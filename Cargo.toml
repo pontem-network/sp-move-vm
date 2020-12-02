@@ -1,9 +1,16 @@
-[package]
-name = "sp-move-vm"
-version = "0.1.0"
-authors = ["Dm. Yakushev <rig410@yandex.ru>"]
-edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
+[workspace]
+members = [
+    "common/infallible",
+    "common/logger",
+    "common/num-variants",
+    "common/short-hex-str",
+    "crypto/crypto",
+    "crypto/crypto-derive",
+    "language/borrow-graph",
+    "language/bytecode-verifier",
+    "language/move-core/types",
+    "language/vm",
+    "language/move-vm/runtime",
+    "language/move-vm/natives",
+    "language/move-vm/types",
+]
