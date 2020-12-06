@@ -1,10 +1,10 @@
 // Copyright (c) The Libra Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{counters::STRUCT_LOG_COUNT, Event, Metadata};
+use crate::{Event, Metadata};
 
 use once_cell::sync::OnceCell;
-use std::sync::Arc;
+use sp_std::sync::Arc;
 
 static LOGGER: OnceCell<Arc<dyn Logger>> = OnceCell::new();
 
@@ -19,7 +19,6 @@ pub trait Logger: Sync + Send + 'static {
 
 pub(crate) fn dispatch(event: &Event) {
     if let Some(logger) = LOGGER.get() {
-        STRUCT_LOG_COUNT.inc();
         logger.record(event)
     }
 }
@@ -33,6 +32,7 @@ pub(crate) fn enabled(metadata: &Metadata) -> bool {
 
 pub fn set_global_logger(logger: Arc<dyn Logger>) {
     if LOGGER.set(logger).is_err() {
-        eprintln!("Global logger has already been set");
+        // TODO print error.
+        // eprintln!("Global logger has already been set");
     }
 }

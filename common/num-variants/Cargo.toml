@@ -13,3 +13,4 @@ proc-macro = true
 syn = "1.0.53"
 quote = "1.0.7"
 proc-macro2 = "1.0.24"
+sp-std = "2.0.0"

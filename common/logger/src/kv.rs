@@ -4,7 +4,7 @@
 //! Key-Value definitions
 
 use serde::Serialize;
-use std::fmt;
+use sp_std::fmt;
 
 #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq, Ord, PartialOrd, Serialize)]
 pub struct Key(&'static str);

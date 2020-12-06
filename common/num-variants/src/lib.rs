@@ -5,6 +5,7 @@
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
+#![no_std]
 
 extern crate proc_macro;
 
@@ -14,6 +15,7 @@ use syn::{
     parse_macro_input, spanned::Spanned, Attribute, Data, DeriveInput, Error, Lit, Meta,
     MetaNameValue, Result,
 };
+use sp_std::prelude::Vec;
 
 /// Derives an associated constant with the number of variants this enum has.
 ///

@@ -1,10 +1,10 @@
 // Copyright (c) The Libra Core Contributors
 // SPDX-License-Identifier: Apache-2.0
+#![no_std]
 
 use mirai_annotations::debug_checked_precondition;
 use serde::{Serialize, Serializer};
-use std::{fmt, str};
-use thiserror::Error;
+use sp_std::{fmt, str};
 
 /// An efficient container for formatting a byte slice as a hex-formatted string,
 /// stored on the stack.
@@ -14,8 +14,7 @@ use thiserror::Error;
 #[derive(Ord, PartialOrd, Eq, PartialEq, Hash, Clone, Copy)]
 pub struct ShortHexStr([u8; ShortHexStr::LENGTH]);
 
-#[derive(Error, Debug)]
-#[error("Input bytes are too short")]
+#[derive(Debug)]
 pub struct InputTooShortError;
 
 impl ShortHexStr {

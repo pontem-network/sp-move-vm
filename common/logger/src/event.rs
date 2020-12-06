@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{Metadata, Schema};
-use std::fmt;
+use sp_std::fmt;
 
 #[derive(Debug)]
 pub struct Event<'a> {

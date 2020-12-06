@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use serde::{Deserialize, Serialize};
-use std::{fmt, str::FromStr};
+use sp_std::{fmt, str::FromStr};
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct Metadata {
