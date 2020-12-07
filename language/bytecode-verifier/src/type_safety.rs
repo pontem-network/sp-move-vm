@@ -18,6 +18,8 @@ use vm::{
     },
 };
 use move_core_types::vm_status::StatusCode;
+use alloc::boxed::Box;
+use sp_std::prelude::Vec;
 
 struct Locals<'a> {
     param_count: usize,

@@ -7,11 +7,13 @@
 //! - All "breaks" (forward, loop-exiting jumps) go to the "end" of the loop
 //! - All "continues" (back jumps in a loop) are only to the current loop
 use move_core_types::vm_status::StatusCode;
-use std::{collections::HashSet, convert::TryInto};
+use sp_std::convert::TryInto;
+use hashbrown::HashSet;
 use vm::{
     errors::{PartialVMError, PartialVMResult},
     file_format::{Bytecode, CodeOffset, CodeUnit, FunctionDefinitionIndex},
 };
+use sp_std::prelude::Vec;
 
 pub fn verify(
     current_function_opt: Option<FunctionDefinitionIndex>,

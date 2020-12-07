@@ -11,7 +11,7 @@ use crate::{
     stack_usage_verifier::StackUsageVerifier,
     type_safety,
 };
-use std::collections::HashMap;
+use hashbrown::HashMap;
 use vm::{
     access::ModuleAccess,
     errors::{Location, PartialVMResult, VMResult},

@@ -10,7 +10,8 @@
 //! - No missing resources (any resource acquired must be present)
 //! - No additional resources (no extraneous resources not actually acquired)
 
-use std::collections::{BTreeSet, HashMap};
+use sp_std::collections::{btree_set::BTreeSet};
+use hashbrown::HashMap;
 use vm::{
     access::ModuleAccess,
     errors::{PartialVMError, PartialVMResult},

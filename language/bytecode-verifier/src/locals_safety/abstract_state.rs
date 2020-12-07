@@ -24,6 +24,7 @@ pub(crate) enum LocalState {
 }
 use crate::binary_views::{BinaryIndexedView, FunctionView};
 use LocalState::*;
+use sp_std::prelude::Vec;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct AbstractState {

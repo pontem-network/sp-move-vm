@@ -8,7 +8,7 @@ use crate::{
 };
 use borrow_graph::references::RefID;
 use mirai_annotations::{checked_postcondition, checked_precondition, checked_verify};
-use std::collections::{BTreeMap, BTreeSet};
+use sp_std::collections::{btree_map::BTreeMap, btree_set::BTreeSet};
 use vm::{
     errors::{PartialVMError, PartialVMResult},
     file_format::{
@@ -17,6 +17,7 @@ use vm::{
     },
 };
 use move_core_types::vm_status::StatusCode;
+use sp_std::prelude::Vec;
 
 type BorrowGraph = borrow_graph::graph::BorrowGraph<(), Label>;
 
@@ -60,8 +61,8 @@ enum Label {
 }
 
 // Needed for debugging with the borrow graph
-impl std::fmt::Display for Label {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl sp_std::fmt::Display for Label {
+    fn fmt(&self, f: &mut sp_std::fmt::Formatter<'_>) -> sp_std::fmt::Result {
         match self {
             Label::Local(i) => write!(f, "local#{}", i),
             Label::Global(i) => write!(f, "resource@{}", i),

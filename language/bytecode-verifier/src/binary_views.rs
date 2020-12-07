@@ -20,6 +20,8 @@ use vm::{
     },
     CompiledModule,
 };
+use sp_std::prelude::Vec;
+use alloc::borrow::ToOwned;
 
 // A `BinaryIndexedView` provides table indexed access for both `CompiledModule` and
 // `CompiledScript`.

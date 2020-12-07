@@ -5,6 +5,11 @@
 
 //! Verifies bytecode sanity.
 
+#![no_std]
+
+#[macro_use]
+extern crate alloc;
+
 // Bounds checks are implemented in the `vm` crate.
 pub mod check_duplication;
 pub mod code_unit_verifier;

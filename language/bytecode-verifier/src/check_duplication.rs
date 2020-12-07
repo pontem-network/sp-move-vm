@@ -10,7 +10,8 @@
 //! - all struct and function handles pointing to the self module index have a definition
 use move_core_types::vm_status::StatusCode;
 use move_core_types::{account_address::AccountAddress, identifier::Identifier};
-use std::{collections::HashSet, hash::Hash};
+use sp_std::hash::Hash;
+use hashbrown::HashSet;
 use vm::{
     access::{ModuleAccess, ScriptAccess},
     errors::{verification_error, Location, PartialVMResult, VMResult},

@@ -5,7 +5,8 @@
 use crate::binary_views::BinaryIndexedView;
 use move_core_types::vm_status::StatusCode;
 use move_core_types::{identifier::Identifier, language_storage::ModuleId};
-use std::collections::{BTreeMap, HashMap};
+use sp_std::collections::{btree_map::BTreeMap};
+use hashbrown::HashMap;
 use vm::{
     access::{ModuleAccess, ScriptAccess},
     errors::{verification_error, Location, PartialVMError, PartialVMResult, VMResult},
@@ -15,6 +16,7 @@ use vm::{
     },
     IndexKind,
 };
+use alloc::borrow::ToOwned;
 
 pub struct DependencyChecker<'a> {
     resolver: BinaryIndexedView<'a>,

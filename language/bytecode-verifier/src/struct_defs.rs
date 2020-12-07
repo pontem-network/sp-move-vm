@@ -6,7 +6,7 @@
 //! each module in isolation guarantees that there is no structural recursion globally.
 use move_core_types::vm_status::StatusCode;
 use petgraph::{algo::toposort, graphmap::DiGraphMap};
-use std::collections::{BTreeMap, BTreeSet};
+use sp_std::collections::{btree_map::BTreeMap, btree_set::BTreeSet};
 use vm::{
     access::ModuleAccess,
     errors::{verification_error, Location, PartialVMError, PartialVMResult, VMResult},
@@ -17,6 +17,7 @@ use vm::{
     views::StructDefinitionView,
     IndexKind,
 };
+use alloc::borrow::ToOwned;
 
 pub struct RecursiveStructDefChecker<'a> {
     module: &'a CompiledModule,

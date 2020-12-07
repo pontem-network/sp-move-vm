@@ -19,7 +19,7 @@ use petgraph::{
     visit::EdgeRef,
     Graph,
 };
-use std::collections::{hash_map, HashMap, HashSet};
+use hashbrown::{hash_map, HashMap, HashSet};
 use vm::{
     access::ModuleAccess,
     errors::{Location, PartialVMError, PartialVMResult, VMResult},
@@ -28,6 +28,8 @@ use vm::{
         SignatureIndex, SignatureToken, TypeParameterIndex,
     },
 };
+use sp_std::prelude::Vec;
+use alloc::string::String;
 
 /// Data attached to each node.
 /// Each node corresponds to a type formal of a generic function in the module.

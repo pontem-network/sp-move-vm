@@ -10,7 +10,9 @@ publish = false
 edition = "2018"
 
 [dependencies]
-anyhow = "1.0.34"
+sp-std = "2.0.0"
+hashbrown = "0.9"
+anyhow = {version ="1.0.34", default-features = false}
 mirai-annotations = "1.10.1"
 petgraph = "0.5.1"
 
