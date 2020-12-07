@@ -103,14 +103,12 @@ use anyhow::{ensure, Error, Result};
 use bytes::Bytes;
 use mirai_annotations::*;
 use once_cell::sync::{Lazy, OnceCell};
-#[cfg(any(test, feature = "fuzzing"))]
-use proptest_derive::Arbitrary;
-use rand::{rngs::OsRng, Rng};
-use serde::{de, ser};
 use short_hex_str::ShortHexStr;
 use static_assertions::const_assert;
-use std::{self, convert::AsRef, fmt, str::FromStr};
+use sp_std::{self, convert::AsRef, fmt, str::FromStr};
 use tiny_keccak::{Hasher, Sha3};
+use sp_std::prelude::Vec;
+use alloc::string::String;
 
 /// A prefix used to begin the salt of every libra hashable structure. The salt
 /// consists in this global prefix, concatenated with the specified
@@ -119,7 +117,6 @@ pub(crate) const LIBRA_HASH_PREFIX: &[u8] = b"LIBRA::";
 
 /// Output value of our hash function. Intentionally opaque for safety and modularity.
 #[derive(Clone, Copy, Eq, Hash, PartialEq, PartialOrd, Ord)]
-#[cfg_attr(any(test, feature = "fuzzing"), derive(Arbitrary))]
 pub struct HashValue {
     hash: [u8; HashValue::LENGTH],
 }
@@ -161,19 +158,6 @@ impl HashValue {
         HashValue {
             hash: [0; HashValue::LENGTH],
         }
-    }
-
-    /// Create a cryptographically random instance.
-    pub fn random() -> Self {
-        let mut rng = OsRng;
-        let hash: [u8; HashValue::LENGTH] = rng.gen();
-        HashValue { hash }
-    }
-
-    /// Creates a random instance with given rng. Useful in unit tests.
-    pub fn random_with_rng<R: Rng>(rng: &mut R) -> Self {
-        let hash: [u8; HashValue::LENGTH] = rng.gen();
-        HashValue { hash }
     }
 
     /// Convenience function that computes a `HashValue` internally equal to
@@ -246,16 +230,6 @@ impl HashValue {
         self.common_prefix_bits_len(other) / 4
     }
 
-    /// Returns the `index`-th nibble.
-    // pub fn get_nibble(&self, index: usize) -> Nibble {
-    //     precondition!(index < HashValue::LENGTH);
-    //     Nibble::from(if index % 2 == 0 {
-    //         self[index / 2] >> 4
-    //     } else {
-    //         self[index / 2] & 0x0F
-    //     })
-    // }
-
     /// Returns first 4 bytes as hex-formatted string
     pub fn short_str(&self) -> ShortHexStr {
         const_assert!(HashValue::LENGTH >= ShortHexStr::SOURCE_LENGTH);
@@ -274,45 +248,6 @@ impl HashValue {
     }
 }
 
-// TODO(#1307)
-impl ser::Serialize for HashValue {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: ser::Serializer,
-    {
-        if serializer.is_human_readable() {
-            serializer.serialize_str(&self.to_hex())
-        } else {
-            // In order to preserve the Serde data model and help analysis tools,
-            // make sure to wrap our value in a container with the same name
-            // as the original type.
-            serializer
-                .serialize_newtype_struct("HashValue", serde_bytes::Bytes::new(&self.hash[..]))
-        }
-    }
-}
-
-impl<'de> de::Deserialize<'de> for HashValue {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where
-        D: de::Deserializer<'de>,
-    {
-        if deserializer.is_human_readable() {
-            let encoded_hash = <String>::deserialize(deserializer)?;
-            HashValue::from_hex(encoded_hash.as_str())
-                .map_err(<D::Error as ::serde::de::Error>::custom)
-        } else {
-            // See comment in serialize.
-            #[derive(::serde::Deserialize)]
-            #[serde(rename = "HashValue")]
-            struct Value<'a>(&'a [u8]);
-
-            let value = Value::deserialize(deserializer)?;
-            Self::from_slice(value.0).map_err(<D::Error as ::serde::de::Error>::custom)
-        }
-    }
-}
-
 impl Default for HashValue {
     fn default() -> Self {
         HashValue::zero()
@@ -325,7 +260,7 @@ impl AsRef<[u8; HashValue::LENGTH]> for HashValue {
     }
 }
 
-impl std::ops::Index<usize> for HashValue {
+impl sp_std::ops::Index<usize> for HashValue {
     type Output = u8;
 
     fn index(&self, s: usize) -> &u8 {
@@ -388,7 +323,7 @@ impl FromStr for HashValue {
 pub struct HashValueBitIterator<'a> {
     /// The reference to the bytes that represent the `HashValue`.
     hash_bytes: &'a [u8],
-    pos: std::ops::Range<usize>,
+    pos: sp_std::ops::Range<usize>,
     // invariant hash_bytes.len() == HashValue::LENGTH;
     // invariant pos.end == hash_bytes.len() * 8;
 }
@@ -413,7 +348,7 @@ impl<'a> HashValueBitIterator<'a> {
     }
 }
 
-impl<'a> std::iter::Iterator for HashValueBitIterator<'a> {
+impl<'a> sp_std::iter::Iterator for HashValueBitIterator<'a> {
     type Item = bool;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -425,13 +360,13 @@ impl<'a> std::iter::Iterator for HashValueBitIterator<'a> {
     }
 }
 
-impl<'a> std::iter::DoubleEndedIterator for HashValueBitIterator<'a> {
+impl<'a> sp_std::iter::DoubleEndedIterator for HashValueBitIterator<'a> {
     fn next_back(&mut self) -> Option<Self::Item> {
         self.pos.next_back().map(|x| self.get_bit(x))
     }
 }
 
-impl<'a> std::iter::ExactSizeIterator for HashValueBitIterator<'a> {}
+impl<'a> sp_std::iter::ExactSizeIterator for HashValueBitIterator<'a> {}
 
 /// A type that can be cryptographically hashed to produce a `HashValue`.
 ///
@@ -446,7 +381,7 @@ pub trait CryptoHash {
 }
 
 /// A trait for representing the state of a cryptographic hasher.
-pub trait CryptoHasher: Default + std::io::Write {
+pub trait CryptoHasher: Default {
     /// the seed used to initialize hashing `Self` before the serialization bytes of the actual value
     fn seed() -> &'static [u8; 32];
 
@@ -546,16 +481,6 @@ macro_rules! define_hasher {
                 self.0.finish()
             }
         }
-
-        impl std::io::Write for $hasher_type {
-            fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
-                self.0.update(bytes);
-                Ok(bytes.len())
-            }
-            fn flush(&mut self) -> std::io::Result<()> {
-                Ok(())
-            }
-        }
     };
 }
 
@@ -633,26 +558,3 @@ pub static GENESIS_BLOCK_ID: Lazy<HashValue> = Lazy::new(|| {
         0xf6, 0xe4,
     ])
 });
-
-/// Provides a test_only_hash() method that can be used in tests on types that implement
-/// `serde::Serialize`.
-///
-/// # Example
-/// ```
-/// use libra_crypto::hash::TestOnlyHash;
-///
-/// b"hello world".test_only_hash();
-/// ```
-pub trait TestOnlyHash {
-    /// Generates a hash used only for tests.
-    fn test_only_hash(&self) -> HashValue;
-}
-
-impl<T: ser::Serialize + ?Sized> TestOnlyHash for T {
-    fn test_only_hash(&self) -> HashValue {
-        let bytes = lcs::to_bytes(self).expect("serialize failed during hash.");
-        let mut hasher = TestOnlyHasher::default();
-        hasher.update(&bytes);
-        hasher.finish()
-    }
-}

@@ -4,7 +4,8 @@
 use anyhow::{ensure, Error, Result};
 use libra_crypto::{
     hash::{CryptoHash, CryptoHasher},
-    x25519, HashValue,
+    //x25519,
+    HashValue,
 };
 use libra_crypto_derive::CryptoHasher;
 #[cfg(any(test, feature = "fuzzing"))]
@@ -93,13 +94,13 @@ impl AccountAddress {
     // not mean anything in a setting without remote authentication, we use the network
     // public key to generate a peer_id for the peer.
     // See this issue for potential improvements: https://github.com/libra/libra/issues/3960
-    pub fn from_identity_public_key(identity_public_key: x25519::PublicKey) -> Self {
-        let mut array = [0u8; Self::LENGTH];
-        let pubkey_slice = identity_public_key.as_slice();
-        // keep only the last 16 bytes
-        array.copy_from_slice(&pubkey_slice[x25519::PUBLIC_KEY_SIZE - Self::LENGTH..]);
-        Self(array)
-    }
+    // pub fn from_identity_public_key(identity_public_key: x25519::PublicKey) -> Self {
+    //     let mut array = [0u8; Self::LENGTH];
+    //     let pubkey_slice = identity_public_key.as_slice();
+    //     // keep only the last 16 bytes
+    //     array.copy_from_slice(&pubkey_slice[x25519::PUBLIC_KEY_SIZE - Self::LENGTH..]);
+    //     Self(array)
+    // }
 }
 
 impl CryptoHash for AccountAddress {
