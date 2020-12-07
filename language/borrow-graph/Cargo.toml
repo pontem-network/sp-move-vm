@@ -8,3 +8,4 @@ license = "Apache-2.0"
 
 [dependencies]
 mirai-annotations = "1.10.1"
+sp-std = "2.0.0"

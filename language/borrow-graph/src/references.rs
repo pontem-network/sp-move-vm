@@ -5,9 +5,9 @@ use crate::{
     paths::{self, Path},
     shared::*,
 };
-use std::{
+use sp_std::{
     cmp::Ordering,
-    collections::{BTreeMap, BTreeSet},
+    collections::{btree_map::BTreeMap, btree_set::BTreeSet},
     fmt,
     fmt::Debug,
 };
