@@ -1,6 +1,8 @@
 // Copyright (c) The Libra Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+use alloc::collections::VecDeque;
+use alloc::vec::Vec;
 use move_core_types::vm_status::sub_status::NFE_LCS_SERIALIZATION_FAILURE;
 use move_vm_types::{
     gas_schedule::NativeCostIndex,
@@ -9,8 +11,6 @@ use move_vm_types::{
     values::{values_impl::Reference, Value},
 };
 use vm::errors::PartialVMResult;
-use alloc::vec::Vec;
-use alloc::collections::VecDeque;
 
 /// Rust implementation of Move's `native public fun to_bytes<T>(&T): vector<u8>`
 pub fn native_to_bytes(

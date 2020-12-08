@@ -1,6 +1,8 @@
 // Copyright (c) The Libra Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+use alloc::collections::VecDeque;
+use alloc::vec::Vec;
 use move_core_types::gas_schedule::GasAlgebra;
 use move_vm_types::{
     gas_schedule::NativeCostIndex,
@@ -9,8 +11,6 @@ use move_vm_types::{
     values::{Value, Vector, VectorRef},
 };
 use vm::errors::PartialVMResult;
-use alloc::vec::Vec;
-use alloc::collections::VecDeque;
 
 pub fn native_empty(
     context: &impl NativeContext,

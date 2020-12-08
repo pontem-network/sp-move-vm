@@ -1,6 +1,7 @@
 // Copyright (c) The Libra Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+use alloc::collections::VecDeque;
 use libra_crypto::{ed25519, traits::*};
 use move_vm_types::{
     gas_schedule::NativeCostIndex,
@@ -9,9 +10,8 @@ use move_vm_types::{
     values::Value,
 };
 use sp_std::convert::TryFrom;
-use vm::errors::PartialVMResult;
 use sp_std::prelude::Vec;
-use alloc::collections::VecDeque;
+use vm::errors::PartialVMResult;
 
 pub fn native_ed25519_publickey_validation(
     context: &impl NativeContext,

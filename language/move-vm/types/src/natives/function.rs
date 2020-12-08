@@ -23,10 +23,10 @@ use move_core_types::{
 };
 use vm::errors::PartialVMResult;
 
-pub use move_core_types::vm_status::StatusCode;
-pub use vm::errors::PartialVMError;
-use sp_std::prelude::Vec;
 use alloc::string::String;
+pub use move_core_types::vm_status::StatusCode;
+use sp_std::prelude::Vec;
+pub use vm::errors::PartialVMError;
 
 /// `NativeContext` - Native function context.
 ///

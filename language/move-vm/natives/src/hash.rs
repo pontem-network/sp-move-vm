@@ -1,6 +1,7 @@
 // Copyright (c) The Libra Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+use alloc::collections::VecDeque;
 use libra_crypto::HashValue;
 use move_vm_types::{
     gas_schedule::NativeCostIndex,
@@ -9,9 +10,8 @@ use move_vm_types::{
     values::Value,
 };
 use sha2::{Digest, Sha256};
-use vm::errors::PartialVMResult;
 use sp_std::prelude::Vec;
-use alloc::collections::VecDeque;
+use vm::errors::PartialVMResult;
 
 pub fn native_sha2_256(
     context: &impl NativeContext,

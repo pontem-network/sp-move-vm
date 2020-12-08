@@ -3,6 +3,7 @@
 
 use crate::loader::Loader;
 
+use alloc::vec::Vec;
 use move_core_types::{
     account_address::AccountAddress,
     language_storage::{ModuleId, StructTag, TypeTag},
@@ -16,7 +17,6 @@ use move_vm_types::{
 };
 use sp_std::collections::btree_map::BTreeMap;
 use vm::errors::*;
-use alloc::vec::Vec;
 
 /// Trait for the Move VM to abstract storage operations.
 ///

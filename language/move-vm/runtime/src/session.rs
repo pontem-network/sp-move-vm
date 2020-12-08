@@ -6,6 +6,7 @@ use crate::{
     logging::LogContext,
     runtime::VMRuntime,
 };
+use alloc::vec::Vec;
 use move_core_types::{
     account_address::AccountAddress,
     identifier::IdentStr,
@@ -13,7 +14,6 @@ use move_core_types::{
 };
 use move_vm_types::{gas_schedule::CostStrategy, values::Value};
 use vm::errors::*;
-use alloc::vec::Vec;
 
 pub struct Session<'r, 'l, R> {
     pub(crate) runtime: &'l VMRuntime,

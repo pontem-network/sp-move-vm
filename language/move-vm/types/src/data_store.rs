@@ -5,9 +5,9 @@ use crate::{
     loaded_data::runtime_types::Type,
     values::{GlobalValue, Value},
 };
+use alloc::vec::Vec;
 use move_core_types::{account_address::AccountAddress, language_storage::ModuleId};
 use vm::errors::{PartialVMResult, VMResult};
-use alloc::vec::Vec;
 
 /// Provide an implementation for bytecodes related to data with a given data store.
 ///

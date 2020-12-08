@@ -9,6 +9,8 @@ use crate::{
     session::Session,
 };
 // use libra_logger::prelude::*;
+use alloc::string::ToString;
+use alloc::vec::Vec;
 use move_core_types::{
     account_address::AccountAddress,
     identifier::IdentStr,
@@ -22,8 +24,6 @@ use vm::{
     file_format::SignatureToken,
     CompiledModule, IndexKind,
 };
-use alloc::vec::Vec;
-use alloc::string::ToString;
 
 /// An instantiation of the MoveVM.
 pub(crate) struct VMRuntime {

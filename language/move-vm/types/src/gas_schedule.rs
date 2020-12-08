@@ -6,6 +6,7 @@
 //! It is important to note that the cost schedule defined in this file does not track hashing
 //! operations or other native operations; the cost of each native operation will be returned by the
 //! native function itself.
+use alloc::vec::Vec;
 use mirai_annotations::*;
 use move_core_types::{
     gas_schedule::{
@@ -23,7 +24,6 @@ use vm::{
     },
     file_format_common::{instruction_key, Opcodes},
 };
-use alloc::vec::Vec;
 
 /// The Move VM implementation for gas charging.
 ///

@@ -8,6 +8,10 @@ use crate::{
 };
 use fail::fail_point;
 // use libra_logger::prelude::*;
+use alloc::borrow::ToOwned;
+use alloc::collections::VecDeque;
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
 use move_core_types::{
     account_address::AccountAddress,
     gas_schedule::{AbstractMemorySize, GasAlgebra, GasCarrier},
@@ -27,10 +31,6 @@ use vm::{
     file_format::{Bytecode, FunctionHandleIndex, FunctionInstantiationIndex, Signature},
     file_format_common::Opcodes,
 };
-use alloc::borrow::ToOwned;
-use alloc::vec::Vec;
-use alloc::string::{String, ToString};
-use alloc::collections::VecDeque;
 
 macro_rules! debug_write {
     ($($toks: tt)*) => {

@@ -1,6 +1,8 @@
 // Copyright (c) The Libra Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+use alloc::collections::VecDeque;
+use alloc::vec::Vec;
 use move_core_types::gas_schedule::ONE_GAS_UNIT;
 #[allow(unused_imports)]
 use move_vm_types::values::{values_impl::debug::print_reference, Reference};
@@ -10,8 +12,6 @@ use move_vm_types::{
     values::Value,
 };
 use vm::errors::PartialVMResult;
-use alloc::vec::Vec;
-use alloc::collections::VecDeque;
 
 #[allow(unused_mut)]
 #[allow(unused_variables)]

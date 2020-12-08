@@ -10,6 +10,11 @@ use bytecode_verifier::{
 use libra_crypto::HashValue;
 use libra_infallible::Mutex;
 // use libra_logger::prelude::*;
+use alloc::borrow::ToOwned;
+use alloc::boxed::Box;
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
+use hashbrown::HashMap;
 use move_core_types::{
     identifier::{IdentStr, Identifier},
     language_storage::{ModuleId, StructTag, TypeTag},
@@ -32,11 +37,6 @@ use vm::{
     },
     IndexKind,
 };
-use alloc::boxed::Box;
-use alloc::vec::Vec;
-use alloc::borrow::ToOwned;
-use hashbrown::HashMap;
-use alloc::string::{ToString, String};
 
 // A simple cache that offers both a HashMap and a Vector lookup.
 // Values are forced into a `Arc` so they can be used from multiple thread.

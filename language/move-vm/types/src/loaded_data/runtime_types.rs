@@ -1,13 +1,13 @@
 // Copyright (c) The Libra Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+use alloc::boxed::Box;
+use alloc::vec::Vec;
 use move_core_types::{identifier::Identifier, language_storage::ModuleId, vm_status::StatusCode};
 use vm::{
     errors::{PartialVMError, PartialVMResult},
     file_format::{Kind, StructDefinitionIndex},
 };
-use alloc::boxed::Box;
-use alloc::vec::Vec;
 
 pub const TYPE_DEPTH_MAX: usize = 256;
 
