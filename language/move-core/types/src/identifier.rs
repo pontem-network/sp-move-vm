@@ -28,13 +28,13 @@
 
 use anyhow::{bail, Result};
 
+use alloc::borrow::ToOwned;
+use alloc::boxed::Box;
+use alloc::string::String;
 use ref_cast::RefCast;
 use serde::{Deserialize, Serialize};
-use sp_std::{borrow::Borrow, fmt, ops::Deref};
-use alloc::boxed::Box;
 use sp_std::prelude::Vec;
-use alloc::string::String;
-use alloc::borrow::ToOwned;
+use sp_std::{borrow::Borrow, fmt, ops::Deref};
 
 /// Describes what identifiers are allowed.
 ///

@@ -99,16 +99,16 @@
 //! let hash_value = hasher.finish();
 //! ```
 
+use alloc::string::String;
 use anyhow::{ensure, Error, Result};
 use bytes::Bytes;
 use mirai_annotations::*;
 use once_cell::sync::{Lazy, OnceCell};
 use short_hex_str::ShortHexStr;
-use static_assertions::const_assert;
-use sp_std::{self, convert::AsRef, fmt, str::FromStr};
-use tiny_keccak::{Hasher, Sha3};
 use sp_std::prelude::Vec;
-use alloc::string::String;
+use sp_std::{self, convert::AsRef, fmt, str::FromStr};
+use static_assertions::const_assert;
+use tiny_keccak::{Hasher, Sha3};
 
 /// A prefix used to begin the salt of every libra hashable structure. The salt
 /// consists in this global prefix, concatenated with the specified

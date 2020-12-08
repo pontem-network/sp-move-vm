@@ -1,12 +1,18 @@
-use anyhow::{Result, Error};
+use anyhow::{Error, Result};
 use sp_std::cmp;
 
-pub struct Cursor<T> where T: AsRef<[u8]> {
+pub struct Cursor<T>
+where
+    T: AsRef<[u8]>,
+{
     inner: T,
     pos: u64,
 }
 
-impl<T> Cursor<T> where T: AsRef<[u8]> {
+impl<T> Cursor<T>
+where
+    T: AsRef<[u8]>,
+{
     pub fn new(inner: T) -> Cursor<T> {
         Cursor { pos: 0, inner }
     }

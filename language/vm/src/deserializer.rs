@@ -7,11 +7,11 @@ use move_core_types::{
 };
 use sp_std::convert::TryInto;
 
-use hashbrown::HashSet;
+use crate::cursor::Cursor;
 use alloc::string::ToString;
 use alloc::vec::Vec;
+use hashbrown::HashSet;
 use sp_std::prelude::Box;
-use crate::cursor::Cursor;
 
 impl CompiledScript {
     /// Deserializes a &[u8] slice into a `CompiledScript` instance.

@@ -699,7 +699,6 @@ pub mod sub_status {
     pub const NFE_LCS_SERIALIZATION_FAILURE: u64 = 0x1C5;
 }
 
-
 #[test]
 fn test_status_codes() {
     use std::collections::HashSet;

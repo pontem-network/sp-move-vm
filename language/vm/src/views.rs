@@ -16,9 +16,9 @@ use sp_std::iter::DoubleEndedIterator;
 use crate::{access::ModuleAccess, file_format::*, SignatureTokenKind};
 use sp_std::collections::btree_set::BTreeSet;
 
+use alloc::vec::Vec;
 use move_core_types::{identifier::IdentStr, language_storage::ModuleId};
 use sp_std::collections::btree_map::BTreeMap;
-use alloc::vec::Vec;
 
 /// Represents a lazily evaluated abstraction over a module.
 ///

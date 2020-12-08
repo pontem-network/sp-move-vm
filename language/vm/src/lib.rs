@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #![forbid(unsafe_code)]
-
 #![no_std]
 
 #[macro_use]
@@ -18,13 +17,13 @@ pub mod check_bounds;
 #[macro_use]
 pub mod errors;
 pub mod constant;
+pub mod cursor;
 pub mod deserializer;
 pub mod file_format;
 pub mod file_format_common;
 pub mod internals;
 pub mod serializer;
 pub mod views;
-pub mod cursor;
 
 pub use file_format::CompiledModule;
 

@@ -1,6 +1,8 @@
 // Copyright (c) The Libra Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
 use anyhow::{ensure, Error, Result};
 use libra_crypto::{
     hash::{CryptoHash, CryptoHasher},
@@ -13,10 +15,8 @@ use proptest_derive::Arbitrary;
 use rand::{rngs::OsRng, Rng};
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize, Serializer};
 use short_hex_str::ShortHexStr;
-use static_assertions::const_assert;
 use sp_std::{convert::TryFrom, fmt, str::FromStr};
-use alloc::string::{String, ToString};
-use alloc::vec::Vec;
+use static_assertions::const_assert;
 
 /// A struct that represents an account address.
 #[derive(Ord, PartialOrd, Eq, PartialEq, Hash, Clone, Copy, CryptoHasher)]

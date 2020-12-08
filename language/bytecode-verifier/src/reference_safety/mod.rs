@@ -14,9 +14,10 @@ use crate::{
     binary_views::{BinaryIndexedView, FunctionView},
 };
 use abstract_state::{AbstractState, AbstractValue};
-use mirai_annotations::*;
-use sp_std::collections::{btree_set::BTreeSet};
 use hashbrown::HashMap;
+use mirai_annotations::*;
+use sp_std::collections::btree_set::BTreeSet;
+use sp_std::prelude::Vec;
 use vm::{
     errors::{PartialVMError, PartialVMResult},
     file_format::{
@@ -24,7 +25,6 @@ use vm::{
         SignatureToken, StructDefinition, StructFieldInformation,
     },
 };
-use sp_std::prelude::Vec;
 
 struct ReferenceSafetyAnalysis<'a> {
     resolver: &'a BinaryIndexedView<'a>,

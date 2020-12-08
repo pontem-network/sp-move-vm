@@ -6,11 +6,11 @@
 //! For examples on how to use these traits, see the implementations of the [`ed25519`] or
 //! [`bls12381`] modules.
 
+use alloc::string::String;
 use anyhow::Result;
 use core::convert::{From, TryFrom};
-use sp_std::{fmt::Debug, hash::Hash, fmt};
 use sp_std::prelude::Vec;
-use alloc::string::String;
+use sp_std::{fmt, fmt::Debug, hash::Hash};
 
 /// A deterministic seed for PRNGs related to keys
 pub const TEST_SEED: [u8; 32] = [0u8; 32];
@@ -211,7 +211,6 @@ pub trait Signature:
     /// Convert the signature into a byte representation.
     fn to_bytes(&self) -> Vec<u8>;
 }
-
 
 /// A type family with a by-convention notion of genesis private key.
 pub trait Genesis: PrivateKey {

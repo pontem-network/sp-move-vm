@@ -30,10 +30,8 @@
 //! **Note**: The above example generates a private key using a private function intended only for
 //! testing purposes. Production code should find an alternate means for secure key generation.
 
-use crate::{
-    traits::*,
-};
-use anyhow::{anyhow, Result, Error};
+use crate::traits::*;
+use anyhow::{anyhow, Error, Result};
 use core::convert::TryFrom;
 use mirai_annotations::*;
 use sp_std::{cmp::Ordering, fmt};

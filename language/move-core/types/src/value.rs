@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::account_address::AccountAddress;
+use alloc::boxed::Box;
+use alloc::vec::Vec;
 use anyhow::Result as AResult;
 use serde::{
     de::Error as DeError,
@@ -9,8 +11,6 @@ use serde::{
     Deserialize, Serialize,
 };
 use sp_std::fmt::{self, Debug};
-use alloc::vec::Vec;
-use alloc::boxed::Box;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct MoveStruct(Vec<MoveValue>);

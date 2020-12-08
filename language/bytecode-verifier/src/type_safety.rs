@@ -8,7 +8,10 @@ use crate::{
     binary_views::{BinaryIndexedView, FunctionView},
     control_flow_graph::ControlFlowGraph,
 };
+use alloc::boxed::Box;
 use mirai_annotations::*;
+use move_core_types::vm_status::StatusCode;
+use sp_std::prelude::Vec;
 use vm::{
     errors::{PartialVMError, PartialVMResult},
     file_format::{
@@ -17,9 +20,6 @@ use vm::{
         StructDefinitionIndex, StructFieldInformation, StructHandleIndex,
     },
 };
-use move_core_types::vm_status::StatusCode;
-use alloc::boxed::Box;
-use sp_std::prelude::Vec;
 
 struct Locals<'a> {
     param_count: usize,

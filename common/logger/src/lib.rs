@@ -135,9 +135,7 @@
 #![no_std]
 
 pub mod prelude {
-    pub use crate::{
-        debug, error, info, trace, warn,
-    };
+    pub use crate::{debug, error, info, trace, warn};
 }
 
 mod event;

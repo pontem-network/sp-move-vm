@@ -5,13 +5,13 @@ use crate::{
     file_format::{CodeOffset, FunctionDefinitionIndex, TableIndex},
     IndexKind,
 };
+use alloc::string::String;
+use alloc::vec::Vec;
 use move_core_types::{
     language_storage::ModuleId,
     vm_status::{self, StatusCode, StatusType, VMStatus},
 };
 use sp_std::fmt;
-use alloc::string::String;
-use alloc::vec::Vec;
 
 pub type VMResult<T> = ::sp_std::result::Result<T, VMError>;
 pub type BinaryLoaderResult<T> = ::sp_std::result::Result<T, PartialVMError>;

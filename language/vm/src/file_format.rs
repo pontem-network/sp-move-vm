@@ -33,6 +33,8 @@ use crate::{
     internals::ModuleIndex,
     IndexKind, SignatureTokenKind,
 };
+use alloc::borrow::ToOwned;
+use alloc::string::ToString;
 use mirai_annotations::*;
 use move_core_types::{
     account_address::AccountAddress,
@@ -46,10 +48,8 @@ use proptest::{collection::vec, prelude::*, strategy::BoxedStrategy};
 #[cfg(any(test, feature = "fuzzing"))]
 use proptest_derive::Arbitrary;
 use ref_cast::RefCast;
-use sp_std::prelude::Vec;
-use alloc::string::ToString;
 use sp_std::boxed::Box;
-use alloc::borrow::ToOwned;
+use sp_std::prelude::Vec;
 
 /// Generic index into one of the tables in the binary format.
 pub type TableIndex = u16;

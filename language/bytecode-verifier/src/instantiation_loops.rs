@@ -12,6 +12,8 @@
 //! instances. We do reject recursive functions that create a new type upon each call but do
 //! terminate eventually.
 
+use alloc::string::String;
+use hashbrown::{hash_map, HashMap, HashSet};
 use move_core_types::vm_status::StatusCode;
 use petgraph::{
     algo::tarjan_scc,
@@ -19,7 +21,7 @@ use petgraph::{
     visit::EdgeRef,
     Graph,
 };
-use hashbrown::{hash_map, HashMap, HashSet};
+use sp_std::prelude::Vec;
 use vm::{
     access::ModuleAccess,
     errors::{Location, PartialVMError, PartialVMResult, VMResult},
@@ -28,8 +30,6 @@ use vm::{
         SignatureIndex, SignatureToken, TypeParameterIndex,
     },
 };
-use sp_std::prelude::Vec;
-use alloc::string::String;
 
 /// Data attached to each node.
 /// Each node corresponds to a type formal of a generic function in the module.

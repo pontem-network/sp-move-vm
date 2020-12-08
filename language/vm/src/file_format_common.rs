@@ -10,13 +10,11 @@
 //! We use LEB128 for integer compression. LEB128 is a representation from the DWARF3 spec,
 //! http://dwarfstd.org/Dwarf3Std.php or https://en.wikipedia.org/wiki/LEB128.
 //! It's used to compress mostly indexes into the main binary tables.
-use crate::file_format::Bytecode;
-use anyhow::{bail, Result};
-use sp_std::{
-    mem::size_of,
-};
-use alloc::vec::Vec;
 use crate::cursor::Cursor;
+use crate::file_format::Bytecode;
+use alloc::vec::Vec;
+use anyhow::{bail, Result};
+use sp_std::mem::size_of;
 
 /// Constant values for the binary format header.
 ///
