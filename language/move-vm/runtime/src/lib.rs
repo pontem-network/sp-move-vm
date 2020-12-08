@@ -8,6 +8,10 @@
 //! It is a design goal for the Move VM to be independent of the Libra blockchain, so that
 //! other blockchains can use it as well. The VM isn't there yet, but hopefully will be there
 //! soon.
+#![no_std]
+
+#[macro_use]
+extern crate alloc;
 
 #[macro_use]
 extern crate mirai_annotations;
@@ -20,9 +24,4 @@ pub mod move_vm;
 mod native_functions;
 mod runtime;
 pub mod session;
-#[macro_use]
-mod tracing;
 
-// Only include debugging functionality in debug builds
-#[cfg(debug_assertions)]
-mod debug;

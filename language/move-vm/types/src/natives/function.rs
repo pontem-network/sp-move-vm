@@ -21,12 +21,12 @@ use move_core_types::{
     gas_schedule::{AbstractMemorySize, CostTable, GasAlgebra, GasCarrier, GasUnits},
     value::MoveTypeLayout,
 };
-use sp_std::fmt::Write;
 use vm::errors::PartialVMResult;
 
 pub use move_core_types::vm_status::StatusCode;
 pub use vm::errors::PartialVMError;
 use sp_std::prelude::Vec;
+use alloc::string::String;
 
 /// `NativeContext` - Native function context.
 ///
@@ -36,7 +36,7 @@ use sp_std::prelude::Vec;
 /// runtime.
 pub trait NativeContext {
     /// Prints stack trace.
-    fn print_stack_trace<B: Write>(&self, buf: &mut B) -> PartialVMResult<()>;
+    fn print_stack_trace(&self, buf: &mut String) -> PartialVMResult<()>;
     /// Gets cost table ref.
     fn cost_table(&self) -> &CostTable;
     /// Saves contract event. Returns true if successful

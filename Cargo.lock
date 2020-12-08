@@ -398,6 +398,7 @@ dependencies = [
  "anyhow",
  "bytecode-verifier",
  "fail",
+ "hashbrown",
  "hex",
  "libra-crypto",
  "libra-infallible",
@@ -408,6 +409,7 @@ dependencies = [
  "move-vm-types",
  "once_cell",
  "proptest",
+ "sp-std",
  "vm",
 ]
 

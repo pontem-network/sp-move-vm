@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use libra_logger::Schema;
+use alloc::string::{String, ToString};
 
 // Trait used by the VM to log interesting data.
 // Clients are responsible for the implementation of alert.

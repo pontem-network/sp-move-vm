@@ -13,6 +13,7 @@ use move_core_types::{
 };
 use move_vm_types::{gas_schedule::CostStrategy, values::Value};
 use vm::errors::*;
+use alloc::vec::Vec;
 
 pub struct Session<'r, 'l, R> {
     pub(crate) runtime: &'l VMRuntime,

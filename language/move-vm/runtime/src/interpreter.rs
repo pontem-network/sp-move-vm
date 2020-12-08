@@ -5,10 +5,9 @@ use crate::{
     loader::{Function, Loader, Resolver},
     logging::LogContext,
     native_functions::FunctionContext,
-    trace,
 };
 use fail::fail_point;
-use libra_logger::prelude::*;
+// use libra_logger::prelude::*;
 use move_core_types::{
     account_address::AccountAddress,
     gas_schedule::{AbstractMemorySize, GasAlgebra, GasCarrier},
@@ -22,12 +21,16 @@ use move_vm_types::{
         self, GlobalValue, IntegerValue, Locals, Reference, Struct, StructRef, VMValueCast, Value,
     },
 };
-use std::{cmp::min, collections::VecDeque, fmt::Write, sync::Arc};
+use sp_std::{cmp::min, fmt::Write, sync::Arc};
 use vm::{
     errors::*,
     file_format::{Bytecode, FunctionHandleIndex, FunctionInstantiationIndex, Signature},
     file_format_common::Opcodes,
 };
+use alloc::borrow::ToOwned;
+use alloc::vec::Vec;
+use alloc::string::{String, ToString};
+use alloc::collections::VecDeque;
 
 macro_rules! debug_write {
     ($($toks: tt)*) => {
@@ -343,10 +346,10 @@ impl<L: LogContext> Interpreter<L> {
             Ok(gv) => Ok(gv),
             Err(e) => {
                 log_context.alert();
-                error!(
-                    *log_context,
-                    "[VM] error loading resource at ({}, {:?}): {:?} from data store", addr, ty, e
-                );
+                // error!(
+                //     *log_context,
+                //     "[VM] error loading resource at ({}, {:?}): {:?} from data store", addr, ty, e
+                // );
                 Err(e)
             }
         }
@@ -410,14 +413,14 @@ impl<L: LogContext> Interpreter<L> {
     //
 
     /// Given an `VMStatus` generate a core dump if the error is an `InvariantViolation`.
-    fn maybe_core_dump(&self, mut err: VMError, current_frame: &Frame) -> VMError {
+    fn maybe_core_dump(&self, mut err: VMError, _current_frame: &Frame) -> VMError {
         // a verification error cannot happen at runtime so change it into an invariant violation.
         if err.status_type() == StatusType::Verification {
             self.log_context.alert();
-            error!(
-                self.log_context,
-                "Verification error during runtime: {:?}", err
-            );
+            // error!(
+            //     self.log_context,
+            //     "Verification error during runtime: {:?}", err
+            // );
             let new_err = PartialVMError::new(StatusCode::VERIFICATION_ERROR);
             let new_err = match err.message() {
                 None => new_err,
@@ -426,12 +429,12 @@ impl<L: LogContext> Interpreter<L> {
             err = new_err.finish(err.location().clone())
         }
         if err.status_type() == StatusType::InvariantViolation {
-            let state = self.get_internal_state(current_frame);
+            // let state = self.get_internal_state(current_frame);
             self.log_context.alert();
-            error!(
-                self.log_context,
-                "Error: {:?}\nCORE DUMP: >>>>>>>>>>>>\n{}\n<<<<<<<<<<<<\n", err, state,
-            );
+            // error!(
+            //     self.log_context,
+            //     "Error: {:?}\nCORE DUMP: >>>>>>>>>>>>\n{}\n<<<<<<<<<<<<\n", err, state,
+            // );
         }
         err
     }
@@ -501,9 +504,9 @@ impl<L: LogContext> Interpreter<L> {
     }
 
     #[allow(dead_code)]
-    pub(crate) fn debug_print_stack_trace<B: Write>(
+    pub(crate) fn debug_print_stack_trace(
         &self,
-        buf: &mut B,
+        buf: &mut String,
         loader: &Loader,
     ) -> PartialVMResult<()> {
         debug_writeln!(buf, "Call Stack:")?;
@@ -635,7 +638,7 @@ impl CallStack {
     }
 
     /// Push a `Frame` on the call stack.
-    fn push(&mut self, frame: Frame) -> ::std::result::Result<(), Frame> {
+    fn push(&mut self, frame: Frame) -> ::sp_std::result::Result<(), Frame> {
         if self.0.len() < CALL_STACK_SIZE_LIMIT {
             self.0.push(frame);
             Ok(())
@@ -711,15 +714,6 @@ impl Frame {
         let code = self.function.code();
         loop {
             for instruction in &code[self.pc as usize..] {
-                trace!(
-                    &self.function,
-                    &self.locals,
-                    self.pc,
-                    instruction,
-                    &resolver,
-                    &interpreter
-                );
-
                 fail_point!("move_vm::interpreter_loop", |_| {
                     Err(
                         PartialVMError::new(StatusCode::VERIFIER_INVARIANT_VIOLATION).with_message(

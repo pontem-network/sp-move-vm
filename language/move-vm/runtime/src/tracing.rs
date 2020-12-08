@@ -1,39 +1,13 @@
 // Copyright (c) The Libra Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-#[cfg(debug_assertions)]
-use crate::debug::DebugContext;
-
-#[cfg(debug_assertions)]
-use ::{
-    libra_infallible::Mutex,
-    move_vm_types::values::Locals,
-    once_cell::sync::Lazy,
-    std::{
-        env,
-        fs::{File, OpenOptions},
-        io::Write,
-        process, thread,
-    },
-    vm::file_format::Bytecode,
-};
 
 use crate::{
     interpreter::Interpreter,
     loader::{Function, Loader},
     logging::LogContext,
 };
-
-#[cfg(debug_assertions)]
-const MOVE_VM_TRACING_ENV_VAR_NAME: &str = "MOVE_VM_TRACE";
-
-#[cfg(debug_assertions)]
-const MOVE_VM_STEPPING_ENV_VAR_NAME: &str = "MOVE_VM_STEP";
-
-#[cfg(debug_assertions)]
-static FILE_PATH: Lazy<String> = Lazy::new(|| {
-    env::var(MOVE_VM_TRACING_ENV_VAR_NAME).unwrap_or_else(|_| "move_vm_trace.trace".to_string())
-});
+use alloc::string::{String, ToString};
 
 #[cfg(debug_assertions)]
 static TRACING_ENABLED: Lazy<bool> = Lazy::new(|| env::var(MOVE_VM_TRACING_ENV_VAR_NAME).is_ok());

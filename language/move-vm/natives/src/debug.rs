@@ -50,7 +50,7 @@ pub fn native_print_stack_trace(
     {
         let mut s = String::new();
         context.print_stack_trace(&mut s)?;
-        println!("{}", s);
+        info!("{}", s);
     }
 
     Ok(NativeResult::ok(ONE_GAS_UNIT, vec![]))

@@ -9,7 +9,7 @@ use bytecode_verifier::{
 };
 use libra_crypto::HashValue;
 use libra_infallible::Mutex;
-use libra_logger::prelude::*;
+// use libra_logger::prelude::*;
 use move_core_types::{
     identifier::{IdentStr, Identifier},
     language_storage::{ModuleId, StructTag, TypeTag},
@@ -20,7 +20,7 @@ use move_vm_types::{
     data_store::DataStore,
     loaded_data::runtime_types::{StructType, Type},
 };
-use std::{collections::HashMap, fmt::Debug, hash::Hash, sync::Arc};
+use sp_std::{fmt::Debug, hash::Hash, sync::Arc};
 use vm::{
     access::{ModuleAccess, ScriptAccess},
     errors::{verification_error, Location, PartialVMError, PartialVMResult, VMError, VMResult},
@@ -32,6 +32,11 @@ use vm::{
     },
     IndexKind,
 };
+use alloc::boxed::Box;
+use alloc::vec::Vec;
+use alloc::borrow::ToOwned;
+use hashbrown::HashMap;
+use alloc::string::{ToString, String};
 
 // A simple cache that offers both a HashMap and a Vector lookup.
 // Values are forced into a `Arc` so they can be used from multiple thread.
@@ -243,10 +248,10 @@ impl ModuleCache {
                     // So in the spirit of not crashing we just rewrite the entire `Arc`
                     // over and log the issue.
                     log_context.alert();
-                    error!(
-                        *log_context,
-                        "Arc<StructType> cannot have any live reference while publishing"
-                    );
+                    // error!(
+                    //     *log_context,
+                    //     "Arc<StructType> cannot have any live reference while publishing"
+                    // );
                     let mut struct_type = (*self.structs[struct_idx]).clone();
                     struct_type.fields = fields;
                     self.structs[struct_idx] = Arc::new(struct_type);
@@ -486,10 +491,10 @@ impl Loader {
             Ok(script) => script,
             Err(err) => {
                 log_context.alert();
-                error!(
-                    *log_context,
-                    "[VM] deserializer for script returned error: {:?}", err,
-                );
+                // error!(
+                //     *log_context,
+                //     "[VM] deserializer for script returned error: {:?}", err,
+                // );
                 let msg = format!("Deserialization error: {:?}", err);
                 return Err(PartialVMError::new(StatusCode::CODE_DESERIALIZATION_ERROR)
                     .with_message(msg)
@@ -511,10 +516,10 @@ impl Loader {
             }
             Err(err) => {
                 log_context.alert();
-                error!(
-                    *log_context,
-                    "[VM] bytecode verifier returned errors for script: {:?}", err
-                );
+                // error!(
+                //     *log_context,
+                //     "[VM] bytecode verifier returned errors for script: {:?}", err
+                // );
                 Err(err)
             }
         }
@@ -778,7 +783,7 @@ impl Loader {
             Err(err) if verify_no_missing_modules => return Err(err),
             Err(err) => {
                 log_context.alert();
-                error!(*log_context, "[VM] Error fetching module with id {:?}", id);
+                //error!(*log_context, "[VM] Error fetching module with id {:?}", id);
                 return Err(expect_no_verification_errors(err, log_context));
             }
         };
@@ -1706,7 +1711,7 @@ fn expect_no_verification_errors(err: VMError, log_context: &impl LogContext) ->
             };
 
             log_context.alert();
-            error!(*log_context, "[VM] {}", message);
+            //error!(*log_context, "[VM] {}", message);
             PartialVMError::new(major_status)
                 .with_message(message)
                 .at_indices(indices)

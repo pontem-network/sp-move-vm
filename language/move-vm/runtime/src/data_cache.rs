@@ -14,8 +14,9 @@ use move_vm_types::{
     loaded_data::runtime_types::Type,
     values::{GlobalValue, GlobalValueEffect, Value},
 };
-use std::collections::btree_map::BTreeMap;
+use sp_std::collections::btree_map::BTreeMap;
 use vm::errors::*;
+use alloc::vec::Vec;
 
 /// Trait for the Move VM to abstract storage operations.
 ///

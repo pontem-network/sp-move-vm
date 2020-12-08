@@ -5,6 +5,7 @@ use crate::{data_cache::RemoteCache, runtime::VMRuntime, session::Session};
 use move_core_types::account_address::AccountAddress;
 use move_core_types::language_storage::{ModuleId, StructTag};
 use vm::errors::{PartialVMResult, VMResult};
+use alloc::vec::Vec;
 
 pub struct MoveVM {
     runtime: VMRuntime,

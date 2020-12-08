@@ -14,8 +14,10 @@ use move_vm_types::{
     natives::function::{NativeContext, NativeResult},
     values::Value,
 };
-use std::{collections::VecDeque, fmt::Write};
 use vm::errors::PartialVMResult;
+use alloc::vec::Vec;
+use proptest::std_facade::String;
+use alloc::collections::VecDeque;
 
 // The set of native functions the VM supports.
 // The functions can line in any crate linked in but the VM declares them here.
@@ -140,7 +142,7 @@ impl<'a, L: LogContext> FunctionContext<'a, L> {
 }
 
 impl<'a, L: LogContext> NativeContext for FunctionContext<'a, L> {
-    fn print_stack_trace<B: Write>(&self, buf: &mut B) -> PartialVMResult<()> {
+    fn print_stack_trace(&self, buf: &mut String) -> PartialVMResult<()> {
         self.interpreter
             .debug_print_stack_trace(buf, self.resolver.loader())
     }

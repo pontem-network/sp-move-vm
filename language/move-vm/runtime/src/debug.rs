@@ -7,12 +7,15 @@ use crate::{
     logging::LogContext,
 };
 use move_vm_types::values::{self, Locals};
-use std::{
-    collections::BTreeSet,
+use sp_std::{
+    collections::btree_set::BTreeSet,
     io::{self, Write},
     str::FromStr,
 };
 use vm::file_format::Bytecode;
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
+use alloc::borrow::ToOwned;
 
 #[derive(Debug)]
 enum DebugCommand {

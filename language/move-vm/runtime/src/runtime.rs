@@ -8,7 +8,7 @@ use crate::{
     logging::LogContext,
     session::Session,
 };
-use libra_logger::prelude::*;
+// use libra_logger::prelude::*;
 use move_core_types::{
     account_address::AccountAddress,
     identifier::IdentStr,
@@ -22,6 +22,8 @@ use vm::{
     file_format::SignatureToken,
     CompiledModule, IndexKind,
 };
+use alloc::vec::Vec;
+use alloc::string::ToString;
 
 /// An instantiation of the MoveVM.
 pub(crate) struct VMRuntime {
@@ -56,7 +58,7 @@ impl VMRuntime {
         let compiled_module = match CompiledModule::deserialize(&module) {
             Ok(module) => module,
             Err(err) => {
-                warn!(*log_context, "[VM] module deserialization failed {:?}", err);
+                // warn!(*log_context, "[VM] module deserialization failed {:?}", err);
                 return Err(err.finish(Location::Undefined));
             }
         };
