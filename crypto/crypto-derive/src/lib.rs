@@ -368,7 +368,7 @@ pub fn hasher_dispatch(input: TokenStream) -> TokenStream {
             libra_crypto::_once_cell::sync::Lazy::new(|| #hasher_name::new());
 
 
-        impl std::default::Default for #hasher_name
+        impl sp_std::default::Default for #hasher_name
         {
             fn default() -> Self {
                 #static_hasher_name.clone()

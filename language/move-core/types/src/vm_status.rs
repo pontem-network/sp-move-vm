@@ -5,12 +5,8 @@
 
 use crate::language_storage::ModuleId;
 use anyhow::Result;
-#[cfg(any(test, feature = "fuzzing"))]
-use proptest::prelude::*;
-#[cfg(any(test, feature = "fuzzing"))]
-use proptest_derive::Arbitrary;
 use serde::{de, ser, Deserialize, Serialize};
-use std::{convert::TryFrom, fmt};
+use sp_std::{convert::TryFrom, fmt};
 
 /// The minimum status code for validation statuses
 pub static VALIDATION_STATUS_MIN_CODE: u64 = 0;
@@ -91,8 +87,6 @@ pub type DiscardedVMStatus = StatusCode;
 /// An `AbortLocation` specifies where a Move program `abort` occurred, either in a function in
 /// a module, or in a script
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-#[cfg_attr(any(test, feature = "fuzzing"), derive(Arbitrary))]
-#[cfg_attr(any(test, feature = "fuzzing"), proptest(no_params))]
 pub enum AbortLocation {
     /// Indicates `abort` occurred in the specified module
     Module(ModuleId),
@@ -307,8 +301,6 @@ impl fmt::Debug for AbortLocation {
     }
 }
 
-impl std::error::Error for VMStatus {}
-
 pub mod known_locations {
     use crate::{
         identifier::Identifier,
@@ -378,7 +370,7 @@ macro_rules! derive_status_try_from_repr {
             ),*
         }
 
-        impl std::convert::TryFrom<$repr_ty> for $enum_name {
+        impl sp_std::convert::TryFrom<$repr_ty> for $enum_name {
             type Error = &'static str;
             fn try_from(value: $repr_ty) -> Result<Self, Self::Error> {
                 match value {
@@ -661,7 +653,7 @@ impl StatusCode {
 
 // TODO(#1307)
 impl ser::Serialize for StatusCode {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> sp_std::result::Result<S::Ok, S::Error>
     where
         S: ser::Serializer,
     {
@@ -670,7 +662,7 @@ impl ser::Serialize for StatusCode {
 }
 
 impl<'de> de::Deserialize<'de> for StatusCode {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> sp_std::result::Result<Self, D::Error>
     where
         D: de::Deserializer<'de>,
     {
@@ -682,7 +674,7 @@ impl<'de> de::Deserialize<'de> for StatusCode {
                 formatter.write_str("StatusCode as u64")
             }
 
-            fn visit_u64<E>(self, v: u64) -> std::result::Result<StatusCode, E>
+            fn visit_u64<E>(self, v: u64) -> sp_std::result::Result<StatusCode, E>
             where
                 E: de::Error,
             {
@@ -707,21 +699,6 @@ pub mod sub_status {
     pub const NFE_LCS_SERIALIZATION_FAILURE: u64 = 0x1C5;
 }
 
-/// The `Arbitrary` impl only generates validation statuses since the full enum is too large.
-#[cfg(any(test, feature = "fuzzing"))]
-impl Arbitrary for StatusCode {
-    type Parameters = ();
-    type Strategy = BoxedStrategy<Self>;
-
-    fn arbitrary_with(_args: ()) -> Self::Strategy {
-        (any::<usize>())
-            .prop_map(|index| {
-                let status_code_value = STATUS_CODE_VALUES[index % STATUS_CODE_VALUES.len()];
-                StatusCode::try_from(status_code_value).unwrap()
-            })
-            .boxed()
-    }
-}
 
 #[test]
 fn test_status_codes() {

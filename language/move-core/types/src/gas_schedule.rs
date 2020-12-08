@@ -8,10 +8,10 @@
 //! native function itself.
 use mirai_annotations::*;
 use serde::{Deserialize, Serialize};
-use std::{
+use sp_std::{
     ops::{Add, Div, Mul, Sub},
-    u64,
 };
+use sp_std::prelude::Vec;
 
 /// The underlying carrier for gas-related units and costs. Data with this type should not be
 /// manipulated directly, but instead be manipulated using the newtype wrappers defined around
@@ -134,7 +134,7 @@ pub const ONE_GAS_UNIT: GasUnits<GasCarrier> = GasUnits(1);
 
 /// The maximum size representable by AbstractMemorySize
 pub const MAX_ABSTRACT_MEMORY_SIZE: AbstractMemorySize<GasCarrier> =
-    AbstractMemorySize(std::u64::MAX);
+    AbstractMemorySize(u64::MAX);
 
 /// The size in bytes for a non-string or address constant on the stack
 pub const CONST_SIZE: AbstractMemorySize<GasCarrier> = AbstractMemorySize(16);

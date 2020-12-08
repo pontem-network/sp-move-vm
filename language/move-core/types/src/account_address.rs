@@ -14,7 +14,9 @@ use rand::{rngs::OsRng, Rng};
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize, Serializer};
 use short_hex_str::ShortHexStr;
 use static_assertions::const_assert;
-use std::{convert::TryFrom, fmt, str::FromStr};
+use sp_std::{convert::TryFrom, fmt, str::FromStr};
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
 
 /// A struct that represents an account address.
 #[derive(Ord, PartialOrd, Eq, PartialEq, Hash, Clone, Copy, CryptoHasher)]
@@ -120,7 +122,7 @@ impl AsRef<[u8]> for AccountAddress {
 }
 
 impl fmt::Display for AccountAddress {
-    fn fmt(&self, f: &mut fmt::Formatter) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // Forward to the UpperHex impl with a "0x" prepended (the # flag).
         write!(f, "{:#X}", self)
     }
@@ -228,7 +230,7 @@ impl FromStr for AccountAddress {
 }
 
 impl<'de> Deserialize<'de> for AccountAddress {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> sp_std::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -250,7 +252,7 @@ impl<'de> Deserialize<'de> for AccountAddress {
 }
 
 impl Serialize for AccountAddress {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> sp_std::result::Result<S::Ok, S::Error>
     where
         S: Serializer,
     {

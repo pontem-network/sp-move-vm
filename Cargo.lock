@@ -372,6 +372,7 @@ dependencies = [
  "serde_bytes",
  "serde_json",
  "short-hex-str",
+ "sp-std",
  "static_assertions",
  "thiserror",
 ]

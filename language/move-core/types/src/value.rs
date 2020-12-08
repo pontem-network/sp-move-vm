@@ -8,7 +8,9 @@ use serde::{
     ser::{SerializeSeq, SerializeTuple},
     Deserialize, Serialize,
 };
-use std::fmt::{self, Debug};
+use sp_std::fmt::{self, Debug};
+use alloc::vec::Vec;
+use alloc::boxed::Box;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct MoveStruct(Vec<MoveValue>);

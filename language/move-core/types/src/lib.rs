@@ -3,6 +3,11 @@
 
 //! Core types for Move.
 
+//#![no_std]
+
+#[macro_use]
+extern crate alloc;
+
 pub mod account_address;
 pub mod gas_schedule;
 pub mod identifier;
