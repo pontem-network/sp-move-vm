@@ -1,6 +1,8 @@
 // Copyright (c) The Libra Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+#![no_std]
+
 #![forbid(unsafe_code)]
 
 macro_rules! debug_write {
@@ -20,6 +22,9 @@ macro_rules! debug_writeln {
         )
     };
 }
+
+#[macro_use]
+extern crate alloc;
 
 pub mod data_store;
 pub mod gas_schedule;

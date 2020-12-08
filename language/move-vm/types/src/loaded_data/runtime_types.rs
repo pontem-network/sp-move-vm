@@ -6,6 +6,8 @@ use vm::{
     errors::{PartialVMError, PartialVMResult},
     file_format::{Kind, StructDefinitionIndex},
 };
+use alloc::boxed::Box;
+use alloc::vec::Vec;
 
 pub const TYPE_DEPTH_MAX: usize = 256;
 

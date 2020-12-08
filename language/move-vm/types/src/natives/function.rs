@@ -21,11 +21,12 @@ use move_core_types::{
     gas_schedule::{AbstractMemorySize, CostTable, GasAlgebra, GasCarrier, GasUnits},
     value::MoveTypeLayout,
 };
-use std::fmt::Write;
+use sp_std::fmt::Write;
 use vm::errors::PartialVMResult;
 
 pub use move_core_types::vm_status::StatusCode;
 pub use vm::errors::PartialVMError;
+use sp_std::prelude::Vec;
 
 /// `NativeContext` - Native function context.
 ///
@@ -93,7 +94,7 @@ impl NativeResult {
 /// The key is the specific native function index known to `CostTable`.
 pub fn native_gas(table: &CostTable, key: NativeCostIndex, size: usize) -> GasUnits<GasCarrier> {
     let gas_amt = table.native_cost(key as u8);
-    let memory_size = AbstractMemorySize::new(std::cmp::max(1, size) as GasCarrier);
+    let memory_size = AbstractMemorySize::new(sp_std::cmp::max(1, size) as GasCarrier);
     debug_assert!(memory_size.get() > 0);
     gas_amt.total().mul(memory_size)
 }

@@ -11,7 +11,7 @@ use move_core_types::{
     value::{MoveKind, MoveKindInfo, MoveStructLayout, MoveTypeLayout},
     vm_status::{sub_status::NFE_VECTOR_ERROR_BASE, StatusCode},
 };
-use std::{
+use sp_std::{
     cell::RefCell,
     fmt::{self, Debug, Display},
     iter,
@@ -1138,7 +1138,7 @@ impl Locals {
                         .with_message("moving container with dangling references".to_string()));
                     }
                 }
-                Ok(Value(std::mem::replace(v, x.0)))
+                Ok(Value(sp_std::mem::replace(v, x.0)))
             }
             None => Err(
                 PartialVMError::new(StatusCode::VERIFIER_INVARIANT_VIOLATION).with_message(
@@ -1731,7 +1731,7 @@ impl IntegerValue {
         match self {
             U8(x) => Ok(x),
             U64(x) => {
-                if x > (std::u8::MAX as u64) {
+                if x > (u8::MAX as u64) {
                     Err(PartialVMError::new(StatusCode::ARITHMETIC_ERROR)
                         .with_message(format!("Cannot cast u64({}) to u8", x)))
                 } else {
@@ -1739,7 +1739,7 @@ impl IntegerValue {
                 }
             }
             U128(x) => {
-                if x > (std::u8::MAX as u128) {
+                if x > (u8::MAX as u128) {
                     Err(PartialVMError::new(StatusCode::ARITHMETIC_ERROR)
                         .with_message(format!("Cannot cast u128({}) to u8", x)))
                 } else {
@@ -1756,7 +1756,7 @@ impl IntegerValue {
             U8(x) => Ok(x as u64),
             U64(x) => Ok(x),
             U128(x) => {
-                if x > (std::u64::MAX as u128) {
+                if x > (u64::MAX as u128) {
                     Err(PartialVMError::new(StatusCode::ARITHMETIC_ERROR)
                         .with_message(format!("Cannot cast u128({}) to u64", x)))
                 } else {
@@ -2227,11 +2227,11 @@ impl GlobalValueImpl {
             Self::None | Self::Deleted => {
                 return Err(PartialVMError::new(StatusCode::MISSING_DATA))
             }
-            Self::Fresh { .. } => match std::mem::replace(self, Self::None) {
+            Self::Fresh { .. } => match sp_std::mem::replace(self, Self::None) {
                 Self::Fresh { fields } => fields,
                 _ => unreachable!(),
             },
-            Self::Cached { .. } => match std::mem::replace(self, Self::Deleted) {
+            Self::Cached { .. } => match sp_std::mem::replace(self, Self::Deleted) {
                 Self::Cached { fields, .. } => fields,
                 _ => unreachable!(),
             },
@@ -2437,7 +2437,7 @@ impl Display for Locals {
 #[allow(dead_code)]
 pub mod debug {
     use super::*;
-    use std::fmt::Write;
+    use sp_std::fmt::Write;
 
     fn print_invalid<B: Write>(buf: &mut B) -> PartialVMResult<()> {
         debug_write!(buf, "-")
@@ -2612,6 +2612,9 @@ use serde::{
     ser::{Error as SerError, SerializeSeq, SerializeTuple},
     Deserialize,
 };
+use alloc::vec::Vec;
+use alloc::string::{ToString, String};
+use alloc::boxed::Box;
 
 impl Value {
     pub fn simple_deserialize(

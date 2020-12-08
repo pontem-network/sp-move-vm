@@ -7,6 +7,7 @@ use crate::{
 };
 use move_core_types::{account_address::AccountAddress, language_storage::ModuleId};
 use vm::errors::{PartialVMResult, VMResult};
+use alloc::vec::Vec;
 
 /// Provide an implementation for bytecodes related to data with a given data store.
 ///

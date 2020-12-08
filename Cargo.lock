@@ -414,6 +414,7 @@ dependencies = [
 name = "move-vm-types"
 version = "0.1.0"
 dependencies = [
+ "hashbrown",
  "libra-canonical-serialization",
  "libra-crypto",
  "mirai-annotations",
@@ -422,6 +423,7 @@ dependencies = [
  "proptest",
  "serde",
  "sha2",
+ "sp-std",
  "vm",
 ]
 
