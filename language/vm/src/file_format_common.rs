@@ -12,10 +12,11 @@
 //! It's used to compress mostly indexes into the main binary tables.
 use crate::file_format::Bytecode;
 use anyhow::{bail, Result};
-use std::{
-    io::{Cursor, Read},
+use sp_std::{
     mem::size_of,
 };
+use alloc::vec::Vec;
+use crate::cursor::Cursor;
 
 /// Constant values for the binary format header.
 ///

@@ -877,6 +877,7 @@ name = "vm"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "hashbrown",
  "libra-crypto",
  "mirai-annotations",
  "move-core-types",
@@ -886,6 +887,7 @@ dependencies = [
  "proptest-derive",
  "ref-cast",
  "serde_json",
+ "sp-std",
 ]
 
 [[package]]

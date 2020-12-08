@@ -3,10 +3,15 @@
 
 #![forbid(unsafe_code)]
 
+#![no_std]
+
+#[macro_use]
+extern crate alloc;
+
 #[macro_use]
 extern crate mirai_annotations;
 
-use std::fmt;
+use sp_std::fmt;
 
 pub mod access;
 pub mod check_bounds;
@@ -19,6 +24,7 @@ pub mod file_format_common;
 pub mod internals;
 pub mod serializer;
 pub mod views;
+pub mod cursor;
 
 pub use file_format::CompiledModule;
 

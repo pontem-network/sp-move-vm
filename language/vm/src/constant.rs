@@ -4,6 +4,7 @@
 use crate::file_format::{Constant, SignatureToken};
 
 use move_core_types::value::{MoveTypeLayout, MoveValue};
+use sp_std::prelude::Box;
 
 fn sig_to_ty(sig: &SignatureToken) -> Option<MoveTypeLayout> {
     match sig {

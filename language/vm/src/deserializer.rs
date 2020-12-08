@@ -5,11 +5,13 @@ use crate::{errors::*, file_format::*, file_format_common::*};
 use move_core_types::{
     account_address::AccountAddress, identifier::Identifier, vm_status::StatusCode,
 };
-use std::{
-    collections::HashSet,
-    convert::TryInto,
-    io::{Cursor, Read},
-};
+use sp_std::convert::TryInto;
+
+use hashbrown::HashSet;
+use alloc::string::ToString;
+use alloc::vec::Vec;
+use sp_std::prelude::Box;
+use crate::cursor::Cursor;
 
 impl CompiledScript {
     /// Deserializes a &[u8] slice into a `CompiledScript` instance.

@@ -10,6 +10,7 @@
 use crate::{file_format::*, file_format_common::*};
 use anyhow::{bail, Result};
 use move_core_types::{account_address::AccountAddress, identifier::Identifier};
+use alloc::vec::Vec;
 
 impl CompiledScript {
     /// Serializes a `CompiledScript` into a binary. The mutable `Vec<u8>` will contain the

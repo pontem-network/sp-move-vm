@@ -46,6 +46,10 @@ use proptest::{collection::vec, prelude::*, strategy::BoxedStrategy};
 #[cfg(any(test, feature = "fuzzing"))]
 use proptest_derive::Arbitrary;
 use ref_cast::RefCast;
+use sp_std::prelude::Vec;
+use alloc::string::ToString;
+use sp_std::boxed::Box;
+use alloc::borrow::ToOwned;
 
 /// Generic index into one of the tables in the binary format.
 pub type TableIndex = u16;
@@ -69,14 +73,14 @@ macro_rules! define_index {
             }
         }
 
-        impl ::std::fmt::Display for $name {
-            fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        impl ::sp_std::fmt::Display for $name {
+            fn fmt(&self, f: &mut ::sp_std::fmt::Formatter) -> ::sp_std::fmt::Result {
                 write!(f, "{}", self.0)
             }
         }
 
-        impl ::std::fmt::Debug for $name {
-            fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        impl ::sp_std::fmt::Debug for $name {
+            fn fmt(&self, f: &mut ::sp_std::fmt::Formatter) -> ::sp_std::fmt::Result {
                 write!(f, "{}({})", stringify!($name), self.0)
             }
         }
@@ -661,8 +665,8 @@ impl Arbitrary for SignatureToken {
     }
 }
 
-impl std::fmt::Debug for SignatureToken {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+impl sp_std::fmt::Debug for SignatureToken {
+    fn fmt(&self, f: &mut ::sp_std::fmt::Formatter) -> ::sp_std::fmt::Result {
         match self {
             SignatureToken::Bool => write!(f, "Bool"),
             SignatureToken::U8 => write!(f, "U8"),
@@ -1228,8 +1232,8 @@ pub enum Bytecode {
 
 pub const NUMBER_OF_NATIVE_FUNCTIONS: usize = 18;
 
-impl ::std::fmt::Debug for Bytecode {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+impl ::sp_std::fmt::Debug for Bytecode {
+    fn fmt(&self, f: &mut ::sp_std::fmt::Formatter) -> ::sp_std::fmt::Result {
         match self {
             Bytecode::Pop => write!(f, "Pop"),
             Bytecode::Ret => write!(f, "Ret"),
