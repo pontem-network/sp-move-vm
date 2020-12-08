@@ -362,6 +362,13 @@ pub fn hasher_dispatch(input: TokenStream) -> TokenStream {
                 #hasher_name(
                     libra_crypto::hash::DefaultHasher::new(&name.as_bytes()))
             }
+
+            fn write(&mut self, bytes: &[u8]) -> usize {
+                use libra_crypto::hash::CryptoHasher;
+
+                self.0.update(bytes);
+                bytes.len()
+            }
         }
 
         static #static_hasher_name: libra_crypto::_once_cell::sync::Lazy<#hasher_name> =
@@ -392,19 +399,6 @@ pub fn hasher_dispatch(input: TokenStream) -> TokenStream {
                 self.0.finish()
             }
         }
-
-        impl std::io::Write for #hasher_name {
-            fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
-                use libra_crypto::hash::CryptoHasher;
-
-                self.0.update(bytes);
-                Ok(bytes.len())
-            }
-            fn flush(&mut self) -> std::io::Result<()> {
-                Ok(())
-            }
-        }
-
     );
     out.into()
 }
@@ -428,7 +422,7 @@ pub fn lcs_crypto_hash_dispatch(input: TokenStream) -> TokenStream {
                 use libra_crypto::hash::CryptoHasher;
 
                 let mut state = Self::Hasher::default();
-                lcs::serialize_into(&mut state, &self).expect(#error_msg);
+                state.write(&lcs::to_bytes(&self).expect(#error_msg));
                 state.finish()
             }
         }

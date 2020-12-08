@@ -3,7 +3,7 @@
 
 //! Core types for Move.
 
-//#![no_std]
+#![no_std]
 
 #[macro_use]
 extern crate alloc;

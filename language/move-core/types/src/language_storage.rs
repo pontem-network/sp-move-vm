@@ -8,7 +8,10 @@ use crate::{
 use libra_crypto::hash::CryptoHash;
 use libra_crypto_derive::{CryptoHasher, LCSCryptoHash};
 use serde::{Deserialize, Serialize};
-use std::fmt::{Display, Formatter};
+use sp_std::fmt::{Display, Formatter};
+use sp_std::prelude::Vec;
+use sp_std::boxed::Box;
+use sp_std::borrow::ToOwned;
 
 pub const CODE_TAG: u8 = 0;
 pub const RESOURCE_TAG: u8 = 1;
