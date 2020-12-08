@@ -8,8 +8,9 @@ use move_vm_types::{
     natives::function::{native_gas, NativeContext, NativeResult},
     values::{values_impl::Reference, Value},
 };
-use std::collections::VecDeque;
 use vm::errors::PartialVMResult;
+use alloc::vec::Vec;
+use alloc::collections::VecDeque;
 
 /// Rust implementation of Move's `native public fun to_bytes<T>(&T): vector<u8>`
 pub fn native_to_bytes(

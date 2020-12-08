@@ -8,8 +8,9 @@ use move_vm_types::{
     natives::function::{native_gas, NativeContext, NativeResult},
     values::Value,
 };
-use std::collections::VecDeque;
 use vm::errors::PartialVMResult;
+use sp_std::prelude::Vec;
+use alloc::collections::VecDeque;
 
 pub fn native_emit_event(
     context: &mut impl NativeContext,

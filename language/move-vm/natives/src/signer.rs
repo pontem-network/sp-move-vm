@@ -7,8 +7,9 @@ use move_vm_types::{
     natives::function::{native_gas, NativeContext, NativeResult},
     values::{values_impl::SignerRef, Value},
 };
-use std::collections::VecDeque;
 use vm::errors::PartialVMResult;
+use alloc::vec::Vec;
+use alloc::collections::VecDeque;
 
 pub fn native_borrow_address(
     context: &impl NativeContext,

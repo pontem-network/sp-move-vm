@@ -8,8 +8,9 @@ use move_vm_types::{
     natives::function::{native_gas, NativeContext, NativeResult},
     values::Value,
 };
-use std::collections::VecDeque;
 use vm::errors::PartialVMResult;
+use alloc::vec::Vec;
+use alloc::collections::VecDeque;
 
 pub fn native_create_signer(
     context: &mut impl NativeContext,

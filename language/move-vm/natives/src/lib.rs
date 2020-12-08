@@ -1,8 +1,13 @@
 // Copyright (c) The Libra Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+#![no_std]
+
 #[macro_use]
 extern crate move_vm_types;
+
+#[macro_use]
+extern crate alloc;
 
 pub mod account;
 pub mod debug;

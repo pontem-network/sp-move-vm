@@ -9,8 +9,9 @@ use move_vm_types::{
     natives::function::{NativeContext, NativeResult},
     values::Value,
 };
-use std::collections::VecDeque;
 use vm::errors::PartialVMResult;
+use alloc::vec::Vec;
+use alloc::collections::VecDeque;
 
 #[allow(unused_mut)]
 #[allow(unused_variables)]

@@ -387,6 +387,7 @@ dependencies = [
  "move-vm-types",
  "once_cell",
  "sha2",
+ "sp-std",
  "vm",
 ]
 

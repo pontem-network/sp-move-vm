@@ -8,8 +8,10 @@ use move_vm_types::{
     natives::function::{native_gas, NativeContext, NativeResult},
     values::Value,
 };
-use std::{collections::VecDeque, convert::TryFrom};
+use sp_std::convert::TryFrom;
 use vm::errors::PartialVMResult;
+use sp_std::prelude::Vec;
+use alloc::collections::VecDeque;
 
 pub fn native_ed25519_publickey_validation(
     context: &impl NativeContext,
