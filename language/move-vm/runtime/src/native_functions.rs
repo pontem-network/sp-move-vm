@@ -16,8 +16,8 @@ use move_vm_types::{
     natives::function::{NativeContext, NativeResult},
     values::Value,
 };
-use proptest::std_facade::String;
 use vm::errors::PartialVMResult;
+use alloc::string::String;
 
 // The set of native functions the VM supports.
 // The functions can line in any crate linked in but the VM declares them here.
