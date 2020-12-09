@@ -2,10 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{data_cache::RemoteCache, runtime::VMRuntime, session::Session};
-use alloc::vec::Vec;
-use move_core_types::account_address::AccountAddress;
-use move_core_types::language_storage::{ModuleId, StructTag};
-use vm::errors::{PartialVMResult, VMResult};
 
 pub struct MoveVM {
     runtime: VMRuntime,
@@ -35,27 +31,4 @@ impl MoveVM {
     pub fn new_session<'r, R: RemoteCache>(&self, remote: &'r R) -> Session<'r, '_, R> {
         self.runtime.new_session(remote)
     }
-}
-
-struct T;
-
-impl RemoteCache for T {
-    fn get_module(&self, module_id: &ModuleId) -> VMResult<Option<Vec<u8>>> {
-        unimplemented!()
-    }
-
-    fn get_resource(
-        &self,
-        address: &AccountAddress,
-        tag: &StructTag,
-    ) -> PartialVMResult<Option<Vec<u8>>> {
-        unimplemented!()
-    }
-}
-
-#[test]
-fn create_vm() {
-    let vm = MoveVM::new();
-    let session = vm.new_session(&T);
-    let ser = session.finish().unwrap();
 }
