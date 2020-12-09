@@ -3,6 +3,7 @@
 
 use crate::{interpreter::Interpreter, loader::Resolver, logging::LogContext};
 use alloc::collections::VecDeque;
+use alloc::string::String;
 use alloc::vec::Vec;
 use move_core_types::{
     account_address::AccountAddress, gas_schedule::CostTable, language_storage::CORE_CODE_ADDRESS,
@@ -17,7 +18,6 @@ use move_vm_types::{
     values::Value,
 };
 use vm::errors::PartialVMResult;
-use alloc::string::String;
 
 // The set of native functions the VM supports.
 // The functions can line in any crate linked in but the VM declares them here.

@@ -303,13 +303,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "libra-infallible"
-version = "0.1.0"
-dependencies = [
- "sp-std",
-]
-
-[[package]]
 name = "libra-log-derive"
 version = "0.1.0"
 dependencies = [
@@ -323,7 +316,6 @@ name = "libra-logger"
 version = "0.1.0"
 dependencies = [
  "erased-serde",
- "libra-infallible",
  "libra-log-derive",
  "once_cell",
  "serde",
@@ -401,7 +393,6 @@ dependencies = [
  "hashbrown",
  "hex",
  "libra-crypto",
- "libra-infallible",
  "libra-logger",
  "mirai-annotations",
  "move-core-types",

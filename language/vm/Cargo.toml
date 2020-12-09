@@ -10,7 +10,7 @@ publish = false
 edition = "2018"
 
 [dependencies]
-sp-std = "2.0.0"
+sp-std = { version = "2.0.0", default-features = false }
 hashbrown = "0.9"
 
 anyhow = "1.0.34"
