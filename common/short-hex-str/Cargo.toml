@@ -10,12 +10,17 @@ publish = false
 edition = "2018"
 
 [dependencies]
-mirai-annotations = "1.10.1"
+# that fix
+#   error: duplicate lang item in crate `std` (which `serde` depends on): `panic_impl`.
 serde = { version = "1.0.117", default-features = false }
 sp-std = { version = "2.0.0", default-features = false }
+
+[dev-dependencies]
+proptest = "0.10"
 
 [features]
 default = ["std"]
 std = [
 	"sp-std/std",
+	"serde/std",
 ]

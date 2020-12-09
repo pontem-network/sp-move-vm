@@ -2,9 +2,42 @@
 // SPDX-License-Identifier: Apache-2.0
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use mirai_annotations::debug_checked_precondition;
-use serde::{Serialize, Serializer};
+// that fix
+// use serde::{Serialize, Serializer};
 use sp_std::{fmt, str};
+
+// that fix
+// instead of
+// use mirai_annotations::debug_checked_precondition;
+macro_rules! debug_checked_precondition {
+	($condition:expr) => (
+		 if cfg!(mirai) {
+			//   mirai_annotations::mirai_precondition_start();
+			//   mirai_annotations::mirai_precondition($condition, "unsatisfied precondition")
+			debug_assert!($condition);
+		 } else {
+			  debug_assert!($condition);
+		 }
+	);
+	($condition:expr, $message:literal) => (
+		 if cfg!(mirai) {
+			//   mirai_annotations::mirai_precondition_start();
+			//   mirai_annotations::mirai_precondition($condition, concat!("unsatisfied precondition: ", $message))
+			  debug_assert!($condition, $message);
+		 } else {
+			  debug_assert!($condition, $message);
+		 }
+	);
+	($condition:expr, $($arg:tt)*) => (
+		 if cfg!(mirai) {
+			//   mirai_annotations::mirai_precondition_start();
+			//   mirai_annotations::mirai_precondition($condition, concat!("unsatisfied precondition: ", stringify!($($arg)*)));
+			debug_assert!($condition, $($arg)*);
+		 } else {
+			  debug_assert!($condition, $($arg)*);
+		 }
+	);
+}
 
 /// An efficient container for formatting a byte slice as a hex-formatted string,
 /// stored on the stack.
@@ -64,14 +97,13 @@ impl fmt::Display for ShortHexStr {
     }
 }
 
-impl Serialize for ShortHexStr {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(self.as_str())
-    }
-}
+// that fix
+// impl Serialize for ShortHexStr {
+// 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+// 		where S: Serializer {
+// 		serializer.serialize_str(self.as_str())
+// 	}
+// }
 
 /// Maps a nibble to its corresponding hex-formatted ASCII character.
 const HEX_CHARS_LOWER: &[u8; 16] = b"0123456789abcdef";
@@ -124,11 +156,11 @@ mod test {
     }
 
     proptest! {
-        #[test]
-        fn test_address_short_str_equivalence(addr in any::<[u8; 16]>()) {
-            let short_str_old = hex::encode(&addr[0..ShortHexStr::SOURCE_LENGTH]);
-            let short_str_new = ShortHexStr::try_from_bytes(&addr).unwrap();
-            prop_assert_eq!(short_str_old.as_str(), short_str_new.as_str());
-        }
+         #[test]
+         fn test_address_short_str_equivalence(addr in any::<[u8; 16]>()) {
+              let short_str_old = hex::encode(&addr[0..ShortHexStr::SOURCE_LENGTH]);
+              let short_str_new = ShortHexStr::try_from_bytes(&addr).unwrap();
+              prop_assert_eq!(short_str_old.as_str(), short_str_new.as_str());
+         }
     }
 }
