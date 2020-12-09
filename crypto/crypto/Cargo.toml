@@ -26,6 +26,17 @@ libra-crypto-derive = { path = "../crypto-derive", version = "0.1.0" }
 lcs = { version = "0.1.0", package = "libra-canonical-serialization" }
 
 [features]
-default = ["fiat"]
+default = ["std", "fiat"]
 fiat = ["curve25519-dalek", "ed25519-dalek"]
+
+std = [
+	"sp-std/std",
+	# "sp-io/std",
+	# "vm/std",
+	# "move-core-types/std",
+	# "move-vm-types/std",
+	# "move-vm-runtime/std",
+	"libra-crypto-derive/std",
+	"short-hex-str/std",
+]
 

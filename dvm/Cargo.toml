@@ -19,3 +19,14 @@ move-vm-runtime = { path = "../language/move-vm/runtime" }
 move-vm-types = { path = "../language/move-vm/types" }
 move-core-types = { path = "../language/move-core/types" }
 vm = { path = "../language/vm" }
+
+[features]
+default = ["std"]
+std = [
+	"sp-std/std",
+	"sp-io/std",
+	"vm/std",
+	"move-core-types/std",
+	"move-vm-types/std",
+	"move-vm-runtime/std",
+]

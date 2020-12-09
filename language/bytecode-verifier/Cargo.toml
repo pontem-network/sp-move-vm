@@ -21,4 +21,12 @@ vm = { path = "../vm", version = "0.1.0" }
 move-core-types = { path = "../move-core/types", version = "0.1.0" }
 
 [features]
-default = []
+default = ["std"]
+std = [
+	"sp-std/std",
+	# "libra-crypto/std",
+	"move-core-types/std",
+	# "move-vm-types/std",
+	"borrow-graph/std",
+	"vm/std",
+]

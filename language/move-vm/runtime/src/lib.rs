@@ -8,7 +8,7 @@
 //! It is a design goal for the Move VM to be independent of the Libra blockchain, so that
 //! other blockchains can use it as well. The VM isn't there yet, but hopefully will be there
 //! soon.
-#![no_std]
+#![cfg_attr(not(feature = "std"), no_std)]
 
 #[macro_use]
 extern crate alloc;

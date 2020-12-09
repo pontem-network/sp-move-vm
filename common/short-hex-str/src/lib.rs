@@ -1,6 +1,6 @@
 // Copyright (c) The Libra Core Contributors
 // SPDX-License-Identifier: Apache-2.0
-#![no_std]
+#![cfg_attr(not(feature = "std"), no_std)]
 
 use mirai_annotations::debug_checked_precondition;
 use serde::{Serialize, Serializer};

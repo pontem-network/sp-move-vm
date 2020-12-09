@@ -5,7 +5,7 @@
 #![deny(missing_docs)]
 //! This feature gets turned on only if libra-crypto is compiled via MIRAI in a nightly build.
 #![cfg_attr(mirai, allow(incomplete_features), feature(const_generics))]
-#![no_std]
+#![cfg_attr(not(feature = "std"), no_std)]
 
 #[macro_use]
 extern crate alloc;

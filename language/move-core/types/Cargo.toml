@@ -36,5 +36,14 @@ regex = "1.4.2"
 serde_json = "1.0.59"
 
 [features]
-default = ["fiat"]
+default = ["std", "fiat"]
 fiat = ["libra-crypto/fiat"]
+std = [
+	"sp-std/std",
+	"libra-crypto/std",
+	"libra-crypto-derive/std",
+	"short-hex-str/std",
+	# "move-core-types/std",
+	# "move-vm-types/std",
+	# "vm/std",
+]

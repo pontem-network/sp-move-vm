@@ -18,3 +18,7 @@ proc-macro2 = "1.0.24"
 
 [dev-dependencies]
 anyhow = "1.0.34"
+
+[features]
+default = ["std"]
+std = [ ]

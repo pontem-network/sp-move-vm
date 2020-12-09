@@ -29,4 +29,20 @@ proptest-derive = "0.2.0"
 serde_json = "1.0.59"
 
 [features]
-default = []
+default = ["std"]
+
+std = [
+	"sp-std/std",
+	# "sp-io/std",
+	# "vm/std",
+	"move-core-types/std",
+	# "move-vm-types/std",
+	# "move-vm-runtime/std",
+	# "move-vm-natives/std",
+	# "bytecode-verifier/std",
+	"libra-crypto/std",
+	# "libra-crypto-derive/std",
+	# "short-hex-str/std",
+	"num-variants/std",
+]
+
