@@ -15,14 +15,15 @@ sp-io = { version = "2.0.0", default-features = false }
 anyhow = { version = "1.0.34", default-features = false }
 hex = { version = "0.4.2", default-features = false }
 
-move-vm-runtime = { path = "../language/move-vm/runtime" }
-move-vm-types = { path = "../language/move-vm/types" }
-move-core-types = { path = "../language/move-core/types" }
-vm = { path = "../language/vm" }
+move-vm-runtime = { path = "../language/move-vm/runtime", default-features = false }
+move-vm-types = { path = "../language/move-vm/types", default-features = false }
+move-core-types = { path = "../language/move-core/types", default-features = false }
+vm = { path = "../language/vm", default-features = false }
 
 [features]
 default = ["std"]
 std = [
+	"anyhow/std",
 	"sp-std/std",
 	"sp-io/std",
 	"vm/std",

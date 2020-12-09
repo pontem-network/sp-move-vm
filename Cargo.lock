@@ -183,7 +183,6 @@ dependencies = [
 name = "borrow-graph"
 version = "0.0.1"
 dependencies = [
- "mirai-annotations",
  "sp-std",
 ]
 
@@ -1093,8 +1092,6 @@ version = "0.1.0"
 dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.7",
- "sp-io",
- "sp-std",
  "syn 1.0.53",
 ]
 
@@ -1722,7 +1719,7 @@ dependencies = [
 name = "short-hex-str"
 version = "0.1.0"
 dependencies = [
- "mirai-annotations",
+ "proptest",
  "serde",
  "sp-std",
 ]
