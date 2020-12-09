@@ -1,8 +1,8 @@
+use alloc::vec::Vec;
 use move_core_types::gas_schedule::{CostTable, GasCost};
+use move_vm_types::gas_schedule::new_from_instructions;
 use vm::file_format::Bytecode::*;
 use vm::file_format::*;
-use alloc::vec::Vec;
-use move_vm_types::gas_schedule::new_from_instructions;
 use vm::file_format_common::instruction_key;
 
 /// Specific gas per instruction configuration for dvm.

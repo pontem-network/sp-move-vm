@@ -115,12 +115,12 @@ pub fn silent_display(source: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(source).expect("Incorrect macro input");
     let name = &ast.ident;
     let gen = quote! {
-        // In order to ensure that secrets are never leaked, Display is elided
-        impl ::std::fmt::Display for #name {
-            fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-                write!(f, "<elided secret for {}>", stringify!(#name))
-            }
-        }
+         // In order to ensure that secrets are never leaked, Display is elided
+         impl ::std::fmt::Display for #name {
+              fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+                    write!(f, "<elided secret for {}>", stringify!(#name))
+              }
+         }
     };
     gen.into()
 }
@@ -130,12 +130,12 @@ pub fn silent_debug(source: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(source).expect("Incorrect macro input");
     let name = &ast.ident;
     let gen = quote! {
-        // In order to ensure that secrets are never leaked, Debug is elided
-        impl ::std::fmt::Debug for #name {
-            fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-                write!(f, "<elided secret for {}>", stringify!(#name))
-            }
-        }
+         // In order to ensure that secrets are never leaked, Debug is elided
+         impl ::std::fmt::Debug for #name {
+              fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+                    write!(f, "<elided secret for {}>", stringify!(#name))
+              }
+         }
     };
     gen.into()
 }
@@ -147,30 +147,30 @@ pub fn deserialize_key(source: TokenStream) -> TokenStream {
     let name = &ast.ident;
     let name_string = name.to_string();
     let gen = quote! {
-        impl<'de> ::serde::Deserialize<'de> for #name {
-            fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-            where
-                D: ::serde::Deserializer<'de>,
-            {
-                if deserializer.is_human_readable() {
-                    let encoded_key = <String>::deserialize(deserializer)?;
-                    ValidCryptoMaterialStringExt::from_encoded_string(encoded_key.as_str())
-                        .map_err(<D::Error as ::serde::de::Error>::custom)
-                } else {
-                    // In order to preserve the Serde data model and help analysis tools,
-                    // make sure to wrap our value in a container with the same name
-                    // as the original type.
-                    #[derive(::serde::Deserialize)]
-                    #[serde(rename = #name_string)]
-                    struct Value<'a>(&'a [u8]);
+         impl<'de> ::serde::Deserialize<'de> for #name {
+              fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+              where
+                    D: ::serde::Deserializer<'de>,
+              {
+                    if deserializer.is_human_readable() {
+                         let encoded_key = <String>::deserialize(deserializer)?;
+                         ValidCryptoMaterialStringExt::from_encoded_string(encoded_key.as_str())
+                              .map_err(<D::Error as ::serde::de::Error>::custom)
+                    } else {
+                         // In order to preserve the Serde data model and help analysis tools,
+                         // make sure to wrap our value in a container with the same name
+                         // as the original type.
+                         #[derive(::serde::Deserialize)]
+                         #[serde(rename = #name_string)]
+                         struct Value<'a>(&'a [u8]);
 
-                    let value = Value::deserialize(deserializer)?;
-                    #name::try_from(value.0).map_err(|s| {
-                        <D::Error as ::serde::de::Error>::custom(format!("{} with {}", s, #name_string))
-                    })
-                }
-            }
-        }
+                         let value = Value::deserialize(deserializer)?;
+                         #name::try_from(value.0).map_err(|s| {
+                              <D::Error as ::serde::de::Error>::custom(format!("{} with {}", s, #name_string))
+                         })
+                    }
+              }
+         }
     };
     gen.into()
 }
@@ -182,24 +182,24 @@ pub fn serialize_key(source: TokenStream) -> TokenStream {
     let name = &ast.ident;
     let name_string = name.to_string();
     let gen = quote! {
-        impl ::serde::Serialize for #name {
-            fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-            where
-                S: ::serde::Serializer,
-            {
-                if serializer.is_human_readable() {
-                    self.to_encoded_string()
-                        .map_err(<S::Error as ::serde::ser::Error>::custom)
-                        .and_then(|str| serializer.serialize_str(&str[..]))
-                } else {
-                    // See comment in deserialize_key.
-                    serializer.serialize_newtype_struct(
-                        #name_string,
-                        serde_bytes::Bytes::new(&ValidCryptoMaterial::to_bytes(self).as_slice()),
-                    )
-                }
-            }
-        }
+         impl ::serde::Serialize for #name {
+              fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+              where
+                    S: ::serde::Serializer,
+              {
+                    if serializer.is_human_readable() {
+                         self.to_encoded_string()
+                              .map_err(<S::Error as ::serde::ser::Error>::custom)
+                              .and_then(|str| serializer.serialize_str(&str[..]))
+                    } else {
+                         // See comment in deserialize_key.
+                         serializer.serialize_newtype_struct(
+                              #name_string,
+                              serde_bytes::Bytes::new(&ValidCryptoMaterial::to_bytes(self).as_slice()),
+                         )
+                    }
+              }
+         }
     };
     gen.into()
 }
@@ -213,15 +213,15 @@ pub fn derive_deref(input: TokenStream) -> TokenStream {
     let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
 
     quote!(
-        impl #impl_generics ::std::ops::Deref for #name #ty_generics
-        #where_clause
-        {
-            type Target = #field_ty;
+         impl #impl_generics ::std::ops::Deref for #name #ty_generics
+         #where_clause
+         {
+              type Target = #field_ty;
 
-            fn deref(&self) -> &Self::Target {
-                #field_access
-            }
-        }
+              fn deref(&self) -> &Self::Target {
+                    #field_access
+              }
+         }
     )
     .into()
 }
@@ -349,56 +349,56 @@ pub fn hasher_dispatch(input: TokenStream) -> TokenStream {
     };
 
     let out = quote!(
-        /// Cryptographic hasher for an LCS-serializable #item
-        #[derive(Clone)]
-        pub struct #hasher_name(libra_crypto::hash::DefaultHasher);
+         /// Cryptographic hasher for an LCS-serializable #item
+         #[derive(Clone)]
+         pub struct #hasher_name(libra_crypto::hash::DefaultHasher);
 
-        static #static_seed_name: libra_crypto::_once_cell::sync::OnceCell<[u8; 32]> = libra_crypto::_once_cell::sync::OnceCell::new();
+         static #static_seed_name: libra_crypto::_once_cell::sync::OnceCell<[u8; 32]> = libra_crypto::_once_cell::sync::OnceCell::new();
 
-        impl #hasher_name {
-            fn new() -> Self {
-                let name = libra_crypto::_serde_name::trace_name::<#type_name #param>()
-                    .expect("The `CryptoHasher` macro only applies to structs and enums");
-                #hasher_name(
-                    libra_crypto::hash::DefaultHasher::new(&name.as_bytes()))
-            }
-
-            fn write(&mut self, bytes: &[u8]) -> usize {
-                use libra_crypto::hash::CryptoHasher;
-
-                self.0.update(bytes);
-                bytes.len()
-            }
-        }
-
-        static #static_hasher_name: libra_crypto::_once_cell::sync::Lazy<#hasher_name> =
-            libra_crypto::_once_cell::sync::Lazy::new(|| #hasher_name::new());
-
-
-        impl sp_std::default::Default for #hasher_name
-        {
-            fn default() -> Self {
-                #static_hasher_name.clone()
-            }
-        }
-
-        impl libra_crypto::hash::CryptoHasher for #hasher_name {
-            fn seed() -> &'static [u8; 32] {
-                #static_seed_name.get_or_init(|| {
+         impl #hasher_name {
+              fn new() -> Self {
                     let name = libra_crypto::_serde_name::trace_name::<#type_name #param>()
-                        .expect("The `CryptoHasher` macro only applies to structs and enums.").as_bytes();
-                    libra_crypto::hash::DefaultHasher::prefixed_hash(&name)
-                })
-            }
+                         .expect("The `CryptoHasher` macro only applies to structs and enums");
+                    #hasher_name(
+                         libra_crypto::hash::DefaultHasher::new(&name.as_bytes()))
+              }
 
-            fn update(&mut self, bytes: &[u8]) {
-                self.0.update(bytes);
-            }
+              fn write(&mut self, bytes: &[u8]) -> usize {
+                    use libra_crypto::hash::CryptoHasher;
 
-            fn finish(self) -> libra_crypto::hash::HashValue {
-                self.0.finish()
-            }
-        }
+                    self.0.update(bytes);
+                    bytes.len()
+              }
+         }
+
+         static #static_hasher_name: libra_crypto::_once_cell::sync::Lazy<#hasher_name> =
+              libra_crypto::_once_cell::sync::Lazy::new(|| #hasher_name::new());
+
+
+         impl sp_std::default::Default for #hasher_name
+         {
+              fn default() -> Self {
+                    #static_hasher_name.clone()
+              }
+         }
+
+         impl libra_crypto::hash::CryptoHasher for #hasher_name {
+              fn seed() -> &'static [u8; 32] {
+                    #static_seed_name.get_or_init(|| {
+                         let name = libra_crypto::_serde_name::trace_name::<#type_name #param>()
+                              .expect("The `CryptoHasher` macro only applies to structs and enums.").as_bytes();
+                         libra_crypto::hash::DefaultHasher::prefixed_hash(&name)
+                    })
+              }
+
+              fn update(&mut self, bytes: &[u8]) {
+                    self.0.update(bytes);
+              }
+
+              fn finish(self) -> libra_crypto::hash::HashValue {
+                    self.0.finish()
+              }
+         }
     );
     out.into()
 }
@@ -415,17 +415,17 @@ pub fn lcs_crypto_hash_dispatch(input: TokenStream) -> TokenStream {
     let generics = add_trait_bounds(ast.generics);
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
     let out = quote!(
-        impl #impl_generics libra_crypto::hash::CryptoHash for #name #ty_generics #where_clause {
-            type Hasher = #hasher_name;
+         impl #impl_generics libra_crypto::hash::CryptoHash for #name #ty_generics #where_clause {
+              type Hasher = #hasher_name;
 
-            fn hash(&self) -> libra_crypto::hash::HashValue {
-                use libra_crypto::hash::CryptoHasher;
+              fn hash(&self) -> libra_crypto::hash::HashValue {
+                    use libra_crypto::hash::CryptoHasher;
 
-                let mut state = Self::Hasher::default();
-                state.write(&lcs::to_bytes(&self).expect(#error_msg));
-                state.finish()
-            }
-        }
+                    let mut state = Self::Hasher::default();
+                    state.write(&lcs::to_bytes(&self).expect(#error_msg));
+                    state.finish()
+              }
+         }
     );
     out.into()
 }

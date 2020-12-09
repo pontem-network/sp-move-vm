@@ -485,48 +485,48 @@ macro_rules! define_hasher {
 }
 
 define_hasher! {
-    /// The hasher used to compute the hash of an internal node in the transaction accumulator.
-    (
-        TransactionAccumulatorHasher,
-        TRANSACTION_ACCUMULATOR_HASHER,
-        TRANSACTION_ACCUMULATOR_SEED,
-        b"TransactionAccumulator"
-    )
+     /// The hasher used to compute the hash of an internal node in the transaction accumulator.
+     (
+          TransactionAccumulatorHasher,
+          TRANSACTION_ACCUMULATOR_HASHER,
+          TRANSACTION_ACCUMULATOR_SEED,
+          b"TransactionAccumulator"
+     )
 }
 
 define_hasher! {
-    /// The hasher used to compute the hash of an internal node in the event accumulator.
-    (
-        EventAccumulatorHasher,
-        EVENT_ACCUMULATOR_HASHER,
-        EVENT_ACCUMULATOR_SEED,
-        b"EventAccumulator"
-    )
+     /// The hasher used to compute the hash of an internal node in the event accumulator.
+     (
+          EventAccumulatorHasher,
+          EVENT_ACCUMULATOR_HASHER,
+          EVENT_ACCUMULATOR_SEED,
+          b"EventAccumulator"
+     )
 }
 
 define_hasher! {
-    /// The hasher used to compute the hash of an internal node in the Sparse Merkle Tree.
-    (
-        SparseMerkleInternalHasher,
-        SPARSE_MERKLE_INTERNAL_HASHER,
-        SPARSE_MERKLE_INTERNAL_SEED,
-        b"SparseMerkleInternal"
-    )
+     /// The hasher used to compute the hash of an internal node in the Sparse Merkle Tree.
+     (
+          SparseMerkleInternalHasher,
+          SPARSE_MERKLE_INTERNAL_HASHER,
+          SPARSE_MERKLE_INTERNAL_SEED,
+          b"SparseMerkleInternal"
+     )
 }
 
 define_hasher! {
-    /// The hasher used to compute the hash of an internal node in the transaction accumulator.
-    (
-        VoteProposalHasher,
-        VOTE_PROPOSAL_HASHER,
-        VOTE_PROPOSAL_SEED,
-        b"VoteProposalHasher"
-    )
+     /// The hasher used to compute the hash of an internal node in the transaction accumulator.
+     (
+          VoteProposalHasher,
+          VOTE_PROPOSAL_HASHER,
+          VOTE_PROPOSAL_SEED,
+          b"VoteProposalHasher"
+     )
 }
 
 define_hasher! {
-    /// The hasher used only for testing. It doesn't have a salt.
-    (TestOnlyHasher, TEST_ONLY_HASHER, TEST_ONLY_SEED, b"")
+     /// The hasher used only for testing. It doesn't have a salt.
+     (TestOnlyHasher, TEST_ONLY_HASHER, TEST_ONLY_SEED, b"")
 }
 
 fn create_literal_hash(word: &str) -> HashValue {

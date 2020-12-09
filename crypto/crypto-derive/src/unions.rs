@@ -43,7 +43,7 @@ pub fn impl_enum_tryfrom(name: &Ident, variants: &DataEnum) -> proc_macro2::Toke
         .ty;
 
     let mut try_chain = quote! {
-        #first_variant_arg::try_from(bytes).and_then(|key| Ok(#name::#first_variant_ident(key)))
+         #first_variant_arg::try_from(bytes).and_then(|key| Ok(#name::#first_variant_ident(key)))
     };
     for variant in try_iter {
         let variant_ident = &variant.ident;
@@ -53,18 +53,18 @@ pub fn impl_enum_tryfrom(name: &Ident, variants: &DataEnum) -> proc_macro2::Toke
             .next()
             .expect("Unrecognized enum for key types")
             .ty;
-        try_chain.extend(quote!{
-            .or_else(|_err| #variant_arg::try_from(bytes).and_then(|key| Ok(#name::#variant_ident(key))))
-        })
+        try_chain.extend(quote! {
+						 .or_else(|_err| #variant_arg::try_from(bytes).and_then(|key| Ok(#name::#variant_ident(key))))
+					})
     }
 
     quote! {
-        impl core::convert::TryFrom<&[u8]> for #name {
-            type Error = libra_crypto::CryptoMaterialError;
-            fn try_from(bytes: &[u8]) -> std::result::Result<#name, Self::Error> {
-                #try_chain
-            }
-        }
+         impl core::convert::TryFrom<&[u8]> for #name {
+              type Error = libra_crypto::CryptoMaterialError;
+              fn try_from(bytes: &[u8]) -> std::result::Result<#name, Self::Error> {
+                    #try_chain
+              }
+         }
     }
 }
 
@@ -75,7 +75,7 @@ fn match_enum_to_bytes(name: &Ident, variants: &DataEnum) -> proc_macro2::TokenS
         let variant_ident = &variant.ident;
 
         match_arms.extend(quote! {
-            #name::#variant_ident(key) => key.to_bytes().to_vec(),
+             #name::#variant_ident(key) => key.to_bytes().to_vec(),
         });
     }
     match_arms
@@ -88,13 +88,13 @@ pub fn impl_enum_valid_crypto_material(name: &Ident, variants: &DataEnum) -> Tok
 
     try_from.extend(quote! {
 
-        impl libra_crypto::ValidCryptoMaterial for #name {
-            fn to_bytes(&self) -> Vec<u8> {
-                match self {
-                    #to_bytes_arms
-                }
-            }
-        }
+          impl libra_crypto::ValidCryptoMaterial for #name {
+               fn to_bytes(&self) -> Vec<u8> {
+                    match self {
+                          #to_bytes_arms
+                    }
+               }
+          }
     });
     try_from.into()
 }
@@ -140,22 +140,22 @@ pub fn impl_enum_publickey(
         let variant_ident = &variant.ident;
 
         from_match_arms.extend(quote! {
-            #pkt::#variant_ident(key) => #name::#variant_ident(key.into()),
+             #pkt::#variant_ident(key) => #name::#variant_ident(key.into()),
         });
     }
     let mut res = quote! {
-        impl From<&#pkt> for #name {
-            fn from(public_key: &#pkt) -> Self {
-                match public_key {
-                    #from_match_arms
-                }
-            }
-        }
+         impl From<&#pkt> for #name {
+              fn from(public_key: &#pkt) -> Self {
+                    match public_key {
+                         #from_match_arms
+                    }
+              }
+         }
     };
     res.extend(quote! {
-        impl libra_crypto::PublicKey for #name {
-            type PrivateKeyMaterial = #pkt;
-        }
+         impl libra_crypto::PublicKey for #name {
+              type PrivateKeyMaterial = #pkt;
+         }
     });
     res.into()
 }
@@ -167,9 +167,9 @@ pub fn impl_enum_privatekey(
 ) -> TokenStream {
     let pkt: syn::Type = public_key_type.parse().unwrap();
     let res = quote! {
-        impl libra_crypto::PrivateKey for #name {
-            type PublicKeyMaterial = #pkt;
-        }
+         impl libra_crypto::PrivateKey for #name {
+              type PublicKeyMaterial = #pkt;
+         }
     };
     res.into()
 }
@@ -183,11 +183,11 @@ pub fn impl_enum_verifyingkey(
     let pkt: syn::Type = private_key_type.parse().unwrap();
     let st: syn::Type = signature_type.parse().unwrap();
     let res = quote! {
-        impl libra_crypto::VerifyingKey for #name {
-            type SigningKeyMaterial = #pkt;
-            type SignatureMaterial = #st;
-        }
-        impl libra_crypto::private::Sealed for #name {}
+         impl libra_crypto::VerifyingKey for #name {
+              type SigningKeyMaterial = #pkt;
+              type SignatureMaterial = #st;
+         }
+         impl libra_crypto::private::Sealed for #name {}
     };
     res.into()
 }
@@ -207,31 +207,31 @@ pub fn impl_enum_signingkey(
         let variant_ident = &variant.ident;
 
         match_struct_arms.extend(quote! {
-            #name::#variant_ident(key) => Self::SignatureMaterial::#variant_ident(key.sign(message)),
-        });
+									#name::#variant_ident(key) => Self::SignatureMaterial::#variant_ident(key.sign(message)),
+							  });
         match_arms_arbitrary.extend(quote! {
-            #name::#variant_ident(key) => Self::SignatureMaterial::#variant_ident(key.sign_arbitrary_message(message)),
-        });
+										#name::#variant_ident(key) => Self::SignatureMaterial::#variant_ident(key.sign_arbitrary_message(message)),
+								  });
     }
     let res = quote! {
-        impl libra_crypto::SigningKey for #name {
-            type VerifyingKeyMaterial = #pkt;
-            type SignatureMaterial = #st;
+         impl libra_crypto::SigningKey for #name {
+              type VerifyingKeyMaterial = #pkt;
+              type SignatureMaterial = #st;
 
-            fn sign<T: libra_crypto::hash::CryptoHash + serde::Serialize>(&self, message: &T) -> Self::SignatureMaterial {
-                match self {
-                    #match_struct_arms
-                }
-            }
+              fn sign<T: libra_crypto::hash::CryptoHash + serde::Serialize>(&self, message: &T) -> Self::SignatureMaterial {
+                    match self {
+                         #match_struct_arms
+                    }
+              }
 
-            #[cfg(test)]
-            fn sign_arbitrary_message(&self, message: &[u8]) -> Self::SignatureMaterial {
-                match self {
-                    #match_arms_arbitrary
-                }
-            }
-        }
-        impl libra_crypto::private::Sealed for #name {}
+              #[cfg(test)]
+              fn sign_arbitrary_message(&self, message: &[u8]) -> Self::SignatureMaterial {
+                    match self {
+                         #match_arms_arbitrary
+                    }
+              }
+         }
+         impl libra_crypto::private::Sealed for #name {}
     };
     res.into()
 }
@@ -252,9 +252,9 @@ pub fn impl_enum_signature(
         let variant_ident = &variant.ident;
 
         match_arms.extend(quote! {
-            (#name::#variant_ident(sig), #pub_kt::#variant_ident(pk)) => {
-                sig.verify_arbitrary_msg(message, pk)
-            }
+             (#name::#variant_ident(sig), #pub_kt::#variant_ident(pk)) => {
+                   sig.verify_arbitrary_msg(message, pk)
+             }
         })
     }
 
@@ -263,9 +263,9 @@ pub fn impl_enum_signature(
         let variant_ident = &variant.ident;
 
         match_struct_arms.extend(quote! {
-            (#name::#variant_ident(sig), #pub_kt::#variant_ident(pk)) => {
-                sig.verify(message, pk)
-            }
+              (#name::#variant_ident(sig), #pub_kt::#variant_ident(pk)) => {
+                   sig.verify(message, pk)
+              }
         })
     }
 
