@@ -208,15 +208,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "erased-serde"
-version = "0.3.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6ca8b296792113e1500fd935ae487be6e00ce318952a6880555554824d6ebf38"
-dependencies = [
- "serde",
-]
-
-[[package]]
 name = "fail"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -394,27 +385,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "libra-log-derive"
-version = "0.1.0"
-dependencies = [
- "proc-macro2 1.0.24",
- "quote 1.0.7",
- "syn 1.0.53",
-]
-
-[[package]]
-name = "libra-logger"
-version = "0.1.0"
-dependencies = [
- "erased-serde",
- "libra-log-derive",
- "once_cell",
- "serde",
- "serde_json",
- "sp-std",
-]
-
-[[package]]
 name = "log"
 version = "0.4.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -484,7 +454,6 @@ dependencies = [
  "hashbrown",
  "hex",
  "libra-crypto",
- "libra-logger",
  "mirai-annotations",
  "move-core-types",
  "move-vm-natives",
@@ -527,6 +496,7 @@ version = "0.1.0"
 dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.7",
+ "sp-io",
  "sp-std",
  "syn 1.0.53",
 ]
