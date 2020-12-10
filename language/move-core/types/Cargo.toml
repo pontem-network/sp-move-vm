@@ -14,7 +14,7 @@ sp-std = { version = "2.0.0", default-features = false }
 
 anyhow = { version = "1.0.34", default-features = false } # ok
 hex = { version = "0.4.2", default-features = false } # ok
-rand = { version = "0.7.3", default-features = false } #ok
+rand = { version = "0.7.3", default-features = false } # ok
 mirai-annotations = "1.10.1"
 ref-cast = "1.0.3" # ok
 serde = { version = "1.0.117", default-features = false } # TODO: fix me
@@ -46,6 +46,7 @@ default = ["std", "fiat"]
 fiat = ["libra-crypto/fiat"]
 std = [
 	"anyhow/std",
+	"rand/default",
 	"sp-std/std",
 	"libra-crypto/std",
 	"libra-crypto-derive/std",
