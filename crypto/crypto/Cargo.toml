@@ -17,7 +17,7 @@ curve25519-dalek = { git = "https://github.com/novifinancial/curve25519-dalek.gi
 ed25519-dalek = { git = "https://github.com/novifinancial/ed25519-dalek.git", branch = "fiat5", version = "1.0.1", default-features = false, features = ["fiat_u64_backend", "serde"], optional = true }
 hex = { version = "0.4.2", default-features = false }
 once_cell = { version = "1.4.1", default-features = false }
-mirai-annotations = "1.10.1"
+mirai-annotations = "1.10.1" # TODO: fix me
 serde-name = { version = "0.1.1", default-features = false }
 short-hex-str = { path = "../../common/short-hex-str", version = "0.1.0" }
 static_assertions = "1.1.0"
@@ -30,6 +30,7 @@ default = ["std", "fiat"]
 fiat = ["curve25519-dalek", "ed25519-dalek"]
 
 std = [
+	"anyhow/std",
 	"sp-std/std",
 	# "sp-io/std",
 	# "vm/std",
