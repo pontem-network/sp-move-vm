@@ -23,7 +23,7 @@ short-hex-str = { path = "../../common/short-hex-str", version = "0.1.0" }
 static_assertions = "1.1.0"
 tiny-keccak = { version = "2.0.2", features = ["sha3"] }
 libra-crypto-derive = { path = "../crypto-derive", version = "0.1.0" }
-lcs = { version = "0.1.0", package = "libra-canonical-serialization" }
+lcs = { version = "0.1.0", package = "libra-canonical-serialization" } # TODO: fix me, depends on std
 
 [features]
 default = ["std", "fiat"]

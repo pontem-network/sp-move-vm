@@ -23,7 +23,7 @@ static_assertions = "1.1.0" # ?
 thiserror = "1.0.22" # ?
 once_cell = { version = "1.4.1", default-features = false } # ok
 
-lcs = { version = "0.1.0", package = "libra-canonical-serialization" }
+lcs = { version = "0.1.0", package = "libra-canonical-serialization" } # TODO: fix me, depends on std
 libra-crypto = { path = "../../../crypto/crypto", version = "0.1.0", default-features = false }
 libra-crypto-derive = { path = "../../../crypto/crypto-derive", version = "0.1.0" }
 short-hex-str = { path = "../../../common/short-hex-str", version = "0.1.0" }
