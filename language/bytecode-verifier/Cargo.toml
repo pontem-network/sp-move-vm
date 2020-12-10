@@ -13,8 +13,8 @@ edition = "2018"
 sp-std = { version = "2.0.0", default-features = false }
 hashbrown = "0.9"
 anyhow = {version ="1.0.34", default-features = false}
-mirai-annotations = "1.10.1"
-petgraph = "0.5.1"
+# mirai-annotations = "1.10.1" # need replacement, depends on std
+petgraph = "0.5.1" # need replacement, depends on std
 
 borrow-graph = { path = "../borrow-graph", version = "0.0.1" }
 vm = { path = "../vm", version = "0.1.0" }
@@ -23,6 +23,7 @@ move-core-types = { path = "../move-core/types", version = "0.1.0" }
 [features]
 default = ["std"]
 std = [
+	"anyhow/std",
 	"sp-std/std",
 	# "libra-crypto/std",
 	"move-core-types/std",

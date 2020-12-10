@@ -205,7 +205,6 @@ dependencies = [
  "anyhow",
  "borrow-graph",
  "hashbrown 0.9.1",
- "mirai-annotations",
  "move-core-types",
  "petgraph",
  "sp-std",
