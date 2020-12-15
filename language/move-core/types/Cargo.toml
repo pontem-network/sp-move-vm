@@ -17,13 +17,13 @@ hex = { version = "0.4.2", default-features = false } # ok
 rand = { version = "0.7.3", default-features = false } # ok
 mirai-annotations = "1.10.1"
 ref-cast = "1.0.3" # ok
-serde = { version = "1.0.117", default-features = false } # TODO: fix me
+serde = { version = "1", default-features = false, package = "alt_serde", features = ["derive"] }
 serde_bytes = "0.11.5" # ?
 static_assertions = "1.1.0" # ?
 thiserror = "1.0.22" # ?
 once_cell = { version = "1.4.1", default-features = false } # ok
 
-lcs = { version = "0.1.0", package = "libra-canonical-serialization" } # TODO: fix me, depends on std
+lcs = { path = "../../../lcs", package = "libra-canonical-serialization" }
 libra-crypto = { path = "../../../crypto/crypto", version = "0.1.0", default-features = false }
 libra-crypto-derive = { path = "../../../crypto/crypto-derive", version = "0.1.0" }
 short-hex-str = { path = "../../../common/short-hex-str", version = "0.1.0" }
