@@ -20,10 +20,10 @@ hex = { version = "0.4.2", default-features = false }
 once_cell = { version = "1.4.1", default-features = false }
 mirai-annotations = "1.10.1" # TODO: fix me
 serde-name = { version = "0.1.1", default-features = false }
-short-hex-str = { path = "../../common/short-hex-str", version = "0.1.0" }
+short-hex-str = { path = "../../common/short-hex-str", version = "0.1.0", default-features = false }
 static_assertions = "1.1.0"
 tiny-keccak = { version = "2.0.2", features = ["sha3"] }
-libra-crypto-derive = { path = "../crypto-derive", version = "0.1.0" }
+libra-crypto-derive = { path = "../crypto-derive", version = "0.1.0", default-features = false }
 lcs = { path = "../../lcs", package = "libra-canonical-serialization", default-features = false }
 
 [features]
@@ -32,8 +32,10 @@ fiat = ["curve25519-dalek", "ed25519-dalek"]
 
 std = [
 	"anyhow/std",
+	"once_cell/std",
 	"sp-std/std",
 	# "sp-io/std",
+	"lcs/std",
 	# "vm/std",
 	# "move-core-types/std",
 	# "move-vm-types/std",

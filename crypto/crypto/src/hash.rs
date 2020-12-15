@@ -103,7 +103,10 @@ use alloc::string::String;
 use anyhow::{ensure, Error, Result};
 use bytes::Bytes;
 use mirai_annotations::*;
+#[cfg(feature = "std")]
 use once_cell::sync::{Lazy, OnceCell};
+#[cfg(not(feature = "std"))]
+use once_cell::unsync::{Lazy, OnceCell};
 use short_hex_str::ShortHexStr;
 use sp_std::prelude::Vec;
 use sp_std::{self, convert::AsRef, fmt, str::FromStr};
@@ -172,6 +175,7 @@ impl HashValue {
         HashValue::from_keccak(sha3)
     }
 
+    #[cfg(feature = "std")]
     #[cfg(test)]
     pub fn from_iter_sha3<'a, I>(buffers: I) -> Self
     where
@@ -244,7 +248,8 @@ impl HashValue {
 
     /// Parse a given hex string to a hash value.
     pub fn from_hex(hex_str: &str) -> Result<Self> {
-        Self::from_slice(hex::decode(hex_str)?.as_slice())
+        //   Self::from_slice(hex::decode(hex_str)?.as_slice())
+        Self::from_slice(hex::decode(hex_str).map_err(anyhow::Error::msg)?.as_slice())
     }
 }
 
