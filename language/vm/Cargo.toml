@@ -19,7 +19,7 @@ mirai-annotations = "1.10.1" # TODO: fix me
 ref-cast = "1.0.3" # ok
 libra-crypto = { path = "../../crypto/crypto", version = "0.1.0" }
 move-core-types = { path = "../move-core/types", version = "0.1.0" }
-num-variants = { path = "../../common/num-variants", version = "0.1.0" } # mb. ok
+num-variants = { path = "../../common/num-variants", version = "0.1.0" } # ok
 
 [dev-dependencies]
 proptest-derive = "0.2.0"
