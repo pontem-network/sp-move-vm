@@ -1994,6 +1994,7 @@ name = "short-hex-str"
 version = "0.1.0"
 dependencies = [
  "alt_serde",
+ "hex",
  "proptest",
  "sp-std",
 ]

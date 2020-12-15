@@ -10,21 +10,21 @@ publish = false
 edition = "2018"
 
 [dependencies]
-sp-std = { version = "2.0.0", default-features = false }
-anyhow = { version = "1.0.34", default-features = false }
+sp-std = { version = "2.0.0", default-features = false } # ok
+anyhow = { version = "1.0.34", default-features = false } # ok
 bytes = { version = "0.5.6", default-features = false }
-serde = { version = "1", default-features = false, package = "alt_serde", features = ["derive"] }
+serde = { version = "1", default-features = false, package = "alt_serde", features = ["derive"] } # ok
 curve25519-dalek = { git = "https://github.com/novifinancial/curve25519-dalek.git", branch = "fiat3", version = "3", default-features = false, features = ["fiat_u64_backend"], optional = true }
 ed25519-dalek = { git = "https://github.com/novifinancial/ed25519-dalek.git", branch = "fiat5", version = "1.0.1", default-features = false, features = ["fiat_u64_backend", "serde"], optional = true }
-hex = { version = "0.4.2", default-features = false }
-once_cell = { version = "1.4.1", default-features = false }
+hex = { version = "0.4.2", default-features = false } # ok
+once_cell = { version = "1.4.1", default-features = false } # ok
 mirai-annotations = "1.10.1" # TODO: fix me
-serde-name = { version = "0.1.1", default-features = false }
-short-hex-str = { path = "../../common/short-hex-str", version = "0.1.0", default-features = false }
-static_assertions = "1.1.0"
+serde-name = { version = "0.1.1", default-features = false } # need replacement, depends on std, serde and thiserror
+short-hex-str = { path = "../../common/short-hex-str", version = "0.1.0", default-features = false } # ok
+static_assertions = "1.1.0" # ok
 tiny-keccak = { version = "2.0.2", features = ["sha3"] }
-libra-crypto-derive = { path = "../crypto-derive", version = "0.1.0", default-features = false }
-lcs = { path = "../../lcs", package = "libra-canonical-serialization", default-features = false }
+libra-crypto-derive = { path = "../crypto-derive", version = "0.1.0", default-features = false } # ok
+lcs = { path = "../../lcs", package = "libra-canonical-serialization", default-features = false } # ok
 
 [features]
 default = ["std", "fiat"]
