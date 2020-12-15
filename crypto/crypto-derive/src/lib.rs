@@ -357,7 +357,7 @@ pub fn hasher_dispatch(input: TokenStream) -> TokenStream {
 
          impl #hasher_name {
               fn new() -> Self {
-                    let name = libra_crypto::_serde_name::trace_name::<#type_name #param>()
+                    let name = libra_crypto::serde_name::trace_name::<#type_name #param>()
                          .expect("The `CryptoHasher` macro only applies to structs and enums");
                     #hasher_name(
                          libra_crypto::hash::DefaultHasher::new(&name.as_bytes()))
@@ -385,7 +385,7 @@ pub fn hasher_dispatch(input: TokenStream) -> TokenStream {
          impl libra_crypto::hash::CryptoHasher for #hasher_name {
               fn seed() -> &'static [u8; 32] {
                     #static_seed_name.get_or_init(|| {
-                         let name = libra_crypto::_serde_name::trace_name::<#type_name #param>()
+                         let name = libra_crypto::serde_name::trace_name::<#type_name #param>()
                               .expect("The `CryptoHasher` macro only applies to structs and enums.").as_bytes();
                          libra_crypto::hash::DefaultHasher::prefixed_hash(&name)
                     })

@@ -13,6 +13,7 @@ edition = "2018"
 sp-std = { version = "2.0.0", default-features = false }
 anyhow = { version = "1.0.34", default-features = false }
 bytes = { version = "0.5.6", default-features = false }
+serde = { version = "1", default-features = false, package = "alt_serde", features = ["derive"] }
 curve25519-dalek = { git = "https://github.com/novifinancial/curve25519-dalek.git", branch = "fiat3", version = "3", default-features = false, features = ["fiat_u64_backend"], optional = true }
 ed25519-dalek = { git = "https://github.com/novifinancial/ed25519-dalek.git", branch = "fiat5", version = "1.0.1", default-features = false, features = ["fiat_u64_backend", "serde"], optional = true }
 hex = { version = "0.4.2", default-features = false }
