@@ -1469,7 +1469,7 @@ dependencies = [
 [[package]]
 name = "petgraph"
 version = "0.5.1"
-source = "git+https://github.com/dfinance/petgraph.git#83606542947aacf32a823b3bb1c5980f60022acc"
+source = "git+https://github.com/dfinance/petgraph.git#76f1cc8194512a08633a24f29d992fa497051f79"
 dependencies = [
  "fixedbitset",
  "hashbrown 0.9.1",
