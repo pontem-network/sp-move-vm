@@ -1236,6 +1236,7 @@ dependencies = [
 name = "move-vm-types"
 version = "0.1.0"
 dependencies = [
+ "alt_serde",
  "hashbrown 0.9.1",
  "libra-canonical-serialization",
  "libra-crypto",
@@ -1243,7 +1244,6 @@ dependencies = [
  "move-core-types",
  "once_cell",
  "proptest",
- "serde",
  "sha2 0.9.2",
  "sp-std",
  "vm",
