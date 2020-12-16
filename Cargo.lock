@@ -1227,6 +1227,7 @@ dependencies = [
  "once_cell",
  "proptest",
  "sha2 0.9.2",
+ "sp-io",
  "sp-std",
  "vm",
 ]
@@ -2531,10 +2532,7 @@ dependencies = [
  "move-core-types",
  "num-variants",
  "once_cell",
- "proptest",
- "proptest-derive",
  "ref-cast",
- "serde_json",
  "sp-std",
 ]
 
