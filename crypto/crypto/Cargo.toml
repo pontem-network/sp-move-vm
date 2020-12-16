@@ -17,7 +17,7 @@ serde = { version = "1", default-features = false, package = "alt_serde", featur
 curve25519-dalek = { git = "https://github.com/novifinancial/curve25519-dalek.git", branch = "fiat3", version = "3", default-features = false, features = ["fiat_u64_backend"], optional = true }
 ed25519-dalek = { git = "https://github.com/novifinancial/ed25519-dalek.git", branch = "fiat5", version = "1.0.1", default-features = false, features = ["fiat_u64_backend", "serde"], optional = true }
 hex = { version = "0.4.2", default-features = false } # ok
-once_cell = { version = "1.4.1", default-features = false } # ok
+once_cell = { version = "1.5.2", default-features = false, features = ["unstable", "alloc"] } # ok
 mirai-annotations = "1.10.1" # TODO: fix me
 short-hex-str = { path = "../../common/short-hex-str", version = "0.1.0", default-features = false } # ok
 static_assertions = "1.1.0" # ok

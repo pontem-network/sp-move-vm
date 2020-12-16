@@ -27,8 +27,8 @@ use static_assertions::_core::fmt::Formatter;
 
 /// Compute the Serde name of a container.
 pub fn trace_name<'de, T>() -> Option<&'static str>
-    where
-        T: serde::de::Deserialize<'de>,
+where
+    T: serde::de::Deserialize<'de>,
 {
     match T::deserialize(SerdeName) {
         Err(SerdeNameError(name)) => name,
@@ -105,8 +105,8 @@ impl<'de> serde::de::Deserializer<'de> for SerdeName {
         _len: usize,
         _visitor: V,
     ) -> core::result::Result<V::Value, SerdeNameError>
-        where
-            V: Visitor<'de>,
+    where
+        V: Visitor<'de>,
     {
         Err(SerdeNameError(None))
     }
@@ -116,8 +116,8 @@ impl<'de> serde::de::Deserializer<'de> for SerdeName {
         name: &'static str,
         _visitor: V,
     ) -> core::result::Result<V::Value, SerdeNameError>
-        where
-            V: Visitor<'de>,
+    where
+        V: Visitor<'de>,
     {
         Err(SerdeNameError(Some(name)))
     }
@@ -127,8 +127,8 @@ impl<'de> serde::de::Deserializer<'de> for SerdeName {
         name: &'static str,
         _visitor: V,
     ) -> core::result::Result<V::Value, SerdeNameError>
-        where
-            V: Visitor<'de>,
+    where
+        V: Visitor<'de>,
     {
         Err(SerdeNameError(Some(name)))
     }
@@ -139,8 +139,8 @@ impl<'de> serde::de::Deserializer<'de> for SerdeName {
         _len: usize,
         _visitor: V,
     ) -> core::result::Result<V::Value, SerdeNameError>
-        where
-            V: Visitor<'de>,
+    where
+        V: Visitor<'de>,
     {
         Err(SerdeNameError(Some(name)))
     }
@@ -151,8 +151,8 @@ impl<'de> serde::de::Deserializer<'de> for SerdeName {
         _fields: &'static [&'static str],
         _visitor: V,
     ) -> core::result::Result<V::Value, SerdeNameError>
-        where
-            V: Visitor<'de>,
+    where
+        V: Visitor<'de>,
     {
         Err(SerdeNameError(Some(name)))
     }
@@ -163,8 +163,8 @@ impl<'de> serde::de::Deserializer<'de> for SerdeName {
         _variants: &'static [&'static str],
         _visitor: V,
     ) -> core::result::Result<V::Value, SerdeNameError>
-        where
-            V: Visitor<'de>,
+    where
+        V: Visitor<'de>,
     {
         Err(SerdeNameError(Some(name)))
     }

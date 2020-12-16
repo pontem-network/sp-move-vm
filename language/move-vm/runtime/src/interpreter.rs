@@ -713,7 +713,6 @@ impl Frame {
         let code = self.function.code();
         loop {
             for instruction in &code[self.pc as usize..] {
-
                 match instruction {
                     Bytecode::Pop => {
                         cost_strategy.charge_instr(Opcodes::POP)?;
