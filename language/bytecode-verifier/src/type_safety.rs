@@ -9,7 +9,7 @@ use crate::{
     control_flow_graph::ControlFlowGraph,
 };
 use alloc::boxed::Box;
-// use mirai_annotations::*;
+use mirai_annotations::*;
 use move_core_types::vm_status::StatusCode;
 use sp_std::prelude::Vec;
 use vm::{

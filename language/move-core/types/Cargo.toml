@@ -15,7 +15,7 @@ sp-std = { version = "2.0.0", default-features = false } # ok
 anyhow = { version = "1.0.34", default-features = false } # ok
 hex = { version = "0.4.2", default-features = false } # ok
 rand = { version = "0.7.3", default-features = false } # ok
-mirai-annotations = "1.10.1" # TODO: fix me
+mirai-annotations = { path = "../../../mirai-annotations" }
 ref-cast = "1.0.3" # ok
 serde = { version = "1", default-features = false, package = "alt_serde", features = ["derive"] } # ok
 serde_bytes = "0.11.5" # need replacement, depends on std

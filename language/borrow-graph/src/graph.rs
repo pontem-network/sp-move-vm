@@ -5,73 +5,9 @@ use crate::{
     paths::{self, Path},
     references::*,
 };
-// use mirai_annotations::{debug_checked_postcondition, debug_checked_precondition};
+use mirai_annotations::{debug_checked_postcondition, debug_checked_precondition};
 use sp_std::collections::{btree_map::BTreeMap, btree_set::BTreeSet};
 use sp_std::prelude::Vec;
-
-// that fix
-// instead of
-// use mirai_annotations::debug_checked_precondition;
-macro_rules! debug_checked_precondition {
-	($condition:expr) => (
-		 if cfg!(mirai) {
-			//   mirai_annotations::mirai_precondition_start();
-			//   mirai_annotations::mirai_precondition($condition, "unsatisfied precondition")
-			debug_assert!($condition);
-		 } else {
-			  debug_assert!($condition);
-		 }
-	);
-	($condition:expr, $message:literal) => (
-		 if cfg!(mirai) {
-			//   mirai_annotations::mirai_precondition_start();
-			//   mirai_annotations::mirai_precondition($condition, concat!("unsatisfied precondition: ", $message))
-			  debug_assert!($condition, $message);
-		 } else {
-			  debug_assert!($condition, $message);
-		 }
-	);
-	($condition:expr, $($arg:tt)*) => (
-		 if cfg!(mirai) {
-			//   mirai_annotations::mirai_precondition_start();
-			//   mirai_annotations::mirai_precondition($condition, concat!("unsatisfied precondition: ", stringify!($($arg)*)));
-			debug_assert!($condition, $($arg)*);
-		 } else {
-			  debug_assert!($condition, $($arg)*);
-		 }
-	);
-}
-
-#[macro_export]
-macro_rules! debug_checked_postcondition {
-    ($condition:expr) => (
-        #[cfg(mirai)] {
-				// mirai_annotations::mirai_postcondition($condition, false,  "unsatisfied postcondition")
-				debug_assert!($condition);
-        }
-        #[cfg(not(mirai))] {
-            debug_assert!($condition);
-        }
-    );
-    ($condition:expr, $message:literal) => (
-        #[cfg(mirai)] {
-				// mirai_annotations::mirai_postcondition($condition, false,  concat!("unsatisfied postcondition: ", $message))
-				debug_assert!($condition);
-        }
-        #[cfg(not(mirai))] {
-            debug_assert!($condition, $message);
-        }
-    );
-    ($condition:expr, $($arg:tt)*) => (
-        #[cfg(mirai)] {
-				// mirai_annotations::mirai_postcondition($condition, false,  concat!("unsatisfied postcondition: ", stringify!($($arg)*)));
-				debug_assert!($condition);
-        }
-        #[cfg(not(mirai))] {
-            debug_assert!($condition, $($arg)*);
-        }
-    );
-}
 
 //**************************************************************************************************
 // Definitions

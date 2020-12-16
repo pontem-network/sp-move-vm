@@ -8,8 +8,7 @@
 extern crate alloc;
 
 #[macro_use]
-extern crate mirai_annotations;
-
+// extern crate mirai_annotations;
 use sp_std::fmt;
 
 pub mod access;

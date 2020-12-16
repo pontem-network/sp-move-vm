@@ -13,7 +13,7 @@ edition = "2018"
 sp-std = { version = "2.0.0", default-features = false } # ok
 hashbrown = "0.9" # ok
 anyhow = {version ="1.0.34", default-features = false} # ok
-#mirai-annotations = "1.10.1" # need replacement, depends on std
+mirai-annotations = { path = "../../mirai-annotations" }
 petgraph = { git = "https://github.com/dfinance/petgraph.git", default-features = false, features = ["graphmap", "stable_graph", "matrix_graph"]} # ok
 
 borrow-graph = { path = "../borrow-graph", version = "0.0.1" }

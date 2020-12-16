@@ -6,38 +6,7 @@
 // use serde::{Serialize, Serializer};
 use sp_std::{fmt, str};
 
-// that fix
-// instead of
-// use mirai_annotations::debug_checked_precondition;
-macro_rules! debug_checked_precondition {
-	($condition:expr) => (
-		 if cfg!(mirai) {
-			//   mirai_annotations::mirai_precondition_start();
-			//   mirai_annotations::mirai_precondition($condition, "unsatisfied precondition")
-			debug_assert!($condition);
-		 } else {
-			  debug_assert!($condition);
-		 }
-	);
-	($condition:expr, $message:literal) => (
-		 if cfg!(mirai) {
-			//   mirai_annotations::mirai_precondition_start();
-			//   mirai_annotations::mirai_precondition($condition, concat!("unsatisfied precondition: ", $message))
-			  debug_assert!($condition, $message);
-		 } else {
-			  debug_assert!($condition, $message);
-		 }
-	);
-	($condition:expr, $($arg:tt)*) => (
-		 if cfg!(mirai) {
-			//   mirai_annotations::mirai_precondition_start();
-			//   mirai_annotations::mirai_precondition($condition, concat!("unsatisfied precondition: ", stringify!($($arg)*)));
-			debug_assert!($condition, $($arg)*);
-		 } else {
-			  debug_assert!($condition, $($arg)*);
-		 }
-	);
-}
+use mirai_annotations::debug_checked_precondition;
 
 /// An efficient container for formatting a byte slice as a hex-formatted string,
 /// stored on the stack.

@@ -12,5 +12,6 @@ members = [
     "language/move-vm/natives",
     "language/move-vm/types",
     "dvm",
-    "lcs"
+    "lcs",
+    "mirai-annotations"
 ]
