@@ -14,7 +14,6 @@ edition = "2018"
 [dependencies]
 sp-std = { version = "2.0.0", default-features = false } # ok
 hashbrown = "0.9" # ok
-fail = "0.4.0" # need replacement, depends on std
 mirai-annotations = "1.10.1" # need replacement, depends on std
 once_cell = { version = "1.4.1", default-features = false } # ok
 hex = { version = "0.4.2", default-features = false } # ok
@@ -39,7 +38,7 @@ features = [
 [features]
 default = ["std"]
 debug_module = ["move-vm-natives/debug_module"]
-failpoints = ["fail/failpoints"]
+#failpoints = ["fail/failpoints"]
 
 std = [
 	"once_cell/std",
