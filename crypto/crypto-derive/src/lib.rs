@@ -356,8 +356,9 @@ pub fn hasher_dispatch(input: TokenStream) -> TokenStream {
         #[cfg(feature = "std")]
         static #static_seed_name: libra_crypto::_once_cell::sync::OnceCell<[u8; 32]>
             = libra_crypto::_once_cell::sync::OnceCell::new();
+
         #[cfg(not(feature = "std"))]
-        static #static_seed_name: libra_crypto::_once_cell::race::OnceBox::OnceBox<[u8; 32]>
+        static #static_seed_name: libra_crypto::_once_cell::race::OnceBox<[u8; 32]>
             = libra_crypto::_once_cell::race::OnceBox::new();
 
          impl #hasher_name {
@@ -400,17 +401,12 @@ pub fn hasher_dispatch(input: TokenStream) -> TokenStream {
 
          impl libra_crypto::hash::CryptoHasher for #hasher_name {
               fn seed() -> &'static [u8; 32] {
-                    #static_seed_name.get_or_init(|| {
-                         let name = libra_crypto::serde_name::trace_name::<#type_name #param>()
-                              .expect("The `CryptoHasher` macro only applies to structs and enums.").as_bytes();
-                         let seed = libra_crypto::hash::DefaultHasher::prefixed_hash(&name);
-                         #[cfg(feature = "std")] {
-                            seed
-                         }
-                         #[cfg(not(feature = "std"))] {
-                            alloc::boxed::Box::new(seed)
-                         }
-                    })
+                    todo!()
+                    // #static_seed_name.get_or_init(|| {
+                    //      let name = libra_crypto::serde_name::trace_name::<#type_name #param>()
+                    //           .expect("The `CryptoHasher` macro only applies to structs and enums.").as_bytes();
+                    //      libra_crypto::hash::DefaultHasher::prefixed_hash(&name)
+                    // })
               }
 
               fn update(&mut self, bytes: &[u8]) {

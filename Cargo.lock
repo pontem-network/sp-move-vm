@@ -1177,6 +1177,7 @@ dependencies = [
  "ref-cast",
  "regex",
  "short-hex-str",
+ "sp-io",
  "sp-std",
  "static_assertions",
 ]

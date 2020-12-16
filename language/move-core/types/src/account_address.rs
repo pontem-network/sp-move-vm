@@ -6,7 +6,6 @@ use alloc::vec::Vec;
 use anyhow::{ensure, Error, Result};
 use libra_crypto::{
     hash::{CryptoHash, CryptoHasher},
-    //x25519,
     HashValue,
 };
 use libra_crypto_derive::CryptoHasher;
