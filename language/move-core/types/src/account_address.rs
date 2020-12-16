@@ -73,9 +73,9 @@ impl AccountAddress {
             let mut hex_str = String::with_capacity(hex_len + 1);
             hex_str.push('0');
             hex_str.push_str(&literal[2..]);
-            hex::decode(&hex_str)?
+            hex::decode(&hex_str).map_err(Error::msg)?
         } else {
-            hex::decode(&literal[2..])?
+            hex::decode(&literal[2..]).map_err(Error::msg)?
         };
 
         let len = result.len();
@@ -215,7 +215,7 @@ impl TryFrom<String> for AccountAddress {
     type Error = Error;
 
     fn try_from(s: String) -> Result<AccountAddress> {
-        let bytes_out = ::hex::decode(s)?;
+        let bytes_out = ::hex::decode(s).map_err(Error::msg)?;
         AccountAddress::try_from(bytes_out.as_slice())
     }
 }
@@ -224,15 +224,16 @@ impl FromStr for AccountAddress {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self> {
-        let bytes_out = ::hex::decode(s)?;
-        AccountAddress::try_from(bytes_out.as_slice())
+        ::hex::decode(s)
+            .map_err(Error::msg)
+            .and_then(|bytes_out| AccountAddress::try_from(bytes_out.as_slice()))
     }
 }
 
 impl<'de> Deserialize<'de> for AccountAddress {
     fn deserialize<D>(deserializer: D) -> sp_std::result::Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
+        where
+            D: Deserializer<'de>,
     {
         if deserializer.is_human_readable() {
             let s = <String>::deserialize(deserializer)?;
@@ -253,8 +254,8 @@ impl<'de> Deserialize<'de> for AccountAddress {
 
 impl Serialize for AccountAddress {
     fn serialize<S>(&self, serializer: S) -> sp_std::result::Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+        where
+            S: Serializer,
     {
         if serializer.is_human_readable() {
             self.to_string().serialize(serializer)

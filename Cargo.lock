@@ -1179,7 +1179,6 @@ dependencies = [
  "rand",
  "ref-cast",
  "regex",
- "serde_bytes",
  "serde_json",
  "short-hex-str",
  "sp-std",
