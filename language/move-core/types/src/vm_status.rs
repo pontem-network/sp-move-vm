@@ -309,47 +309,145 @@ pub mod known_locations {
         language_storage::{ModuleId, CORE_CODE_ADDRESS},
         vm_status::AbortLocation,
     };
-    use once_cell::sync::Lazy;
+    #[cfg(feature = "std")]
+    use once_cell::sync::OnceCell;
+    #[cfg(not(feature = "std"))]
+    use once_cell::race::OnceBox;
+
+    macro_rules! define_lazy {
+    (
+        $(#[$attr:meta])*
+        ($t:ident, $hash_name: ident, $fn_name: ident, $e: expr)
+    ) => {
+        #[cfg(feature = "std")]
+        static $hash_name: OnceCell<$t> = OnceCell::new();
+
+        #[cfg(not(feature = "std"))]
+        static $hash_name: OnceBox<$t> = OnceBox::new();
+
+        #[cfg(feature = "std")]
+        $(#[$attr])*
+        pub fn $fn_name() -> &'static $t {
+            $hash_name.get_or_init(|| $e)
+        }
+
+        #[cfg(not(feature = "std"))]
+        $(#[$attr])*
+        pub fn $fn_name() -> &'static $t {
+            $hash_name.get_or_init(|| alloc::boxed::Box::new($e))
+        }
+    };
+}
 
     /// The name of the Account module.
     pub const ACCOUNT_MODULE_NAME: &str = "LibraAccount";
-    /// The Identifier for the Account module.
-    pub static ACCOUNT_MODULE_IDENTIFIER: Lazy<Identifier> =
-        Lazy::new(|| Identifier::new(ACCOUNT_MODULE_NAME).unwrap());
-    /// The ModuleId for the Account module.
-    pub static ACCOUNT_MODULE: Lazy<ModuleId> =
-        Lazy::new(|| ModuleId::new(CORE_CODE_ADDRESS, ACCOUNT_MODULE_IDENTIFIER.clone()));
+
+    define_lazy! {
+        /// The Identifier for the Account module.
+        (
+            Identifier,
+            ACCOUNT_MODULE_IDENTIFIER,
+            account_module_identifier,
+            Identifier::new(ACCOUNT_MODULE_NAME).unwrap()
+        )
+    }
+    // /// The Identifier for the Account module.
+    // pub static ACCOUNT_MODULE_IDENTIFIER: Lazy<Identifier> =
+    //     Lazy::new(|| Identifier::new(ACCOUNT_MODULE_NAME).unwrap());
+
+    define_lazy! {
+        /// The ModuleId for the Account module.
+        (
+            ModuleId,
+            ACCOUNT_MODULE,
+            account_module,
+            ModuleId::new(CORE_CODE_ADDRESS, account_module_identifier().clone())
+        )
+    }
+    // /// The ModuleId for the Account module.
+    // pub static ACCOUNT_MODULE: Lazy<ModuleId> =
+    //     Lazy::new(|| ModuleId::new(CORE_CODE_ADDRESS, ACCOUNT_MODULE_IDENTIFIER.clone()));
+
     /// Location for an abort in the Account module
     pub fn account_module_abort() -> AbortLocation {
-        AbortLocation::Module(ACCOUNT_MODULE.clone())
+        AbortLocation::Module(account_module().clone())
     }
 
     /// The name of the Libra module.
     pub const LIBRA_MODULE_NAME: &str = "Libra";
-    /// The Identifier for the Libra module.
-    pub static LIBRA_MODULE_IDENTIFIER: Lazy<Identifier> =
-        Lazy::new(|| Identifier::new(LIBRA_MODULE_NAME).unwrap());
-    /// The ModuleId for the Libra module.
-    pub static LIBRA_MODULE: Lazy<ModuleId> =
-        Lazy::new(|| ModuleId::new(CORE_CODE_ADDRESS, LIBRA_MODULE_IDENTIFIER.clone()));
+
+
+    define_lazy! {
+        /// The Identifier for the Libra module.
+        (
+            Identifier,
+            LIBRA_MODULE_IDENTIFIER,
+            libra_module_identifier,
+            Identifier::new(LIBRA_MODULE_NAME).unwrap()
+        )
+    }
+
+    // /// The Identifier for the Libra module.
+    // pub static LIBRA_MODULE_IDENTIFIER: Lazy<Identifier> =
+    //     Lazy::new(|| Identifier::new(LIBRA_MODULE_NAME).unwrap());
+
+    define_lazy! {
+        /// The ModuleId for the Libra module.
+        (
+            ModuleId,
+            LIBRA_MODULE,
+            libra_module,
+            ModuleId::new(CORE_CODE_ADDRESS, libra_module_identifier().clone())
+        )
+    }
+    // /// The ModuleId for the Libra module.
+    // pub static LIBRA_MODULE: Lazy<ModuleId> =
+    //     Lazy::new(|| ModuleId::new(CORE_CODE_ADDRESS, LIBRA_MODULE_IDENTIFIER.clone()));
+
     pub fn libra_module_abort() -> AbortLocation {
-        AbortLocation::Module(LIBRA_MODULE.clone())
+        AbortLocation::Module(libra_module().clone())
     }
 
     /// The name of the Designated Dealer module.
     pub const DESIGNATED_DEALER_MODULE_NAME: &str = "DesignatedDealer";
-    /// The Identifier for the Designated Dealer module.
-    pub static DESIGNATED_DEALER_MODULE_IDENTIFIER: Lazy<Identifier> =
-        Lazy::new(|| Identifier::new(DESIGNATED_DEALER_MODULE_NAME).unwrap());
-    /// The ModuleId for the Designated Dealer module.
-    pub static DESIGNATED_DEALER_MODULE: Lazy<ModuleId> = Lazy::new(|| {
-        ModuleId::new(
-            CORE_CODE_ADDRESS,
-            DESIGNATED_DEALER_MODULE_IDENTIFIER.clone(),
+
+    define_lazy! {
+        /// The Identifier for the Designated Dealer module.
+        (
+            Identifier,
+            DESIGNATED_DEALER_MODULE_IDENTIFIER,
+            designated_dealer_module_identifier,
+            Identifier::new(DESIGNATED_DEALER_MODULE_NAME).unwrap()
         )
-    });
+    }
+    // /// The Identifier for the Designated Dealer module.
+    // pub static DESIGNATED_DEALER_MODULE_IDENTIFIER: Lazy<Identifier> =
+    //     Lazy::new(|| Identifier::new(DESIGNATED_DEALER_MODULE_NAME).unwrap());
+    //
+
+    define_lazy! {
+        /// The ModuleId for the Designated Dealer module.
+        (
+            ModuleId,
+            DESIGNATED_DEALER_MODULE,
+            designated_dealer_module,
+            ModuleId::new(
+            CORE_CODE_ADDRESS,
+            designated_dealer_module_identifier().clone(),
+        )
+        )
+    }
+
+    // /// The ModuleId for the Designated Dealer module.
+    // pub static DESIGNATED_DEALER_MODULE: Lazy<ModuleId> = Lazy::new(|| {
+    //     ModuleId::new(
+    //         CORE_CODE_ADDRESS,
+    //         DESIGNATED_DEALER_MODULE_IDENTIFIER.clone(),
+    //     )
+    // });
+
     pub fn designated_dealer_module_abort() -> AbortLocation {
-        AbortLocation::Module(DESIGNATED_DEALER_MODULE.clone())
+        AbortLocation::Module(designated_dealer_module().clone())
     }
 }
 
@@ -656,8 +754,8 @@ impl StatusCode {
 // TODO(#1307)
 impl ser::Serialize for StatusCode {
     fn serialize<S>(&self, serializer: S) -> sp_std::result::Result<S::Ok, S::Error>
-    where
-        S: ser::Serializer,
+        where
+            S: ser::Serializer,
     {
         serializer.serialize_u64((*self).into())
     }
@@ -665,8 +763,8 @@ impl ser::Serialize for StatusCode {
 
 impl<'de> de::Deserialize<'de> for StatusCode {
     fn deserialize<D>(deserializer: D) -> sp_std::result::Result<Self, D::Error>
-    where
-        D: de::Deserializer<'de>,
+        where
+            D: de::Deserializer<'de>,
     {
         struct StatusCodeVisitor;
         impl<'de> de::Visitor<'de> for StatusCodeVisitor {
@@ -677,8 +775,8 @@ impl<'de> de::Deserialize<'de> for StatusCode {
             }
 
             fn visit_u64<E>(self, v: u64) -> sp_std::result::Result<StatusCode, E>
-            where
-                E: de::Error,
+                where
+                    E: de::Error,
             {
                 Ok(StatusCode::try_from(v).unwrap_or(StatusCode::UNKNOWN_STATUS))
             }

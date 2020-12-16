@@ -11,7 +11,6 @@ use libra_crypto::{
 use libra_crypto_derive::CryptoHasher;
 #[cfg(any(test, feature = "fuzzing"))]
 use proptest_derive::Arbitrary;
-use rand::{rngs::OsRng, Rng};
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize, Serializer};
 use short_hex_str::ShortHexStr;
 use sp_std::{convert::TryFrom, fmt, str::FromStr};
@@ -32,12 +31,6 @@ impl AccountAddress {
 
     /// Hex address: 0x0
     pub const ZERO: Self = Self([0u8; Self::LENGTH]);
-
-    pub fn random() -> Self {
-        let mut rng = OsRng;
-        let buf: [u8; Self::LENGTH] = rng.gen();
-        Self(buf)
-    }
 
     // Helpful in log messages
     pub fn short_str(&self) -> ShortHexStr {

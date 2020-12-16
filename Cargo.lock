@@ -1173,11 +1173,10 @@ dependencies = [
  "once_cell",
  "proptest",
  "proptest-derive",
- "rand",
  "ref-cast",
  "regex",
+ "serde_json",
  "short-hex-str",
- "sp-io",
  "sp-std",
  "static_assertions",
 ]
