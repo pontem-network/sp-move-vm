@@ -20,7 +20,6 @@ ref-cast = "1.0.3" # ok
 serde = { version = "1", default-features = false, package = "alt_serde", features = ["derive"] } # ok
 serde_bytes = "0.11.5" # need replacement, depends on std
 static_assertions = "1.1.0" # ok
-thiserror = "1.0.22" # need replacement, depends on std
 once_cell = { version = "1.4.1", default-features = false } # ok
 
 lcs = { path = "../../../lcs", package = "libra-canonical-serialization", default-features = false } # ok
