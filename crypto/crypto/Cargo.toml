@@ -19,7 +19,6 @@ ed25519-dalek = { git = "https://github.com/novifinancial/ed25519-dalek.git", br
 hex = { version = "0.4.2", default-features = false } # ok
 once_cell = { version = "1.4.1", default-features = false } # ok
 mirai-annotations = "1.10.1" # TODO: fix me
-serde-name = { version = "0.1.1", default-features = false } # need replacement, depends on std, serde and thiserror
 short-hex-str = { path = "../../common/short-hex-str", version = "0.1.0", default-features = false } # ok
 static_assertions = "1.1.0" # ok
 tiny-keccak = { version = "2.0.2", features = ["sha3"] }

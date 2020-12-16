@@ -949,11 +949,11 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "1.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4fb1fa934250de4de8aef298d81c729a7d33d8c239daa3a7575e6b92bfc7313b"
+version = "1.6.0"
+source = "git+https://github.com/RIg410/indexmap?branch=1.6.00#ebae2bfab47c213c69086179cc717306cc280ecc"
 dependencies = [
  "autocfg",
+ "byteorder",
  "hashbrown 0.9.1",
 ]
 
@@ -1032,7 +1032,6 @@ dependencies = [
  "libra-crypto-derive",
  "mirai-annotations",
  "once_cell",
- "serde-name",
  "short-hex-str",
  "sp-std",
  "static_assertions",
@@ -1469,7 +1468,7 @@ dependencies = [
 [[package]]
 name = "petgraph"
 version = "0.5.1"
-source = "git+https://github.com/dfinance/petgraph.git#76f1cc8194512a08633a24f29d992fa497051f79"
+source = "git+https://github.com/dfinance/petgraph.git#a01a4aaf06aa43f9d37b26c26be1cc4032423ea2"
 dependencies = [
  "fixedbitset",
  "hashbrown 0.9.1",
@@ -1901,16 +1900,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "06c64263859d87aa2eb554587e2d23183398d617427327cf2b3d0ed8c69e4800"
 dependencies = [
  "serde_derive",
-]
-
-[[package]]
-name = "serde-name"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "87442b7a30baedc6e8875cb7156cb0e2cf41cdd9f13c34de73090c463f028bd8"
-dependencies = [
- "serde",
- "thiserror",
 ]
 
 [[package]]
