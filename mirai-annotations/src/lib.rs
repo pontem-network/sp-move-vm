@@ -1,4 +1,5 @@
 //! mostly no-op copy of https://github.com/facebookexperimental/MIRAI/blob/master/annotations/src/lib.rs
+#![no_std]
 
 #[macro_export]
 macro_rules! debug_checked_precondition {

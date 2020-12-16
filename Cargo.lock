@@ -214,6 +214,7 @@ dependencies = [
 name = "borrow-graph"
 version = "0.0.1"
 dependencies = [
+ "mirai-annotations 0.1.0",
  "sp-std",
 ]
 
@@ -254,6 +255,7 @@ dependencies = [
  "anyhow",
  "borrow-graph",
  "hashbrown 0.9.1",
+ "mirai-annotations 0.1.0",
  "move-core-types",
  "petgraph",
  "sp-std",
@@ -1019,7 +1021,7 @@ dependencies = [
  "hex",
  "libra-canonical-serialization",
  "libra-crypto-derive",
- "mirai-annotations",
+ "mirai-annotations 0.1.0",
  "once_cell",
  "short-hex-str",
  "sp-std",
@@ -1158,6 +1160,10 @@ dependencies = [
 
 [[package]]
 name = "mirai-annotations"
+version = "0.1.0"
+
+[[package]]
+name = "mirai-annotations"
 version = "1.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b48e78b8626927bd980dff38d8147006323f5d7634d7bc9e31c3a59e07da1b28"
@@ -1172,7 +1178,7 @@ dependencies = [
  "libra-canonical-serialization",
  "libra-crypto",
  "libra-crypto-derive",
- "mirai-annotations",
+ "mirai-annotations 0.1.0",
  "once_cell",
  "proptest",
  "proptest-derive",
@@ -1191,7 +1197,7 @@ name = "move-vm-natives"
 version = "0.1.0"
 dependencies = [
  "libra-crypto",
- "mirai-annotations",
+ "mirai-annotations 0.1.0",
  "move-core-types",
  "move-vm-types",
  "once_cell",
@@ -1209,7 +1215,7 @@ dependencies = [
  "hashbrown 0.9.1",
  "hex",
  "libra-crypto",
- "mirai-annotations",
+ "mirai-annotations 0.1.0",
  "move-core-types",
  "move-vm-natives",
  "move-vm-types",
@@ -1227,7 +1233,7 @@ dependencies = [
  "hashbrown 0.9.1",
  "libra-canonical-serialization",
  "libra-crypto",
- "mirai-annotations",
+ "mirai-annotations 0.1.0",
  "move-core-types",
  "once_cell",
  "proptest",
@@ -1971,6 +1977,7 @@ version = "0.1.0"
 dependencies = [
  "alt_serde",
  "hex",
+ "mirai-annotations 0.1.0",
  "proptest",
  "sp-std",
 ]
@@ -2541,7 +2548,7 @@ dependencies = [
  "anyhow",
  "hashbrown 0.9.1",
  "libra-crypto",
- "mirai-annotations",
+ "mirai-annotations 1.10.1",
  "move-core-types",
  "num-variants",
  "once_cell",
