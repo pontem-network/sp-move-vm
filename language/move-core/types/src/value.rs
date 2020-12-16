@@ -4,7 +4,7 @@
 use crate::account_address::AccountAddress;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
-use anyhow::{Result as AResult, Error};
+use anyhow::{Error, Result as AResult};
 use serde::{
     de::Error as DeError,
     ser::{SerializeSeq, SerializeTuple},

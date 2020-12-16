@@ -2,11 +2,11 @@ use crate::types::{Gas, ModuleTx, ScriptTx, VmResult};
 use crate::{gas_schedule, Vm};
 use move_core_types::gas_schedule::CostTable;
 use move_vm_runtime::move_vm::MoveVM;
-use sp_io::Storage;
+use sp_std::fmt::Debug;
 
 pub struct Dvm<S>
 where
-    S: Storage,
+    S: Debug,//todo replace with sp-io::Storage
 {
     vm: MoveVM,
     cost_table: CostTable,
@@ -15,7 +15,7 @@ where
 
 impl<S> Dvm<S>
 where
-    S: Storage,
+    S: Debug,
 {
     pub fn new(store: S) -> Dvm<S> {
         Dvm {
@@ -28,7 +28,7 @@ where
 
 impl<S> Vm for Dvm<S>
 where
-    S: Storage,
+    S: Debug,
 {
     fn publish_module(&self, gas: Gas, module: ModuleTx) -> VmResult {
         Ok(())

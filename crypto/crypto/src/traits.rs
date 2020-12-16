@@ -225,7 +225,7 @@ pub(crate) mod private {
     pub trait Sealed {}
 
     // Implement for the ed25519, multi-ed25519 signatures
-    impl Sealed for crate::ed25519::Ed25519PrivateKey {}
-    impl Sealed for crate::ed25519::Ed25519PublicKey {}
-    impl Sealed for crate::ed25519::Ed25519Signature {}
+    // impl Sealed for crate::ed25519::Ed25519PrivateKey {}
+    // impl Sealed for crate::ed25519::Ed25519PublicKey {}
+    // impl Sealed for crate::ed25519::Ed25519Signature {}
 }

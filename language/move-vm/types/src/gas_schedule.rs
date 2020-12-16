@@ -11,7 +11,6 @@ use mirai_annotations::*;
 use move_core_types::{
     gas_schedule::{
         AbstractMemorySize, CostTable, GasAlgebra, GasCarrier, GasConstants, GasCost, GasUnits,
-        MAX_TRANSACTION_SIZE_IN_BYTES,
     },
     vm_status::StatusCode,
 };

@@ -26,7 +26,7 @@
 //! * specify keys for lookups in storage
 //! * do cross-module lookups while executing transactions
 
-use anyhow::{bail, Result, Error};
+use anyhow::{bail, Error, Result};
 
 use alloc::borrow::ToOwned;
 use alloc::boxed::Box;

@@ -16,9 +16,9 @@ anyhow = { version = "1.0.34", default-features = false }
 once_cell = { version = "1.5.2", default-features = false, features = ["unstable", "alloc"] }
 mirai-annotations = { path = "../../mirai-annotations", default-features = false }
 ref-cast = "1.0.3"
-libra-crypto = { path = "../../crypto/crypto", version = "0.1.0", default-features = false, features = ["fiat"] }
-move-core-types = { path = "../move-core/types", version = "0.1.0", default-features = false }
-num-variants = { path = "../../common/num-variants", version = "0.1.0", default-features = false }
+libra-crypto = { path = "../../crypto/crypto", default-features = false }
+move-core-types = { path = "../move-core/types", default-features = false }
+num-variants = { path = "../../common/num-variants", default-features = false }
 
 [features]
 default = ["std"]

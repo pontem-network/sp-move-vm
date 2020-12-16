@@ -10,34 +10,24 @@ publish = false
 edition = "2018"
 
 [dependencies]
-sp-std = { version = "2.0.0", default-features = false } # ok
-hashbrown = "0.9" # ok
-sp-io = { version = "2.0.0", default-features = false }
+sp-std = { version = "2.0.0", default-features = false }
+hashbrown = "0.9"
 
-mirai-annotations = { path = "../../../mirai-annotations" }
-once_cell = { version = "1.4.1", default-features = false } # ok
-sha2 = { version = "0.9.2", default-features = false } # ok
-serde = { version = "1", default-features = false, package = "alt_serde", features = ["derive", "alloc"] } # ok
+mirai-annotations = { path = "../../../mirai-annotations", default-features = false }
+once_cell = { version = "1.5.2", default-features = false, features = ["unstable", "alloc"] }
+sha2 = { version = "0.9.2", default-features = false }
+serde = { version = "1", default-features = false, package = "alt_serde", features = ["derive", "alloc"] }
 
-lcs = { path = "../../../lcs", package = "libra-canonical-serialization", default-features = false } # ok
-libra-crypto = { path = "../../../crypto/crypto", version = "0.1.0"}
-move-core-types = { path = "../../move-core/types", version = "0.1.0" }
-vm = { path = "../../vm", version = "0.1.0" }
-
-[dev-dependencies]
-
-[dev-dependencies.proptest]
-version = "0.10.1"
-features = [
-	"alloc", "fork", "timeout", "bit-set",
-]
+lcs = { path = "../../../lcs", package = "libra-canonical-serialization", default-features = false }
+libra-crypto = { path = "../../../crypto/crypto", default-features = false }
+move-core-types = { path = "../../move-core/types", default-features = false }
+vm = { path = "../../vm", default-features = false }
 
 [features]
 default = ["std"]
 std = [
 	"sha2/std",
 	"sp-std/std",
-	"sp-io/std",
 	"vm/std",
 	"move-core-types/std",
 	"libra-crypto/std",

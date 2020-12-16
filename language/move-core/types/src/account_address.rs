@@ -224,8 +224,8 @@ impl FromStr for AccountAddress {
 
 impl<'de> Deserialize<'de> for AccountAddress {
     fn deserialize<D>(deserializer: D) -> sp_std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
     {
         if deserializer.is_human_readable() {
             let s = <String>::deserialize(deserializer)?;
@@ -246,8 +246,8 @@ impl<'de> Deserialize<'de> for AccountAddress {
 
 impl Serialize for AccountAddress {
     fn serialize<S>(&self, serializer: S) -> sp_std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
+    where
+        S: Serializer,
     {
         if serializer.is_human_readable() {
             self.to_string().serialize(serializer)

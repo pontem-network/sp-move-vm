@@ -309,10 +309,10 @@ pub mod known_locations {
         language_storage::{ModuleId, CORE_CODE_ADDRESS},
         vm_status::AbortLocation,
     };
-    #[cfg(feature = "std")]
-    use once_cell::sync::OnceCell;
     #[cfg(not(feature = "std"))]
     use once_cell::race::OnceBox;
+    #[cfg(feature = "std")]
+    use once_cell::sync::OnceCell;
 
     macro_rules! define_lazy {
     (
@@ -375,7 +375,6 @@ pub mod known_locations {
 
     /// The name of the Libra module.
     pub const LIBRA_MODULE_NAME: &str = "Libra";
-
 
     define_lazy! {
         /// The Identifier for the Libra module.
@@ -754,8 +753,8 @@ impl StatusCode {
 // TODO(#1307)
 impl ser::Serialize for StatusCode {
     fn serialize<S>(&self, serializer: S) -> sp_std::result::Result<S::Ok, S::Error>
-        where
-            S: ser::Serializer,
+    where
+        S: ser::Serializer,
     {
         serializer.serialize_u64((*self).into())
     }
@@ -763,8 +762,8 @@ impl ser::Serialize for StatusCode {
 
 impl<'de> de::Deserialize<'de> for StatusCode {
     fn deserialize<D>(deserializer: D) -> sp_std::result::Result<Self, D::Error>
-        where
-            D: de::Deserializer<'de>,
+    where
+        D: de::Deserializer<'de>,
     {
         struct StatusCodeVisitor;
         impl<'de> de::Visitor<'de> for StatusCodeVisitor {
@@ -775,8 +774,8 @@ impl<'de> de::Deserialize<'de> for StatusCode {
             }
 
             fn visit_u64<E>(self, v: u64) -> sp_std::result::Result<StatusCode, E>
-                where
-                    E: de::Error,
+            where
+                E: de::Error,
             {
                 Ok(StatusCode::try_from(v).unwrap_or(StatusCode::UNKNOWN_STATUS))
             }

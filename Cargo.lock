@@ -499,19 +499,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "curve25519-dalek"
-version = "3.0.0"
-source = "git+https://github.com/novifinancial/curve25519-dalek.git?branch=fiat3#2940429efd0e6482af1531cff079e6605cbc9cf2"
-dependencies = [
- "byteorder",
- "digest 0.9.0",
- "fiat-crypto",
- "rand_core",
- "subtle 2.3.0",
- "zeroize",
-]
-
-[[package]]
 name = "derive_more"
 version = "0.99.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -596,21 +583,10 @@ version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c762bae6dcaf24c4c84667b8579785430908723d5c889f469d76a41d59cc7a9d"
 dependencies = [
- "curve25519-dalek 3.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "curve25519-dalek 3.0.0",
  "ed25519",
  "rand",
  "serde",
- "sha2 0.9.2",
- "zeroize",
-]
-
-[[package]]
-name = "ed25519-dalek"
-version = "1.0.1"
-source = "git+https://github.com/novifinancial/ed25519-dalek.git?branch=fiat5#88603ebf0196015e9b4106844f9f47ed6c01e951"
-dependencies = [
- "curve25519-dalek 3.0.0 (git+https://github.com/novifinancial/curve25519-dalek.git?branch=fiat3)",
- "ed25519",
  "sha2 0.9.2",
  "zeroize",
 ]
@@ -654,12 +630,6 @@ name = "fake-simd"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e88a8acf291dafb59c2d96e8f59828f3838bb1a70398823ade51a84de6a6deed"
-
-[[package]]
-name = "fiat-crypto"
-version = "0.1.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f6ab97095615857b6ad00a8330fff0e443f1def9fd357cef82d0ca0677b616b"
 
 [[package]]
 name = "fixed-hash"
@@ -1013,8 +983,6 @@ dependencies = [
  "alt_serde",
  "anyhow",
  "bytes",
- "curve25519-dalek 3.0.0 (git+https://github.com/novifinancial/curve25519-dalek.git?branch=fiat3)",
- "ed25519-dalek 1.0.1 (git+https://github.com/novifinancial/ed25519-dalek.git?branch=fiat5)",
  "hex",
  "libra-canonical-serialization",
  "libra-crypto-derive",
@@ -1171,11 +1139,7 @@ dependencies = [
  "libra-crypto-derive",
  "mirai-annotations",
  "once_cell",
- "proptest",
- "proptest-derive",
  "ref-cast",
- "regex",
- "serde_json",
  "short-hex-str",
  "sp-std",
  "static_assertions",
@@ -1209,7 +1173,6 @@ dependencies = [
  "move-vm-natives",
  "move-vm-types",
  "once_cell",
- "proptest",
  "sp-std",
  "vm",
 ]
@@ -1225,9 +1188,7 @@ dependencies = [
  "mirai-annotations",
  "move-core-types",
  "once_cell",
- "proptest",
  "sha2 0.9.2",
- "sp-io",
  "sp-std",
  "vm",
 ]
@@ -1991,7 +1952,7 @@ dependencies = [
  "byteorder",
  "derive_more",
  "dyn-clonable",
- "ed25519-dalek 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ed25519-dalek",
  "futures",
  "hash-db",
  "hash256-std-hasher",

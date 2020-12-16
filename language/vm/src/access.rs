@@ -4,12 +4,12 @@
 //! Defines accessors for compiled modules.
 
 use crate::{file_format::*, internals::ModuleIndex};
+use mirai_annotations::*;
 use move_core_types::{
     account_address::AccountAddress,
     identifier::{IdentStr, Identifier},
     language_storage::ModuleId,
 };
-use mirai_annotations::*;
 
 /// Represents accessors for a compiled module.
 ///

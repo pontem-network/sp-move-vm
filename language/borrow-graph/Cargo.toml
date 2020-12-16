@@ -14,5 +14,4 @@ mirai-annotations = { path = "../../mirai-annotations" }
 default = ["std"]
 std = [
 	"sp-std/std",
-
 ]
