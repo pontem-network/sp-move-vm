@@ -10,6 +10,7 @@ publish = false
 edition = "2018"
 
 [dependencies]
+mirai-annotations = { path = "../../mirai-annotations" }
 serde = { version = "1", default-features = false, package = "alt_serde", features = ["derive"] }
 sp-std = { version = "2.0.0", default-features = false }
 

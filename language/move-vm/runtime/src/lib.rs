@@ -13,8 +13,8 @@
 #[macro_use]
 extern crate alloc;
 
-#[macro_use]
-extern crate mirai_annotations;
+// #[macro_use]
+// extern crate mirai_annotations;
 
 pub mod data_cache;
 mod interpreter;

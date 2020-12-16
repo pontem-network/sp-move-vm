@@ -4,7 +4,7 @@
 //! This module defines the abstract state for the local safety analysis.
 
 use crate::absint::{AbstractDomain, JoinResult};
-// use mirai_annotations::{checked_precondition, checked_verify};
+use mirai_annotations::{checked_precondition, checked_verify};
 use move_core_types::vm_status::StatusCode;
 use vm::{
     errors::PartialVMError,

@@ -14,7 +14,7 @@ edition = "2018"
 [dependencies]
 sp-std = { version = "2.0.0", default-features = false } # ok
 hashbrown = "0.9" # ok
-mirai-annotations = "1.10.1" # need replacement, depends on std
+mirai-annotations = { path = "../../../mirai-annotations" }
 once_cell = { version = "1.4.1", default-features = false } # ok
 hex = { version = "0.4.2", default-features = false } # ok
 anyhow = { version = "1.0.34", default-features = false } # ok
