@@ -4,6 +4,7 @@ use move_vm_types::gas_schedule::new_from_instructions;
 use vm::file_format::Bytecode::*;
 use vm::file_format::*;
 use vm::file_format_common::instruction_key;
+use move_vm_types::gas_schedule::NativeCostIndex as N;
 
 /// Specific gas per instruction configuration for dvm.
 /// INITIAL_GAS_SCHEDULE from libra with dfinance update.
@@ -14,7 +15,6 @@ use vm::file_format_common::instruction_key;
 ///  ImmBorrowGlobal -> GasCost::new(1000, 3);
 ///  ImmBorrowGlobalGeneric -> GasCost::new(1000, 3);
 pub fn cost_table() -> CostTable {
-    use Bytecode::*;
     let mut instrs = vec![
         (MoveTo(StructDefinitionIndex::new(0)), GasCost::new(825, 1)),
         (

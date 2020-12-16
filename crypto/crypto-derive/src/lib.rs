@@ -223,7 +223,7 @@ pub fn derive_deref(input: TokenStream) -> TokenStream {
               }
          }
     )
-    .into()
+        .into()
 }
 
 #[proc_macro_derive(ValidCryptoMaterial)]
@@ -353,7 +353,12 @@ pub fn hasher_dispatch(input: TokenStream) -> TokenStream {
          #[derive(Clone)]
          pub struct #hasher_name(libra_crypto::hash::DefaultHasher);
 
-         static #static_seed_name: libra_crypto::_once_cell::sync::OnceCell<[u8; 32]> = libra_crypto::_once_cell::sync::OnceCell::new();
+        #[cfg(feature = "std")]
+        static #static_seed_name: libra_crypto::_once_cell::sync::OnceCell<[u8; 32]>
+            = libra_crypto::_once_cell::sync::OnceCell::new();
+        #[cfg(not(feature = "std"))]
+        static #static_seed_name: libra_crypto::_once_cell::race::OnceBox::OnceBox<[u8; 32]>
+            = libra_crypto::_once_cell::race::OnceBox::new();
 
          impl #hasher_name {
               fn new() -> Self {
@@ -371,23 +376,40 @@ pub fn hasher_dispatch(input: TokenStream) -> TokenStream {
               }
          }
 
-         static #static_hasher_name: libra_crypto::_once_cell::sync::Lazy<#hasher_name> =
-              libra_crypto::_once_cell::sync::Lazy::new(|| #hasher_name::new());
+        #[cfg(feature = "std")]
+        static #static_hasher_name: libra_crypto::_once_cell::sync::OnceCell<#hasher_name>
+            = libra_crypto::_once_cell::sync::OnceCell::new();
 
+        #[cfg(not(feature = "std"))]
+        static #static_hasher_name: libra_crypto::_once_cell::race::OnceBox<#hasher_name>
+            = libra_crypto::_once_cell::race::OnceBox::new();
 
-         impl sp_std::default::Default for #hasher_name
-         {
-              fn default() -> Self {
-                    #static_hasher_name.clone()
-              }
-         }
+        #[cfg(feature = "std")]
+        impl sp_std::default::Default for #hasher_name {
+            fn default() -> Self {
+                 #static_hasher_name.get_or_init(|| #hasher_name::new()).clone()
+            }
+        }
+
+        #[cfg(not(feature = "std"))]
+        impl sp_std::default::Default for #hasher_name {
+            fn default() -> Self {
+                 #static_hasher_name.get_or_init(|| alloc::boxed::Box::new(#hasher_name::new())).clone()
+            }
+        }
 
          impl libra_crypto::hash::CryptoHasher for #hasher_name {
               fn seed() -> &'static [u8; 32] {
                     #static_seed_name.get_or_init(|| {
                          let name = libra_crypto::serde_name::trace_name::<#type_name #param>()
                               .expect("The `CryptoHasher` macro only applies to structs and enums.").as_bytes();
-                         libra_crypto::hash::DefaultHasher::prefixed_hash(&name)
+                         let seed = libra_crypto::hash::DefaultHasher::prefixed_hash(&name);
+                         #[cfg(feature = "std")] {
+                            seed
+                         }
+                         #[cfg(not(feature = "std"))] {
+                            alloc::boxed::Box::new(seed)
+                         }
                     })
               }
 

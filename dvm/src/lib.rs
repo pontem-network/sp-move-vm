@@ -8,7 +8,6 @@ pub mod gas_schedule;
 pub mod types;
 
 use crate::types::{Gas, ModuleTx, ScriptTx, VmResult};
-use anyhow::{ensure, Result};
 
 pub trait Vm {
     fn publish_module(&self, gas: Gas, module: ModuleTx) -> VmResult;
