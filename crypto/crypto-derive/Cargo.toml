@@ -21,4 +21,4 @@ anyhow = "1.0.34"
 
 [features]
 default = ["std"]
-std = [ ]
+std = []
