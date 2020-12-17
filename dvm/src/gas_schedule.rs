@@ -1,8 +1,9 @@
+use alloc::vec::Vec;
 use move_core_types::gas_schedule::{CostTable, GasCost};
+use move_vm_types::gas_schedule::new_from_instructions;
+use move_vm_types::gas_schedule::NativeCostIndex as N;
 use vm::file_format::Bytecode::*;
 use vm::file_format::*;
-use alloc::vec::Vec;
-use move_vm_types::gas_schedule::new_from_instructions;
 use vm::file_format_common::instruction_key;
 
 /// Specific gas per instruction configuration for dvm.
@@ -14,7 +15,6 @@ use vm::file_format_common::instruction_key;
 ///  ImmBorrowGlobal -> GasCost::new(1000, 3);
 ///  ImmBorrowGlobalGeneric -> GasCost::new(1000, 3);
 pub fn cost_table() -> CostTable {
-    use Bytecode::*;
     let mut instrs = vec![
         (MoveTo(StructDefinitionIndex::new(0)), GasCost::new(825, 1)),
         (
@@ -145,16 +145,6 @@ pub fn cost_table() -> CostTable {
         (N::CREATE_SIGNER, GasCost::new(24, 1)),
         (N::DESTROY_SIGNER, GasCost::new(212, 1)),
         (N::EMIT_EVENT, GasCost::new(52, 1)),
-        (N::U256_FROM_U8, GasCost::new(10, 1)),
-        (N::U256_FROM_U64, GasCost::new(10, 1)),
-        (N::U256_FROM_U128, GasCost::new(10, 1)),
-        (N::U256_AS_U8, GasCost::new(10, 1)),
-        (N::U256_AS_U64, GasCost::new(10, 1)),
-        (N::U256_AS_U128, GasCost::new(10, 1)),
-        (N::U256_MUL, GasCost::new(10, 1)),
-        (N::U256_DIV, GasCost::new(10, 1)),
-        (N::U256_SUB, GasCost::new(10, 1)),
-        (N::U256_ADD, GasCost::new(10, 1)),
     ];
 
     instrs.sort_by_key(|cost| instruction_key(&cost.0));

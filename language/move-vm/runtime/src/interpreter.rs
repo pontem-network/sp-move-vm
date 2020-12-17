@@ -6,7 +6,6 @@ use crate::{
     logging::LogContext,
     native_functions::FunctionContext,
 };
-use fail::fail_point;
 // use libra_logger::prelude::*;
 use alloc::borrow::ToOwned;
 use alloc::collections::VecDeque;
@@ -714,14 +713,6 @@ impl Frame {
         let code = self.function.code();
         loop {
             for instruction in &code[self.pc as usize..] {
-                fail_point!("move_vm::interpreter_loop", |_| {
-                    Err(
-                        PartialVMError::new(StatusCode::VERIFIER_INVARIANT_VIOLATION).with_message(
-                            "Injected move_vm::interpreter verifier failure".to_owned(),
-                        ),
-                    )
-                });
-
                 match instruction {
                     Bytecode::Pop => {
                         cost_strategy.charge_instr(Opcodes::POP)?;

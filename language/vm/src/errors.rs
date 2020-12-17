@@ -100,7 +100,7 @@ impl VMError {
                 }
             }
 
-            (major_status, _, _) => VMStatus::Error(major_status),
+            (major_status, ..) => VMStatus::Error(major_status),
         }
     }
 

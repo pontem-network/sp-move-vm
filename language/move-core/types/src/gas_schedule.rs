@@ -110,21 +110,21 @@ macro_rules! define_gas_unit {
 }
 
 define_gas_unit! {
-    name: AbstractMemorySize,
-    carrier: GasCarrier,
-    doc: "A newtype wrapper that represents the (abstract) memory size that the instruction will take up."
+     name: AbstractMemorySize,
+     carrier: GasCarrier,
+     doc: "A newtype wrapper that represents the (abstract) memory size that the instruction will take up."
 }
 
 define_gas_unit! {
-    name: GasUnits,
-    carrier: GasCarrier,
-    doc: "A newtype wrapper around the underlying carrier for the gas cost."
+     name: GasUnits,
+     carrier: GasCarrier,
+     doc: "A newtype wrapper around the underlying carrier for the gas cost."
 }
 
 define_gas_unit! {
-    name: GasPrice,
-    carrier: GasCarrier,
-    doc: "A newtype wrapper around the gas price for each unit of gas consumed."
+     name: GasPrice,
+     carrier: GasCarrier,
+     doc: "A newtype wrapper around the gas price for each unit of gas consumed."
 }
 
 /// One unit of gas

@@ -6,13 +6,11 @@ use alloc::vec::Vec;
 use anyhow::{ensure, Error, Result};
 use libra_crypto::{
     hash::{CryptoHash, CryptoHasher},
-    //x25519,
     HashValue,
 };
 use libra_crypto_derive::CryptoHasher;
 #[cfg(any(test, feature = "fuzzing"))]
 use proptest_derive::Arbitrary;
-use rand::{rngs::OsRng, Rng};
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize, Serializer};
 use short_hex_str::ShortHexStr;
 use sp_std::{convert::TryFrom, fmt, str::FromStr};
@@ -33,12 +31,6 @@ impl AccountAddress {
 
     /// Hex address: 0x0
     pub const ZERO: Self = Self([0u8; Self::LENGTH]);
-
-    pub fn random() -> Self {
-        let mut rng = OsRng;
-        let buf: [u8; Self::LENGTH] = rng.gen();
-        Self(buf)
-    }
 
     // Helpful in log messages
     pub fn short_str(&self) -> ShortHexStr {
@@ -73,9 +65,9 @@ impl AccountAddress {
             let mut hex_str = String::with_capacity(hex_len + 1);
             hex_str.push('0');
             hex_str.push_str(&literal[2..]);
-            hex::decode(&hex_str)?
+            hex::decode(&hex_str).map_err(Error::msg)?
         } else {
-            hex::decode(&literal[2..])?
+            hex::decode(&literal[2..]).map_err(Error::msg)?
         };
 
         let len = result.len();
@@ -215,7 +207,7 @@ impl TryFrom<String> for AccountAddress {
     type Error = Error;
 
     fn try_from(s: String) -> Result<AccountAddress> {
-        let bytes_out = ::hex::decode(s)?;
+        let bytes_out = ::hex::decode(s).map_err(Error::msg)?;
         AccountAddress::try_from(bytes_out.as_slice())
     }
 }
@@ -224,8 +216,9 @@ impl FromStr for AccountAddress {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self> {
-        let bytes_out = ::hex::decode(s)?;
-        AccountAddress::try_from(bytes_out.as_slice())
+        ::hex::decode(s)
+            .map_err(Error::msg)
+            .and_then(|bytes_out| AccountAddress::try_from(bytes_out.as_slice()))
     }
 }
 

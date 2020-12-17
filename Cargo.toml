@@ -1,6 +1,5 @@
 [workspace]
 members = [
-    "common/logger",
     "common/num-variants",
     "common/short-hex-str",
     "crypto/crypto",
@@ -12,5 +11,7 @@ members = [
     "language/move-vm/runtime",
     "language/move-vm/natives",
     "language/move-vm/types",
-    "dvm"
+    "dvm",
+    "lcs",
+    "mirai-annotations"
 ]

@@ -10,7 +10,15 @@ publish = false
 edition = "2018"
 
 [dependencies]
-mirai-annotations = "1.10.1"
-serde = { version = "1.0.117", default-features = false }
+mirai-annotations = { path = "../../mirai-annotations" }
 sp-std = { version = "2.0.0", default-features = false }
 
+[dev-dependencies]
+proptest = "0.10"
+hex = "0.4.2"
+
+[features]
+default = ["std"]
+std = [
+	"sp-std/std",
+]

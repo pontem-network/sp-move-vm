@@ -448,7 +448,7 @@ impl<'a> BoundsChecker<'a> {
                 | Reference(_)
                 | MutableReference(_)
                 | Vector(_)
-                | StructInstantiation(_, _) => (),
+                | StructInstantiation(..) => (),
             }
         }
         Ok(())
@@ -488,7 +488,10 @@ impl<'a> BoundsChecker<'a> {
     ) -> PartialVMError {
         match self.current_function {
             None => {
-                let msg = format!("Indexing into bytecode {} during bounds checking but 'current_function' was not set", cur_bytecode_offset);
+                let msg = format!(
+					        "Indexing into bytecode {} during bounds checking but 'current_function' was not set",
+					        cur_bytecode_offset
+					);
                 PartialVMError::new(StatusCode::UNKNOWN_INVARIANT_VIOLATION_ERROR).with_message(msg)
             }
             Some(current_function_index) => offset_out_of_bounds_error(

@@ -357,28 +357,30 @@ impl ValueImpl {
             | ValueImpl::U64(_)
             | ValueImpl::U128(_)
             | ValueImpl::Address(_) => true,
-            ValueImpl::Container(c) => match c {
-                Container::VecBool(_)
-                | Container::VecU8(_)
-                | Container::VecU64(_)
-                | Container::VecU128(_)
-                | Container::VecAddress(_) => true,
-                Container::VecC(values) => {
-                    // this is not verifying vector consistency because it cannot always.
-                    // It's simply checking that every elements in the vector is itself
-                    // a constant or a vector
-                    for value in &*values.borrow() {
-                        if !value.is_constant() {
-                            return false;
+            ValueImpl::Container(c) => {
+                match c {
+                    Container::VecBool(_)
+                    | Container::VecU8(_)
+                    | Container::VecU64(_)
+                    | Container::VecU128(_)
+                    | Container::VecAddress(_) => true,
+                    Container::VecC(values) => {
+                        // this is not verifying vector consistency because it cannot always.
+                        // It's simply checking that every elements in the vector is itself
+                        // a constant or a vector
+                        for value in &*values.borrow() {
+                            if !value.is_constant() {
+                                return false;
+                            }
                         }
+                        true
                     }
-                    true
+                    Container::Locals(_)
+                    | Container::StructC(_)
+                    | Container::StructR(_)
+                    | Container::VecR(_) => false,
                 }
-                Container::Locals(_)
-                | Container::StructC(_)
-                | Container::StructR(_)
-                | Container::VecR(_) => false,
-            },
+            }
             ValueImpl::ContainerRef(_) | ValueImpl::IndexedRef(_) | ValueImpl::Invalid => false,
         }
     }
@@ -1785,7 +1787,7 @@ impl IntegerValue {
 *
 *   TODO: split the code into two parts:
 *         1) Internal vector APIs that define & implements the core operations
-             (and operations only).
+                 (and operations only).
 *         2) Native function adapters that the dispatcher can call into. These will
 *            check if arguments are valid and deal with gas metering.
 *
@@ -2378,13 +2380,15 @@ impl Display for ContainerRef {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Local(c) => write!(f, "({}, {})", c.rc_count(), c),
-            Self::Global { status, container } => write!(
-                f,
-                "({:?}, {}, {})",
-                &*status.borrow(),
-                container.rc_count(),
-                container
-            ),
+            Self::Global { status, container } => {
+                write!(
+                    f,
+                    "({:?}, {}, {})",
+                    &*status.borrow(),
+                    container.rc_count(),
+                    container
+                )
+            }
         }
     }
 }
@@ -2963,7 +2967,7 @@ impl Value {
                 )
             }
             // Not yet supported
-            S::Struct(_) | S::StructInstantiation(_, _) => return None,
+            S::Struct(_) | S::StructInstantiation(..) => return None,
             // Not allowed/Not meaningful
             S::TypeParameter(_) | S::Reference(_) | S::MutableReference(_) => return None,
         })
@@ -3090,12 +3094,12 @@ pub mod prop {
         use MoveTypeLayout as L;
 
         let leaf = prop_oneof![
-            1 => Just((L::U8, K::Base(T::Copyable))),
-            1 => Just((L::U64, K::Base(T::Copyable))),
-            1 => Just((L::U128, K::Base(T::Copyable))),
-            1 => Just((L::Bool, K::Base(T::Copyable))),
-            1 => Just((L::Address, K::Base(T::Copyable))),
-            1 => Just((L::Signer, K::Base(T::Resource))),
+             1 => Just((L::U8, K::Base(T::Copyable))),
+             1 => Just((L::U64, K::Base(T::Copyable))),
+             1 => Just((L::U128, K::Base(T::Copyable))),
+             1 => Just((L::Bool, K::Base(T::Copyable))),
+             1 => Just((L::Address, K::Base(T::Copyable))),
+             1 => Just((L::Signer, K::Base(T::Resource))),
         ];
 
         leaf.prop_recursive(8, 32, 2, |inner| prop_oneof![

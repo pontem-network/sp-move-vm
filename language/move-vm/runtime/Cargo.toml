@@ -9,29 +9,33 @@ license = "Apache-2.0"
 publish = false
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 sp-std = { version = "2.0.0", default-features = false }
 hashbrown = "0.9"
-fail = "0.4.0"
-mirai-annotations = "1.10.1"
-once_cell = "1.4.1"
+mirai-annotations = { path = "../../../mirai-annotations", default-features = false }
+once_cell = { version = "1.4.1", default-features = false }
+hex = { version = "0.4.2", default-features = false }
+anyhow = { version = "1.0.34", default-features = false }
 
-bytecode-verifier = { path = "../../bytecode-verifier", version = "0.1.0" }
-libra-crypto = { path = "../../../crypto/crypto", version = "0.1.0" }
-libra-logger = { path = "../../../common/logger", version = "0.1.0" }
-move-core-types = { path = "../../move-core/types", version = "0.1.0" }
-move-vm-natives = { path = "../natives", version = "0.1.0" }
-move-vm-types = { path = "../types", version = "0.1.0" }
-vm = { path = "../../vm", version = "0.1.0" }
-
-[dev-dependencies]
-anyhow = "1.0.34"
-hex = "0.4.2"
-proptest = "0.10.1"
+bytecode-verifier = { path = "../../bytecode-verifier", default-features = false }
+libra-crypto = { path = "../../../crypto/crypto", default-features = false }
+move-core-types = { path = "../../move-core/types", default-features = false }
+move-vm-natives = { path = "../natives", default-features = false }
+move-vm-types = { path = "../types", default-features = false }
+vm = { path = "../../vm", default-features = false }
 
 [features]
-default = []
+default = ["std"]
 debug_module = ["move-vm-natives/debug_module"]
-failpoints = ["fail/failpoints"]
+
+std = [
+	"once_cell/std",
+	"anyhow/std",
+	"sp-std/std",
+	"vm/std",
+	"move-core-types/std",
+	"move-vm-types/std",
+	"move-vm-natives/std",
+	"bytecode-verifier/std",
+	"libra-crypto/std",
+]

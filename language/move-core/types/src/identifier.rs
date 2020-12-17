@@ -26,7 +26,7 @@
 //! * specify keys for lookups in storage
 //! * do cross-module lookups while executing transactions
 
-use anyhow::{bail, Result};
+use anyhow::{bail, Error, Result};
 
 use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
@@ -98,7 +98,7 @@ impl Identifier {
 
     /// Converts a vector of bytes to an `Identifier`.
     pub fn from_utf8(vec: Vec<u8>) -> Result<Self> {
-        let s = String::from_utf8(vec)?;
+        let s = String::from_utf8(vec).map_err(Error::msg)?;
         Self::new(s)
     }
 

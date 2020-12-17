@@ -5,13 +5,16 @@
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
-#![no_std]
+#![cfg_attr(not(feature = "std"), no_std)]
 
 extern crate proc_macro;
-
 use proc_macro2::{Ident, Span, TokenStream};
+
+extern crate alloc;
+use alloc::vec::Vec;
+
 use quote::quote;
-use sp_std::prelude::Vec;
+// use sp_std::prelude::Vec;
 use syn::{
     parse_macro_input, spanned::Spanned, Attribute, Data, DeriveInput, Error, Lit, Meta,
     MetaNameValue, Result,
@@ -39,10 +42,10 @@ fn derive_num_variants_impl(input: DeriveInput) -> Result<TokenStream> {
     let num_variants = compute_num_variants(&input.data, input_span)?;
 
     let expanded = quote! {
-        impl #impl_generics #name #ty_generics #where_clause {
-            /// The number of variants in this enum.
-            pub const #const_name: usize = #num_variants;
-        }
+         impl #impl_generics #name #ty_generics #where_clause {
+              /// The number of variants in this enum.
+              pub const #const_name: usize = #num_variants;
+         }
     };
 
     Ok(expanded)

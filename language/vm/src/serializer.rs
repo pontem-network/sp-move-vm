@@ -10,6 +10,7 @@
 use crate::{file_format::*, file_format_common::*};
 use alloc::vec::Vec;
 use anyhow::{bail, Result};
+use mirai_annotations::*;
 use move_core_types::{account_address::AccountAddress, identifier::Identifier};
 
 impl CompiledScript {

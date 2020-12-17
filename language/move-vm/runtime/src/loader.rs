@@ -14,6 +14,7 @@ use alloc::boxed::Box;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use hashbrown::HashMap;
+use mirai_annotations::assume;
 use move_core_types::{
     identifier::{IdentStr, Identifier},
     language_storage::{ModuleId, StructTag, TypeTag},
@@ -24,6 +25,7 @@ use move_vm_types::{
     data_store::DataStore,
     loaded_data::runtime_types::{StructType, Type},
 };
+use sp_std::cell::RefCell;
 use sp_std::{fmt::Debug, hash::Hash, sync::Arc};
 use vm::{
     access::{ModuleAccess, ScriptAccess},
@@ -36,7 +38,6 @@ use vm::{
     },
     IndexKind,
 };
-use sp_std::cell::RefCell;
 
 // A simple cache that offers both a HashMap and a Vector lookup.
 // Values are forced into a `Arc` so they can be used from multiple thread.
@@ -1594,12 +1595,14 @@ impl Function {
     pub(crate) fn pretty_string(&self) -> String {
         match &self.scope {
             Scope::Script(_) => "Script::main".into(),
-            Scope::Module(id) => format!(
-                "0x{}::{}::{}",
-                id.address(),
-                id.name().as_str(),
-                self.name.as_str()
-            ),
+            Scope::Module(id) => {
+                format!(
+                    "0x{}::{}::{}",
+                    id.address(),
+                    id.name().as_str(),
+                    self.name.as_str()
+                )
+            }
         }
     }
 

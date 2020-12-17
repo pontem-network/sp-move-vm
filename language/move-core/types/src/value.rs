@@ -4,7 +4,7 @@
 use crate::account_address::AccountAddress;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
-use anyhow::Result as AResult;
+use anyhow::{Error, Result as AResult};
 use serde::{
     de::Error as DeError,
     ser::{SerializeSeq, SerializeTuple},
@@ -97,7 +97,7 @@ impl MoveKindInfo {
 
 impl MoveValue {
     pub fn simple_deserialize(blob: &[u8], ty: &MoveTypeLayout) -> AResult<Self> {
-        Ok(lcs::from_bytes_seed(ty, blob)?)
+        Ok(lcs::from_bytes_seed(ty, blob).map_err(Error::msg)?)
     }
 
     pub fn simple_serialize(&self) -> Option<Vec<u8>> {
@@ -115,7 +115,7 @@ impl MoveStruct {
     }
 
     pub fn simple_deserialize(blob: &[u8], ty: &MoveStructLayout) -> AResult<Self> {
-        Ok(lcs::from_bytes_seed(ty, blob)?)
+        Ok(lcs::from_bytes_seed(ty, blob).map_err(Error::msg)?)
     }
 
     pub fn fields(&self) -> &[MoveValue] {

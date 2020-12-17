@@ -103,7 +103,10 @@ use alloc::string::String;
 use anyhow::{ensure, Error, Result};
 use bytes::Bytes;
 use mirai_annotations::*;
-use once_cell::sync::{Lazy, OnceCell};
+#[cfg(not(feature = "std"))]
+use once_cell::race::OnceBox;
+#[cfg(feature = "std")]
+use once_cell::sync::OnceCell;
 use short_hex_str::ShortHexStr;
 use sp_std::prelude::Vec;
 use sp_std::{self, convert::AsRef, fmt, str::FromStr};
@@ -172,6 +175,7 @@ impl HashValue {
         HashValue::from_keccak(sha3)
     }
 
+    #[cfg(feature = "std")]
     #[cfg(test)]
     pub fn from_iter_sha3<'a, I>(buffers: I) -> Self
     where
@@ -244,7 +248,8 @@ impl HashValue {
 
     /// Parse a given hex string to a hash value.
     pub fn from_hex(hex_str: &str) -> Result<Self> {
-        Self::from_slice(hex::decode(hex_str)?.as_slice())
+        //   Self::from_slice(hex::decode(hex_str)?.as_slice())
+        Self::from_slice(hex::decode(hex_str).map_err(anyhow::Error::msg)?.as_slice())
     }
 }
 
@@ -457,19 +462,42 @@ macro_rules! define_hasher {
             }
         }
 
-        static $hasher_name: Lazy<$hasher_type> = Lazy::new(|| { $hasher_type::new() });
-        static $seed_name: OnceCell<[u8; 32]> = OnceCell::new();
+        #[cfg(feature = "std")]
+        static $hasher_name: OnceCell<$hasher_type> = OnceCell::new();
+        #[cfg(not(feature = "std"))]
+        static $hasher_name: OnceBox<$hasher_type> = OnceBox::new();
 
+        #[cfg(feature = "std")]
+        static $seed_name: OnceCell<[u8; 32]> = OnceCell::new();
+        #[cfg(not(feature = "std"))]
+        static $seed_name: OnceBox<[u8; 32]> = OnceBox::new();
+
+        #[cfg(feature = "std")]
         impl Default for $hasher_type {
             fn default() -> Self {
-                $hasher_name.clone()
+                $hasher_name.get_or_init(|| $hasher_type::new()).clone()
+            }
+        }
+
+        #[cfg(not(feature = "std"))]
+        impl Default for $hasher_type {
+            fn default() -> Self {
+                $hasher_name.get_or_init(|| alloc::boxed::Box::new($hasher_type::new())).clone()
             }
         }
 
         impl CryptoHasher for $hasher_type {
+            #[cfg(feature = "std")]
             fn seed() -> &'static [u8;32] {
                 $seed_name.get_or_init(|| {
                     DefaultHasher::prefixed_hash($salt)
+                })
+            }
+
+            #[cfg(not(feature = "std"))]
+            fn seed() -> &'static [u8;32] {
+                $seed_name.get_or_init(|| {
+                    alloc::boxed::Box::new(DefaultHasher::prefixed_hash($salt))
                 })
             }
 
@@ -485,48 +513,48 @@ macro_rules! define_hasher {
 }
 
 define_hasher! {
-    /// The hasher used to compute the hash of an internal node in the transaction accumulator.
-    (
-        TransactionAccumulatorHasher,
-        TRANSACTION_ACCUMULATOR_HASHER,
-        TRANSACTION_ACCUMULATOR_SEED,
-        b"TransactionAccumulator"
-    )
+     /// The hasher used to compute the hash of an internal node in the transaction accumulator.
+     (
+          TransactionAccumulatorHasher,
+          TRANSACTION_ACCUMULATOR_HASHER,
+          TRANSACTION_ACCUMULATOR_SEED,
+          b"TransactionAccumulator"
+     )
 }
 
 define_hasher! {
-    /// The hasher used to compute the hash of an internal node in the event accumulator.
-    (
-        EventAccumulatorHasher,
-        EVENT_ACCUMULATOR_HASHER,
-        EVENT_ACCUMULATOR_SEED,
-        b"EventAccumulator"
-    )
+     /// The hasher used to compute the hash of an internal node in the event accumulator.
+     (
+          EventAccumulatorHasher,
+          EVENT_ACCUMULATOR_HASHER,
+          EVENT_ACCUMULATOR_SEED,
+          b"EventAccumulator"
+     )
 }
 
 define_hasher! {
-    /// The hasher used to compute the hash of an internal node in the Sparse Merkle Tree.
-    (
-        SparseMerkleInternalHasher,
-        SPARSE_MERKLE_INTERNAL_HASHER,
-        SPARSE_MERKLE_INTERNAL_SEED,
-        b"SparseMerkleInternal"
-    )
+     /// The hasher used to compute the hash of an internal node in the Sparse Merkle Tree.
+     (
+          SparseMerkleInternalHasher,
+          SPARSE_MERKLE_INTERNAL_HASHER,
+          SPARSE_MERKLE_INTERNAL_SEED,
+          b"SparseMerkleInternal"
+     )
 }
 
 define_hasher! {
-    /// The hasher used to compute the hash of an internal node in the transaction accumulator.
-    (
-        VoteProposalHasher,
-        VOTE_PROPOSAL_HASHER,
-        VOTE_PROPOSAL_SEED,
-        b"VoteProposalHasher"
-    )
+     /// The hasher used to compute the hash of an internal node in the transaction accumulator.
+     (
+          VoteProposalHasher,
+          VOTE_PROPOSAL_HASHER,
+          VOTE_PROPOSAL_SEED,
+          b"VoteProposalHasher"
+     )
 }
 
 define_hasher! {
-    /// The hasher used only for testing. It doesn't have a salt.
-    (TestOnlyHasher, TEST_ONLY_HASHER, TEST_ONLY_SEED, b"")
+     /// The hasher used only for testing. It doesn't have a salt.
+     (TestOnlyHasher, TEST_ONLY_HASHER, TEST_ONLY_SEED, b"")
 }
 
 fn create_literal_hash(word: &str) -> HashValue {
@@ -536,25 +564,54 @@ fn create_literal_hash(word: &str) -> HashValue {
     HashValue::from_slice(&s).expect("Cannot fail")
 }
 
-/// Placeholder hash of `Accumulator`.
-pub static ACCUMULATOR_PLACEHOLDER_HASH: Lazy<HashValue> =
-    Lazy::new(|| create_literal_hash("ACCUMULATOR_PLACEHOLDER_HASH"));
+macro_rules! define_hash {
+    (
+        $(#[$attr:meta])*
+        ($hash_name: ident, $fn_name: ident, $salt: expr)
+    ) => {
+        #[cfg(feature = "std")]
+        static $hash_name: OnceCell<HashValue> = OnceCell::new();
 
-/// Placeholder hash of `SparseMerkleTree`.
-pub static SPARSE_MERKLE_PLACEHOLDER_HASH: Lazy<HashValue> =
-    Lazy::new(|| create_literal_hash("SPARSE_MERKLE_PLACEHOLDER_HASH"));
+        #[cfg(not(feature = "std"))]
+        static $hash_name: OnceBox<HashValue> = OnceBox::new();
 
-/// Block id reserved as the id of parent block of the genesis block.
-pub static PRE_GENESIS_BLOCK_ID: Lazy<HashValue> =
-    Lazy::new(|| create_literal_hash("PRE_GENESIS_BLOCK_ID"));
+        #[cfg(feature = "std")]
+        $(#[$attr])*
+        pub fn $fn_name() -> &'static HashValue {
+            $hash_name.get_or_init(|| create_literal_hash($salt))
+        }
 
-/// Genesis block id is used as a parent of the very first block executed by the executor.
-pub static GENESIS_BLOCK_ID: Lazy<HashValue> = Lazy::new(|| {
-    // This maintains the invariant that block.id() == block.hash(), for
-    // the genesis block and allows us to (de/)serialize it consistently
-    HashValue::new([
-        0x5e, 0x10, 0xba, 0xd4, 0x5b, 0x35, 0xed, 0x92, 0x9c, 0xd6, 0xd2, 0xc7, 0x09, 0x8b, 0x13,
-        0x5d, 0x02, 0xdd, 0x25, 0x9a, 0xe8, 0x8a, 0x8d, 0x09, 0xf4, 0xeb, 0x5f, 0xba, 0xe9, 0xa6,
-        0xf6, 0xe4,
-    ])
-});
+        #[cfg(not(feature = "std"))]
+        $(#[$attr])*
+        pub fn $fn_name() -> &'static HashValue {
+            $hash_name.get_or_init(|| alloc::boxed::Box::new(create_literal_hash($salt)))
+        }
+    };
+}
+
+define_hash! {
+    /// Placeholder hash of `Accumulator`.
+    (
+        ACCUMULATOR_PLACEHOLDER_HASH,
+        accumulator_placeholder_hash,
+        "ACCUMULATOR_PLACEHOLDER_HASH"
+    )
+}
+
+define_hash! {
+    /// Placeholder hash of `SparseMerkleTree`.
+    (
+        SPARSE_MERKLE_PLACEHOLDER_HASH,
+        sparse_merkle_placeholder_hash,
+        "SPARSE_MERKLE_PLACEHOLDER_HASH"
+    )
+}
+
+define_hash! {
+    /// Block id reserved as the id of parent block of the genesis block.
+    (
+        PRE_GENESIS_BLOCK_ID,
+        pre_genesis_block_id,
+        "PRE_GENESIS_BLOCK_ID"
+    )
+}

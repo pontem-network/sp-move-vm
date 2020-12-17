@@ -1,10 +1,10 @@
-use anyhow::*;
-use sp_std::fmt;
 use alloc::vec::Vec;
-use vm::errors::VMError;
-use move_vm_types::values::Value;
+use anyhow::*;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::language_storage::TypeTag;
+use move_vm_types::values::Value;
+use sp_std::fmt;
+use vm::errors::VMError;
 
 /// Result enum for ExecutionResult
 pub type VmResult = Result<(), VMError>;
