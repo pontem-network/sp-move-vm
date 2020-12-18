@@ -30,11 +30,13 @@ impl<S> Vm for Dvm<S>
 where
     S: Storage,
 {
-    fn publish_module(&mut self, gas: Gas, module: ModuleTx) -> VmResult {
+    fn publish_module(&self, gas: Gas, module: ModuleTx) -> VmResult {
+
         Ok(())
     }
 
-    fn execute_script(&mut self, gas: Gas, tx: ScriptTx) -> VmResult {
+    fn execute_script(&self, gas: Gas, tx: ScriptTx) -> VmResult {
+
         Ok(())
     }
 
