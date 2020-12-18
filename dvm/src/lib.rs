@@ -3,11 +3,11 @@
 #[macro_use]
 extern crate alloc;
 
+pub mod access_path;
+pub mod data;
 pub mod dvm;
 pub mod gas_schedule;
 pub mod types;
-pub mod data;
-pub mod access_path;
 
 use crate::types::{Gas, ModuleTx, ScriptTx, VmResult};
 
