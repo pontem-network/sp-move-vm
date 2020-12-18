@@ -15,6 +15,11 @@ pub trait Storage {
     fn remove(&self, key: &[u8]);
 }
 
+pub trait WriteEffects {
+    fn delete(&self, path: AccessPath);
+    fn insert(&self, path: AccessPath, blob: Vec<u8>);
+}
+
 pub struct State<S> {
     store: S,
 }
@@ -51,5 +56,24 @@ where
     ) -> PartialVMResult<Option<Vec<u8>>> {
         let path = AccessPath::resource_access_path(&ResourceKey::new(*address, tag.to_owned()));
         Ok(self.get_by_path(path))
+    }
+}
+
+impl<S> WriteEffects for State<S>
+where
+    S: Storage,
+{
+    fn delete(&self, path: AccessPath) {
+        let mut key = Vec::with_capacity(AccountAddress::LENGTH + path.path.len());
+        key.extend_from_slice(&path.address.to_u8());
+        key.extend_from_slice(&path.path);
+        self.store.remove(&key);
+    }
+
+    fn insert(&self, path: AccessPath, blob: Vec<u8>) {
+        let mut key = Vec::with_capacity(AccountAddress::LENGTH + path.path.len());
+        key.extend_from_slice(&path.address.to_u8());
+        key.extend_from_slice(&path.path);
+        self.store.insert(&key, &blob);
     }
 }

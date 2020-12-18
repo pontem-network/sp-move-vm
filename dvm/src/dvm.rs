@@ -1,19 +1,20 @@
-use crate::data::{State, Storage};
+use crate::access_path::AccessPath;
+use crate::data::{State, Storage, WriteEffects};
 use crate::types::{Gas, ModuleTx, ScriptTx, VmResult};
 use crate::{gas_schedule, Vm};
 use move_core_types::gas_schedule::CostTable;
+use move_core_types::gas_schedule::{AbstractMemorySize, GasAlgebra, GasUnits};
+use move_core_types::vm_status::StatusCode;
+use move_vm_runtime::data_cache::TransactionEffects;
+use move_vm_runtime::logging::NoContextLog;
 use move_vm_runtime::move_vm::MoveVM;
 use move_vm_types::gas_schedule::CostStrategy;
-use move_core_types::gas_schedule::{GasUnits, AbstractMemorySize, GasAlgebra};
-use vm::CompiledModule;
 use vm::errors::{Location, PartialVMError};
-use move_core_types::vm_status::StatusCode;
-use move_core_types::language_storage::CORE_CODE_ADDRESS;
-use move_vm_runtime::logging::NoContextLog;
+use vm::CompiledModule;
 
 pub struct Dvm<S>
-    where
-        S: Storage,
+where
+    S: Storage,
 {
     vm: MoveVM,
     cost_table: CostTable,
@@ -21,8 +22,8 @@ pub struct Dvm<S>
 }
 
 impl<S> Dvm<S>
-    where
-        S: Storage,
+where
+    S: Storage,
 {
     pub fn new(store: S) -> Dvm<S> {
         Dvm {
@@ -31,11 +32,32 @@ impl<S> Dvm<S>
             state: State::new(store),
         }
     }
+
+    pub fn store_tx_effects(&self, tx_effects: TransactionEffects) -> VmResult {
+        for (addr, vals) in tx_effects.resources {
+            for (struct_tag, val_opt) in vals {
+                let ap = AccessPath::new(addr, struct_tag.access_vector());
+                match val_opt {
+                    None => {
+                        self.state.delete(ap);
+                    }
+                    Some((ty_layout, val)) => {
+                        let blob = val.simple_serialize(&ty_layout).ok_or_else(|| {
+                            PartialVMError::new(StatusCode::UNKNOWN_INVARIANT_VIOLATION_ERROR)
+                                .finish(Location::Undefined)
+                        })?;
+                        self.state.insert(ap, blob);
+                    }
+                };
+            }
+        }
+        Ok(())
+    }
 }
 
 impl<S> Vm for Dvm<S>
-    where
-        S: Storage,
+where
+    S: Storage,
 {
     fn publish_module(&self, gas: Gas, module: ModuleTx) -> VmResult {
         let (module, sender) = module.into_inner();
@@ -43,10 +65,9 @@ impl<S> Vm for Dvm<S>
         let mut cost_strategy =
             CostStrategy::transaction(&self.cost_table, GasUnits::new(gas.max_gas_amount()));
 
-        cost_strategy
-            .charge_intrinsic_gas(AbstractMemorySize::new(module.len() as u64))?;
+        cost_strategy.charge_intrinsic_gas(AbstractMemorySize::new(module.len() as u64))?;
 
-        let res = CompiledModule::deserialize(&module)
+        let tx_effects = CompiledModule::deserialize(&module)
             .map_err(|e| e.finish(Location::Undefined))
             .and_then(|compiled_module| {
                 let module_id = compiled_module.self_id();
@@ -54,7 +75,7 @@ impl<S> Vm for Dvm<S>
                     return Err(PartialVMError::new(
                         StatusCode::MODULE_ADDRESS_DOES_NOT_MATCH_SENDER,
                     )
-                        .finish(Location::Module(module_id)));
+                    .finish(Location::Module(module_id)));
                 }
 
                 cost_strategy.charge_intrinsic_gas(AbstractMemorySize::new(module.len() as u64))?;
@@ -70,8 +91,7 @@ impl<S> Vm for Dvm<S>
                     .and_then(|_| session.finish())
             })?;
 
-        // todo save effects.
-        Ok(())
+        self.store_tx_effects(tx_effects)
     }
 
     fn execute_script(&self, gas: Gas, tx: ScriptTx) -> VmResult {
@@ -81,7 +101,7 @@ impl<S> Vm for Dvm<S>
         let mut cost_strategy =
             CostStrategy::transaction(&self.cost_table, GasUnits::new(gas.max_gas_amount()));
 
-        let res = session
+        let tx_effects = session
             .execute_script(
                 script,
                 type_args,
@@ -92,8 +112,7 @@ impl<S> Vm for Dvm<S>
             )
             .and_then(|_| session.finish())?;
 
-        // todo save effects.
-        Ok(())
+        self.store_tx_effects(tx_effects)
     }
 
     fn clear(&mut self) {
