@@ -9,6 +9,8 @@ use libra_crypto::{
     HashValue,
 };
 use libra_crypto_derive::CryptoHasher;
+#[cfg(any(test, feature = "fuzzing"))]
+use proptest_derive::Arbitrary;
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize, Serializer};
 use short_hex_str::ShortHexStr;
 use sp_std::{convert::TryFrom, fmt, str::FromStr};
