@@ -533,7 +533,9 @@ version = "0.1.0"
 dependencies = [
  "alt_serde",
  "anyhow",
+ "hashbrown 0.9.1",
  "hex",
+ "libra-canonical-serialization",
  "libra-crypto",
  "move-core-types",
  "move-vm-runtime",

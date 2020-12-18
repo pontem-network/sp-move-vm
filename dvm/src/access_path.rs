@@ -65,7 +65,7 @@ impl AccessPath {
     pub fn resource_access_path(key: &ResourceKey) -> AccessPath {
         let path = AccessPath::resource_access_vec(&key.type_());
         AccessPath {
-            address: key.address().clone(),
+            address: key.address(),
             path,
         }
     }

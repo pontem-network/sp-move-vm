@@ -83,6 +83,7 @@ pub(crate) struct TransactionDataCache<'r, 'l, R> {
 /// Collection of side effects produced by a Session.
 ///
 /// The Move VM MUST guarantee that no duplicate entries exist.
+#[derive(Debug)]
 pub struct TransactionEffects {
     pub resources: Vec<(
         AccountAddress,

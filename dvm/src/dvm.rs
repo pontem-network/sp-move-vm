@@ -33,7 +33,7 @@ where
         }
     }
 
-    pub fn store_tx_effects(&self, tx_effects: TransactionEffects) -> VmResult {
+    fn store_tx_effects(&self, tx_effects: TransactionEffects) -> VmResult {
         for (addr, vals) in tx_effects.resources {
             for (struct_tag, val_opt) in vals {
                 let ap = AccessPath::new(addr, struct_tag.access_vector());
@@ -50,6 +50,13 @@ where
                     }
                 };
             }
+        }
+
+        for (module_id, blob) in tx_effects.modules {
+            self.state.insert(
+                AccessPath::new(*module_id.address(), module_id.access_vector()),
+                blob,
+            );
         }
         Ok(())
     }
