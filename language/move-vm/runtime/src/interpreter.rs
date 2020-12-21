@@ -529,6 +529,7 @@ impl<L: LogContext> Interpreter<L> {
     /// It is used when generating a core dump but can be used for debugging of the interpreter.
     /// It will be exposed via a debug module to give developers a way to print the internals
     /// of an execution.
+    #[allow(dead_code)]
     fn get_internal_state(&self, current_frame: &Frame) -> String {
         let mut internal_state = "Call stack:\n".to_string();
         for (i, frame) in self.call_stack.0.iter().enumerate() {

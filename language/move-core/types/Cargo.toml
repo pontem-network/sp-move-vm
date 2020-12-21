@@ -19,7 +19,7 @@ serde = { version = "1", default-features = false, package = "alt_serde", featur
 static_assertions = "1.1.0"
 once_cell = { version = "1.5.2", default-features = false, features = ["unstable", "alloc"] }
 lcs = { path = "../../../lcs", package = "libra-canonical-serialization", default-features = false }
-libra-crypto = { path = "../../../crypto/crypto", version = "0.1.0", default-features = false }
+libra-crypto = { path = "../../../crypto/crypto", default-features = false }
 libra-crypto-derive = { path = "../../../crypto/crypto-derive", default-features = false }
 short-hex-str = { path = "../../../common/short-hex-str", default-features = false }
 
