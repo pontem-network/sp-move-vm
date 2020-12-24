@@ -1,0 +1,59 @@
+name: Tests
+on:
+  pull_request:
+  push:
+    branches:
+    - master
+    - release-*
+
+jobs:
+  build:
+    name: Tests
+    runs-on: ${{ matrix.os }}
+
+    defaults:
+      run:
+        shell: bash
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+        - macos-latest
+        - ubuntu-latest
+        rust:
+        # - "1.45.2"
+        - "stable"
+        # - "nightly"
+
+    env:
+      RUSTFLAGS: -D warnings
+      RUST_BACKTRACE: full
+      CARGO_INCREMENTAL: 1
+      RUSTUP_MAX_RETRIES: 10
+      CARGO_NET_RETRY: 10
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Rust Toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: ${{ matrix.rust }}
+        profile: minimal
+        override: true
+        components: rustfmt, clippy
+
+    - name: fix permissions
+      if: matrix.os == 'ubuntu-latest'
+      run: sudo chown -R $(whoami):$(id -ng) ~/.cargo/
+
+    - name: Tests
+      run: cargo test --package dvm --tests --no-fail-fast -- --test-threads=4 --nocapture
+
+    - name: Code-style
+      run: cargo fmt -- --check
+
+    - name: Clippy
+      run: cargo clippy --tests --examples -- -Dwarnings
