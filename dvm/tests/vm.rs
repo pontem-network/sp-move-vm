@@ -51,14 +51,14 @@ fn gas() -> Gas {
 
 fn store_module() -> ModuleTx {
     ModuleTx::new(
-        include_bytes!("assets/Store.mv").to_vec(),
+        include_bytes!("assets/target/modules/0_Store.mv").to_vec(),
         CORE_CODE_ADDRESS,
     )
 }
 
 fn script(args: u64) -> ScriptTx {
     ScriptTx::new(
-        include_bytes!("assets/Script.mv").to_vec(),
+        include_bytes!("assets/target/scripts/0_main.mv").to_vec(),
         vec![Value::u64(args)],
         vec![],
         vec![CORE_CODE_ADDRESS],
@@ -80,7 +80,7 @@ fn test_public_module() {
     let store_module_id = ModuleId::new(CORE_CODE_ADDRESS, Identifier::new("Store").unwrap());
     assert_eq!(
         state.get_module(&store_module_id).unwrap().unwrap(),
-        include_bytes!("assets/Store.mv").to_vec()
+        include_bytes!("assets/target/modules/0_Store.mv").to_vec()
     );
 }
 

@@ -2,6 +2,7 @@
 
 #[macro_use]
 extern crate alloc;
+extern crate sp_io;
 
 pub mod access_path;
 pub mod data;
