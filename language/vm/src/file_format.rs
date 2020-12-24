@@ -1925,6 +1925,7 @@ pub fn basic_test_module() -> CompiledModuleMut {
 }
 
 /// Create a dummy module to wrap the bytecode program in local@code
+#[allow(clippy::field_reassign_with_default)]
 pub fn dummy_procedure_module(code: Vec<Bytecode>) -> CompiledModule {
     let mut module = empty_module();
     let mut code_unit = CodeUnit::default();

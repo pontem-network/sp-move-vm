@@ -92,6 +92,7 @@ impl ScriptCache {
         self.scripts.get(hash).map(|script| script.entry_point())
     }
 
+    #[allow(clippy::unnecessary_wraps)]
     fn insert(&mut self, hash: HashValue, script: Script) -> PartialVMResult<Arc<Function>> {
         match self.get(&hash) {
             Some(script) => Ok(script),
@@ -998,6 +999,7 @@ impl<'a> Resolver<'a> {
         Ok(instantiation)
     }
 
+    #[allow(clippy::unnecessary_wraps)]
     pub(crate) fn type_params_count(
         &self,
         idx: FunctionInstantiationIndex,

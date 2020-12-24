@@ -289,6 +289,7 @@ impl<'r, 'l, C: RemoteCache> DataStore for TransactionDataCache<'r, 'l, C> {
         Ok(self.remote.get_module(module_id)?.is_some())
     }
 
+    #[allow(clippy::unit_arg)]
     fn emit_event(
         &mut self,
         guid: Vec<u8>,

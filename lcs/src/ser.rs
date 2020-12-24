@@ -81,6 +81,7 @@ impl<'a> Serializer<'a> {
         }
     }
 
+    #[allow(clippy::unnecessary_wraps)]
     fn output_u32_as_uleb128(&mut self, mut value: u32) -> Result<()> {
         while value >= 0x80 {
             // Write 7 (lowest) bits of data and set the 8th bit to 1.

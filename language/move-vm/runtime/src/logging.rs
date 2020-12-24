@@ -27,3 +27,9 @@ impl NoContextLog {
 impl LogContext for NoContextLog {
     fn alert(&self) {}
 }
+
+impl Default for NoContextLog {
+    fn default() -> Self {
+        NoContextLog::new()
+    }
+}

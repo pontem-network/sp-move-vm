@@ -252,6 +252,7 @@ fn load_local_index(cursor: &mut Cursor<&[u8]>) -> BinaryLoaderResult<u8> {
 }
 
 /// Module internal function that manages deserialization of transactions.
+#[allow(clippy::field_reassign_with_default)]
 fn deserialize_compiled_script(binary: &[u8]) -> BinaryLoaderResult<CompiledScriptMut> {
     let binary_len = binary.len();
     let mut cursor = Cursor::new(binary);
@@ -274,6 +275,7 @@ fn deserialize_compiled_script(binary: &[u8]) -> BinaryLoaderResult<CompiledScri
 }
 
 /// Module internal function that manages deserialization of modules.
+#[allow(clippy::field_reassign_with_default)]
 fn deserialize_compiled_module(binary: &[u8]) -> BinaryLoaderResult<CompiledModuleMut> {
     let binary_len = binary.len();
     let mut cursor = Cursor::new(binary);
