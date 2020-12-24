@@ -1,5 +1,5 @@
 use crate::access_path::AccessPath;
-use crate::data::{State, Storage, WriteEffects};
+use crate::data::{EventHandler, State, Storage, WriteEffects};
 use crate::types::{Gas, ModuleTx, ScriptTx, VmResult};
 use crate::{gas_schedule, Vm};
 use move_core_types::gas_schedule::CostTable;
@@ -12,24 +12,28 @@ use move_vm_types::gas_schedule::CostStrategy;
 use vm::errors::{Location, PartialVMError};
 use vm::CompiledModule;
 
-pub struct Dvm<S>
+pub struct Dvm<S, E>
 where
     S: Storage,
+    E: EventHandler,
 {
     vm: MoveVM,
     cost_table: CostTable,
     state: State<S>,
+    event_handler: E,
 }
 
-impl<S> Dvm<S>
+impl<S, E> Dvm<S, E>
 where
     S: Storage,
+    E: EventHandler,
 {
-    pub fn new(store: S) -> Dvm<S> {
+    pub fn new(store: S, event_handler: E) -> Dvm<S, E> {
         Dvm {
             vm: MoveVM::new(),
             cost_table: gas_schedule::cost_table(),
             state: State::new(store),
+            event_handler,
         }
     }
 
@@ -58,13 +62,23 @@ where
                 blob,
             );
         }
+
+        for (guid, seq_num, ty_tag, ty_layout, val) in tx_effects.events {
+            let msg = val.simple_serialize(&ty_layout).ok_or_else(|| {
+                PartialVMError::new(StatusCode::UNKNOWN_INVARIANT_VIOLATION_ERROR)
+                    .finish(Location::Undefined)
+            })?;
+            self.event_handler.on_event(guid, seq_num, ty_tag, msg);
+        }
+
         Ok(())
     }
 }
 
-impl<S> Vm for Dvm<S>
+impl<S, E> Vm for Dvm<S, E>
 where
     S: Storage,
+    E: EventHandler,
 {
     fn publish_module(&self, gas: Gas, module: ModuleTx) -> VmResult {
         let (module, sender) = module.into_inner();

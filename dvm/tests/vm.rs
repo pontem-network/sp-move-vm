@@ -5,30 +5,30 @@ use serde::Deserialize;
 
 use alloc::rc::Rc;
 use core::cell::RefCell;
-use dvm::data::{State, Storage};
+use dvm::data::{EventHandler, State, Storage};
 use dvm::dvm::Dvm;
 use dvm::types::{Gas, ModuleTx, ScriptTx};
 use dvm::Vm;
 use hashbrown::HashMap;
 use move_core_types::identifier::Identifier;
-use move_core_types::language_storage::{ModuleId, StructTag, CORE_CODE_ADDRESS};
+use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS};
 use move_vm_runtime::data_cache::RemoteCache;
 use move_vm_types::values::Value;
 
 #[derive(Clone)]
-pub struct Mock {
+pub struct StorageMock {
     pub data: Rc<RefCell<HashMap<Vec<u8>, Vec<u8>>>>,
 }
 
-impl Mock {
-    pub fn new() -> Mock {
-        Mock {
+impl StorageMock {
+    pub fn new() -> StorageMock {
+        StorageMock {
             data: Rc::new(RefCell::new(Default::default())),
         }
     }
 }
 
-impl Storage for Mock {
+impl Storage for StorageMock {
     fn get(&self, key: &[u8]) -> Option<Vec<u8>> {
         let data = self.data.borrow();
         data.get(key).map(|blob| blob.to_owned())
@@ -42,6 +42,18 @@ impl Storage for Mock {
     fn remove(&self, key: &[u8]) {
         let mut data = self.data.borrow_mut();
         data.remove(key);
+    }
+}
+
+#[derive(Clone, Default)]
+pub struct EventHandlerMock {
+    pub data: Rc<RefCell<Vec<(Vec<u8>, u64, TypeTag, Vec<u8>)>>>,
+}
+
+impl EventHandler for EventHandlerMock {
+    fn on_event(&self, guid: Vec<u8>, seq_num: u64, ty_tag: TypeTag, message: Vec<u8>) {
+        let mut data = self.data.borrow_mut();
+        data.push((guid, seq_num, ty_tag, message));
     }
 }
 
@@ -73,8 +85,8 @@ struct StoreU64 {
 
 #[test]
 fn test_public_module() {
-    let mock = Mock::new();
-    let vm = Dvm::new(mock.clone());
+    let mock = StorageMock::new();
+    let vm = Dvm::new(mock.clone(), EventHandlerMock::default());
     let state = State::new(mock.clone());
     vm.publish_module(gas(), store_module()).unwrap();
     let store_module_id = ModuleId::new(CORE_CODE_ADDRESS, Identifier::new("Store").unwrap());
@@ -87,8 +99,9 @@ fn test_public_module() {
 #[test]
 fn test_execute_script() {
     let test_value = 13;
-    let mock = Mock::new();
-    let vm = Dvm::new(mock.clone());
+    let mock = StorageMock::new();
+    let event_handler = EventHandlerMock::default();
+    let vm = Dvm::new(mock.clone(), event_handler.clone());
     let state = State::new(mock.clone());
     vm.publish_module(gas(), store_module()).unwrap();
     vm.execute_script(gas(), script(test_value)).unwrap();
