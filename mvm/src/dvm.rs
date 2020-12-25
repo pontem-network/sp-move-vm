@@ -12,7 +12,8 @@ use move_vm_types::gas_schedule::CostStrategy;
 use vm::errors::{Location, PartialVMError};
 use vm::CompiledModule;
 
-pub struct Dvm<S, E>
+/// MoveVM.
+pub struct Mvm<S, E>
 where
     S: Storage,
     E: EventHandler,
@@ -23,13 +24,14 @@ where
     event_handler: E,
 }
 
-impl<S, E> Dvm<S, E>
+impl<S, E> Mvm<S, E>
 where
     S: Storage,
     E: EventHandler,
 {
-    pub fn new(store: S, event_handler: E) -> Dvm<S, E> {
-        Dvm {
+    /// Creates a new move vm with given store and event handler.
+    pub fn new(store: S, event_handler: E) -> Mvm<S, E> {
+        Mvm {
             vm: MoveVM::new(),
             cost_table: gas_schedule::cost_table(),
             state: State::new(store),
@@ -37,7 +39,8 @@ where
         }
     }
 
-    fn store_tx_effects(&self, tx_effects: TransactionEffects) -> VmResult {
+    /// Stores write set into storage and handle events.
+    fn handle_tx_effects(&self, tx_effects: TransactionEffects) -> VmResult {
         for (addr, vals) in tx_effects.resources {
             for (struct_tag, val_opt) in vals {
                 let ap = AccessPath::new(addr, struct_tag.access_vector());
@@ -75,7 +78,7 @@ where
     }
 }
 
-impl<S, E> Vm for Dvm<S, E>
+impl<S, E> Vm for Mvm<S, E>
 where
     S: Storage,
     E: EventHandler,
@@ -112,7 +115,7 @@ where
                     .and_then(|_| session.finish())
             })?;
 
-        self.store_tx_effects(tx_effects)
+        self.handle_tx_effects(tx_effects)
     }
 
     fn execute_script(&self, gas: Gas, tx: ScriptTx) -> VmResult {
@@ -133,7 +136,7 @@ where
             )
             .and_then(|_| session.finish())?;
 
-        self.store_tx_effects(tx_effects)
+        self.handle_tx_effects(tx_effects)
     }
 
     fn clear(&mut self) {

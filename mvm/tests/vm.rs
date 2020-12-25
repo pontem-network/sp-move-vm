@@ -6,7 +6,7 @@ use serde::Deserialize;
 use alloc::rc::Rc;
 use core::cell::RefCell;
 use dvm::data::{EventHandler, State, Storage};
-use dvm::dvm::Dvm;
+use dvm::dvm::Mvm;
 use dvm::types::{Gas, ModuleTx, ScriptTx};
 use dvm::Vm;
 use hashbrown::HashMap;
@@ -110,7 +110,7 @@ struct StoreU64 {
 #[test]
 fn test_public_module() {
     let mock = StorageMock::new();
-    let vm = Dvm::new(mock.clone(), EventHandlerMock::default());
+    let vm = Mvm::new(mock.clone(), EventHandlerMock::default());
     let state = State::new(mock.clone());
     vm.publish_module(gas(), store_module()).unwrap();
     let store_module_id = ModuleId::new(CORE_CODE_ADDRESS, Identifier::new("Store").unwrap());
@@ -125,7 +125,7 @@ fn test_execute_script() {
     let test_value = 13;
     let mock = StorageMock::new();
     let event_handler = EventHandlerMock::default();
-    let vm = Dvm::new(mock.clone(), event_handler.clone());
+    let vm = Mvm::new(mock.clone(), event_handler.clone());
     let state = State::new(mock.clone());
     vm.publish_module(gas(), store_module()).unwrap();
     vm.execute_script(gas(), store_script(test_value)).unwrap();
@@ -149,7 +149,7 @@ fn test_store_event() {
     let test_value = 13;
     let mock = StorageMock::new();
     let event_handler = EventHandlerMock::default();
-    let vm = Dvm::new(mock, event_handler.clone());
+    let vm = Mvm::new(mock, event_handler.clone());
     vm.publish_module(gas(), vector_module()).unwrap();
     vm.publish_module(gas(), event_module()).unwrap();
     vm.execute_script(gas(), emit_event_script(test_value))
