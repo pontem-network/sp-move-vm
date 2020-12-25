@@ -5,15 +5,15 @@ use serde::Deserialize;
 
 use alloc::rc::Rc;
 use core::cell::RefCell;
-use mvm::data::{EventHandler, State, Storage};
-use mvm::dvm::Mvm;
-use mvm::types::{Gas, ModuleTx, ScriptTx};
-use mvm::Vm;
 use hashbrown::HashMap;
 use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS};
 use move_vm_runtime::data_cache::RemoteCache;
 use move_vm_types::values::Value;
+use mvm::data::{EventHandler, State, Storage};
+use mvm::dvm::Mvm;
+use mvm::types::{Gas, ModuleTx, ScriptTx};
+use mvm::Vm;
 
 #[derive(Clone)]
 pub struct StorageMock {
