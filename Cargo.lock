@@ -970,6 +970,7 @@ dependencies = [
  "anyhow",
  "bytes",
  "hex",
+ "libra-canonical-serialization",
  "libra-crypto-derive",
  "mirai-annotations",
  "once_cell",
