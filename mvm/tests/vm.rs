@@ -5,10 +5,10 @@ use serde::Deserialize;
 
 use alloc::rc::Rc;
 use core::cell::RefCell;
-use dvm::data::{EventHandler, State, Storage};
-use dvm::dvm::Mvm;
-use dvm::types::{Gas, ModuleTx, ScriptTx};
-use dvm::Vm;
+use mvm::data::{EventHandler, State, Storage};
+use mvm::dvm::Mvm;
+use mvm::types::{Gas, ModuleTx, ScriptTx};
+use mvm::Vm;
 use hashbrown::HashMap;
 use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS};
