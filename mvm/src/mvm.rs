@@ -9,7 +9,7 @@ use move_vm_runtime::data_cache::TransactionEffects;
 use move_vm_runtime::logging::NoContextLog;
 use move_vm_runtime::move_vm::MoveVM;
 use move_vm_types::gas_schedule::CostStrategy;
-use vm::errors::{Location, PartialVMError};
+use vm::errors::{Location, PartialVMError, VMError};
 use vm::CompiledModule;
 
 /// MoveVM.
@@ -76,6 +76,17 @@ where
 
         Ok(())
     }
+
+    /// Handle vm result and return transaction status code.
+    fn handle_vm_result(&self, result: Result<TransactionEffects, VMError>) -> StatusCode {
+        match result.and_then(|e| self.handle_tx_effects(e)) {
+            Ok(_) => StatusCode::EXECUTED,
+            Err(err) => {
+                //todo log error.
+                err.major_status()
+            }
+        }
+    }
 }
 
 impl<S, E> Vm for Mvm<S, E>
@@ -83,49 +94,51 @@ where
     S: Storage,
     E: EventHandler,
 {
-    fn publish_module(&self, gas: Gas, module: ModuleTx) -> VmResult {
+    fn publish_module(&self, gas: Gas, module: ModuleTx) -> StatusCode {
         let (module, sender) = module.into_inner();
 
         let mut cost_strategy =
             CostStrategy::transaction(&self.cost_table, GasUnits::new(gas.max_gas_amount()));
 
-        cost_strategy.charge_intrinsic_gas(AbstractMemorySize::new(module.len() as u64))?;
+        let result = cost_strategy
+            .charge_intrinsic_gas(AbstractMemorySize::new(module.len() as u64))
+            .and_then(|_| {
+                CompiledModule::deserialize(&module)
+                    .map_err(|e| e.finish(Location::Undefined))
+                    .and_then(|compiled_module| {
+                        let module_id = compiled_module.self_id();
+                        if sender != *module_id.address() {
+                            return Err(PartialVMError::new(
+                                StatusCode::MODULE_ADDRESS_DOES_NOT_MATCH_SENDER,
+                            )
+                            .finish(Location::Module(module_id)));
+                        }
 
-        let tx_effects = CompiledModule::deserialize(&module)
-            .map_err(|e| e.finish(Location::Undefined))
-            .and_then(|compiled_module| {
-                let module_id = compiled_module.self_id();
-                if sender != *module_id.address() {
-                    return Err(PartialVMError::new(
-                        StatusCode::MODULE_ADDRESS_DOES_NOT_MATCH_SENDER,
-                    )
-                    .finish(Location::Module(module_id)));
-                }
+                        cost_strategy
+                            .charge_intrinsic_gas(AbstractMemorySize::new(module.len() as u64))?;
 
-                cost_strategy.charge_intrinsic_gas(AbstractMemorySize::new(module.len() as u64))?;
-
-                let mut session = self.vm.new_session(&self.state);
-                session
-                    .publish_module(
-                        module.to_vec(),
-                        sender,
-                        &mut cost_strategy,
-                        &NoContextLog::new(),
-                    )
-                    .and_then(|_| session.finish())
-            })?;
-
-        self.handle_tx_effects(tx_effects)
+                        let mut session = self.vm.new_session(&self.state);
+                        session
+                            .publish_module(
+                                module.to_vec(),
+                                sender,
+                                &mut cost_strategy,
+                                &NoContextLog::new(),
+                            )
+                            .and_then(|_| session.finish())
+                    })
+            });
+        self.handle_vm_result(result)
     }
 
-    fn execute_script(&self, gas: Gas, tx: ScriptTx) -> VmResult {
+    fn execute_script(&self, gas: Gas, tx: ScriptTx) -> StatusCode {
         let mut session = self.vm.new_session(&self.state);
 
         let (script, args, type_args, senders) = tx.into_inner();
         let mut cost_strategy =
             CostStrategy::transaction(&self.cost_table, GasUnits::new(gas.max_gas_amount()));
 
-        let tx_effects = session
+        let result = session
             .execute_script(
                 script,
                 type_args,
@@ -134,9 +147,9 @@ where
                 &mut cost_strategy,
                 &NoContextLog::new(),
             )
-            .and_then(|_| session.finish())?;
+            .and_then(|_| session.finish());
 
-        self.handle_tx_effects(tx_effects)
+        self.handle_vm_result(result)
     }
 
     fn clear(&mut self) {
