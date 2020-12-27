@@ -8,13 +8,13 @@ use core::cell::RefCell;
 use hashbrown::HashMap;
 use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS};
+use move_core_types::vm_status::StatusCode;
 use move_vm_runtime::data_cache::RemoteCache;
 use move_vm_types::values::Value;
 use mvm::data::{EventHandler, State, Storage};
 use mvm::mvm::Mvm;
 use mvm::types::{Gas, ModuleTx, ScriptTx};
 use mvm::Vm;
-use move_core_types::vm_status::StatusCode;
 
 #[derive(Clone)]
 pub struct StorageMock {
@@ -113,7 +113,10 @@ fn test_public_module() {
     let mock = StorageMock::new();
     let vm = Mvm::new(mock.clone(), EventHandlerMock::default());
     let state = State::new(mock.clone());
-    assert_eq!(StatusCode::EXECUTED, vm.publish_module(gas(), store_module()));
+    assert_eq!(
+        StatusCode::EXECUTED,
+        vm.publish_module(gas(), store_module())
+    );
     let store_module_id = ModuleId::new(CORE_CODE_ADDRESS, Identifier::new("Store").unwrap());
     assert_eq!(
         state.get_module(&store_module_id).unwrap().unwrap(),
@@ -128,8 +131,14 @@ fn test_execute_script() {
     let event_handler = EventHandlerMock::default();
     let vm = Mvm::new(mock.clone(), event_handler.clone());
     let state = State::new(mock.clone());
-    assert_eq!(StatusCode::EXECUTED, vm.publish_module(gas(), store_module()));
-    assert_eq!(StatusCode::EXECUTED, vm.execute_script(gas(), store_script(test_value)));
+    assert_eq!(
+        StatusCode::EXECUTED,
+        vm.publish_module(gas(), store_module())
+    );
+    assert_eq!(
+        StatusCode::EXECUTED,
+        vm.execute_script(gas(), store_script(test_value))
+    );
 
     let tag = StructTag {
         address: CORE_CODE_ADDRESS,
@@ -151,9 +160,18 @@ fn test_store_event() {
     let mock = StorageMock::new();
     let event_handler = EventHandlerMock::default();
     let vm = Mvm::new(mock, event_handler.clone());
-    assert_eq!(StatusCode::EXECUTED, vm.publish_module(gas(), vector_module()));
-    assert_eq!(StatusCode::EXECUTED, vm.publish_module(gas(), event_module()));
-    assert_eq!(StatusCode::EXECUTED, vm.execute_script(gas(), emit_event_script(test_value)));
+    assert_eq!(
+        StatusCode::EXECUTED,
+        vm.publish_module(gas(), vector_module())
+    );
+    assert_eq!(
+        StatusCode::EXECUTED,
+        vm.publish_module(gas(), event_module())
+    );
+    assert_eq!(
+        StatusCode::EXECUTED,
+        vm.execute_script(gas(), emit_event_script(test_value))
+    );
 
     let (guid, seq, tag, msg) = event_handler.data.borrow_mut().remove(0);
     assert_eq!(guid, b"GUID".to_vec());
