@@ -136,7 +136,7 @@ impl fmt::Debug for ScriptTx {
     }
 }
 
-#[derive(Debug, Encode, Decode)]
+#[derive(Clone, Debug, Encode, Decode)]
 pub enum ScriptArg {
     U8(u8),
     U64(u64),
