@@ -115,7 +115,7 @@ fn test_public_module() {
     let state = State::new(mock.clone());
     assert_eq!(
         StatusCode::EXECUTED,
-        vm.publish_module(gas(), store_module())
+        vm.publish_module(gas(), store_module()).status_code
     );
     let store_module_id = ModuleId::new(CORE_CODE_ADDRESS, Identifier::new("Store").unwrap());
     assert_eq!(
@@ -133,11 +133,12 @@ fn test_execute_script() {
     let state = State::new(mock.clone());
     assert_eq!(
         StatusCode::EXECUTED,
-        vm.publish_module(gas(), store_module())
+        vm.publish_module(gas(), store_module()).status_code
     );
     assert_eq!(
         StatusCode::EXECUTED,
         vm.execute_script(gas(), store_script(test_value))
+            .status_code
     );
 
     let tag = StructTag {
@@ -162,15 +163,16 @@ fn test_store_event() {
     let vm = Mvm::new(mock, event_handler.clone());
     assert_eq!(
         StatusCode::EXECUTED,
-        vm.publish_module(gas(), vector_module())
+        vm.publish_module(gas(), vector_module()).status_code
     );
     assert_eq!(
         StatusCode::EXECUTED,
-        vm.publish_module(gas(), event_module())
+        vm.publish_module(gas(), event_module()).status_code
     );
     assert_eq!(
         StatusCode::EXECUTED,
         vm.execute_script(gas(), emit_event_script(test_value))
+            .status_code
     );
 
     let (guid, seq, tag, msg) = event_handler.data.borrow_mut().remove(0);

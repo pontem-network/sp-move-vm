@@ -10,14 +10,13 @@ pub mod gas_schedule;
 pub mod mvm;
 pub mod types;
 
-use crate::types::{Gas, ModuleTx, ScriptTx};
-use move_core_types::vm_status::StatusCode;
+use crate::types::{Gas, ModuleTx, ScriptTx, VmResult};
 
 pub trait Vm {
     /// Publishes module to the chain.
-    fn publish_module(&self, gas: Gas, module: ModuleTx) -> StatusCode;
+    fn publish_module(&self, gas: Gas, module: ModuleTx) -> VmResult;
     /// Execute script.
-    fn execute_script(&self, gas: Gas, tx: ScriptTx) -> StatusCode;
+    fn execute_script(&self, gas: Gas, tx: ScriptTx) -> VmResult;
     /// Clear vm cache.
     fn clear(&mut self);
 }
