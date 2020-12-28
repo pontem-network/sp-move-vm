@@ -40,7 +40,7 @@ where
     }
 
     /// Stores write set into storage and handle events.
-    fn handle_tx_effects(&self, tx_effects: TransactionEffects) -> VmResult {
+    fn handle_tx_effects(&self, tx_effects: TransactionEffects) -> Result<(), VMError> {
         for (addr, vals) in tx_effects.resources {
             for (struct_tag, val_opt) in vals {
                 let ap = AccessPath::new(addr, struct_tag.access_vector());
@@ -78,12 +78,21 @@ where
     }
 
     /// Handle vm result and return transaction status code.
-    fn handle_vm_result(&self, result: Result<TransactionEffects, VMError>) -> StatusCode {
+    fn handle_vm_result(
+        &self,
+        cost_strategy: CostStrategy,
+        gas_meta: Gas,
+        result: Result<TransactionEffects, VMError>,
+    ) -> VmResult {
+        let gas_used = GasUnits::new(gas_meta.max_gas_amount)
+            .sub(cost_strategy.remaining_gas())
+            .get();
+
         match result.and_then(|e| self.handle_tx_effects(e)) {
-            Ok(_) => StatusCode::EXECUTED,
+            Ok(_) => VmResult::new(StatusCode::EXECUTED, gas_used),
             Err(err) => {
                 //todo log error.
-                err.major_status()
+                VmResult::new(err.major_status(), gas_used)
             }
         }
     }
@@ -94,7 +103,7 @@ where
     S: Storage,
     E: EventHandler,
 {
-    fn publish_module(&self, gas: Gas, module: ModuleTx) -> StatusCode {
+    fn publish_module(&self, gas: Gas, module: ModuleTx) -> VmResult {
         let (module, sender) = module.into_inner();
 
         let mut cost_strategy =
@@ -128,10 +137,10 @@ where
                             .and_then(|_| session.finish())
                     })
             });
-        self.handle_vm_result(result)
+        self.handle_vm_result(cost_strategy, gas, result)
     }
 
-    fn execute_script(&self, gas: Gas, tx: ScriptTx) -> StatusCode {
+    fn execute_script(&self, gas: Gas, tx: ScriptTx) -> VmResult {
         let mut session = self.vm.new_session(&self.state);
 
         let (script, args, type_args, senders) = tx.into_inner();
@@ -149,7 +158,7 @@ where
             )
             .and_then(|_| session.finish());
 
-        self.handle_vm_result(result)
+        self.handle_vm_result(cost_strategy, gas, result)
     }
 
     fn clear(&mut self) {
