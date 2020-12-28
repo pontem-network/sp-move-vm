@@ -1,0 +1,6 @@
+[package]
+name = "assets"
+dialect = "polkadot"
+
+dependencies = [
+]

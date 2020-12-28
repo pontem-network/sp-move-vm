@@ -2,7 +2,7 @@ use crate::access_path::AccessPath;
 use alloc::borrow::ToOwned;
 use alloc::vec::Vec;
 use move_core_types::account_address::AccountAddress;
-use move_core_types::language_storage::{ModuleId, ResourceKey, StructTag};
+use move_core_types::language_storage::{ModuleId, ResourceKey, StructTag, TypeTag};
 use move_vm_runtime::data_cache::RemoteCache;
 use vm::errors::{PartialVMResult, VMResult};
 
@@ -22,6 +22,10 @@ pub trait WriteEffects {
 
 pub struct State<S> {
     store: S,
+}
+
+pub trait EventHandler {
+    fn on_event(&self, guid: Vec<u8>, seq_num: u64, ty_tag: TypeTag, message: Vec<u8>);
 }
 
 impl<S> State<S>

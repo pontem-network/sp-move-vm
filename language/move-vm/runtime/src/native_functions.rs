@@ -47,6 +47,7 @@ pub(crate) enum NativeFunction {
 }
 
 impl NativeFunction {
+    #[allow(clippy::unnecessary_wraps)]
     pub(crate) fn resolve(
         module_address: &AccountAddress,
         module_name: &str,

@@ -27,7 +27,7 @@ impl AccountAddress {
     }
 
     /// The number of bytes in an address.
-    pub const LENGTH: usize = 20;
+    pub const LENGTH: usize = 34;
 
     /// Hex address: 0x0
     pub const ZERO: Self = Self([0u8; Self::LENGTH]);
@@ -236,10 +236,10 @@ impl<'de> Deserialize<'de> for AccountAddress {
             // as the original type.
             #[derive(::serde::Deserialize)]
             #[serde(rename = "AccountAddress")]
-            struct Value([u8; AccountAddress::LENGTH]);
+            struct Value(Vec<u8>);
 
             let value = Value::deserialize(deserializer)?;
-            Ok(AccountAddress::new(value.0))
+            Ok(AccountAddress::try_from(value.0).map_err(D::Error::custom)?)
         }
     }
 }
@@ -253,7 +253,7 @@ impl Serialize for AccountAddress {
             self.to_string().serialize(serializer)
         } else {
             // See comment in deserialize.
-            serializer.serialize_newtype_struct("AccountAddress", &self.0)
+            serializer.serialize_newtype_struct("AccountAddress", &self.0[..])
         }
     }
 }

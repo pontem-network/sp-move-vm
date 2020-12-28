@@ -475,7 +475,7 @@ macro_rules! define_hasher {
         #[cfg(feature = "std")]
         impl Default for $hasher_type {
             fn default() -> Self {
-                $hasher_name.get_or_init(|| $hasher_type::new()).clone()
+                $hasher_name.get_or_init($hasher_type::new).clone()
             }
         }
 

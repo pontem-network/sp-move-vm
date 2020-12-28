@@ -32,3 +32,9 @@ impl MoveVM {
         self.runtime.new_session(remote)
     }
 }
+
+impl Default for MoveVM {
+    fn default() -> Self {
+        MoveVM::new()
+    }
+}

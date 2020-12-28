@@ -1,5 +1,5 @@
 [package]
-name = "dvm"
+name = "mvm"
 version = "0.1.0"
 authors = [
     "Alex Koz. <alexanderkozlovskii@wings.ai>",
@@ -23,7 +23,6 @@ libra-crypto = { path = "../crypto/crypto", default-features = false }
 
 [dev-dependencies]
 lcs = { path = "../lcs", package = "libra-canonical-serialization", default-features = false }
-
 [features]
 default = ["std"]
 std = [

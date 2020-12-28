@@ -2258,6 +2258,7 @@ impl GlobalValueImpl {
         Ok(())
     }
 
+    #[allow(clippy::unnecessary_wraps)]
     fn exists(&self) -> PartialVMResult<bool> {
         match self {
             Self::Fresh { .. } | Self::Cached { .. } => Ok(true),
@@ -2278,6 +2279,7 @@ impl GlobalValueImpl {
         }
     }
 
+    #[allow(clippy::unnecessary_wraps)]
     fn into_effect(self) -> PartialVMResult<GlobalValueEffect<ValueImpl>> {
         Ok(match self {
             Self::None => GlobalValueEffect::None,

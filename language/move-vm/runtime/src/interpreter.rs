@@ -120,6 +120,7 @@ impl<L: LogContext> Interpreter<L> {
     /// at the top of the stack (return). If the call stack is empty execution is completed.
     // REVIEW: create account will be removed in favor of a native function (no opcode) and
     // we can simplify this code quite a bit.
+    #[allow(clippy::unnecessary_cast)]
     fn execute_main(
         &mut self,
         loader: &Loader,
