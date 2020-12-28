@@ -31,6 +31,7 @@ use anyhow::{bail, Error, Result};
 use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
 use alloc::string::String;
+use parity_scale_codec::{Decode, Encode, Error as PsError, Input, Output};
 use ref_cast::RefCast;
 use serde::{Deserialize, Serialize};
 use sp_std::prelude::Vec;
@@ -146,6 +147,30 @@ impl Deref for Identifier {
 impl fmt::Display for Identifier {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", &self.0)
+    }
+}
+
+impl Encode for Identifier {
+    fn size_hint(&self) -> usize {
+        self.0.as_ref().size_hint()
+    }
+
+    fn encode_to<T: Output>(&self, dest: &mut T) {
+        self.0.as_ref().encode_to(dest)
+    }
+
+    fn encode(&self) -> Vec<u8> {
+        self.0.as_ref().encode()
+    }
+
+    fn using_encoded<R, F: FnOnce(&[u8]) -> R>(&self, f: F) -> R {
+        self.0.as_ref().using_encoded(f)
+    }
+}
+
+impl Decode for Identifier {
+    fn decode<I: Input>(value: &mut I) -> Result<Self, PsError> {
+        Identifier::new(String::decode(value)?).map_err(|_| PsError::from("Invalid identifier"))
     }
 }
 
