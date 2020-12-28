@@ -10,10 +10,9 @@ use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS};
 use move_core_types::vm_status::StatusCode;
 use move_vm_runtime::data_cache::RemoteCache;
-use move_vm_types::values::Value;
 use mvm::data::{EventHandler, State, Storage};
 use mvm::mvm::Mvm;
-use mvm::types::{Gas, ModuleTx, ScriptTx};
+use mvm::types::{Gas, ModuleTx, ScriptArg, ScriptTx};
 use mvm::Vm;
 
 #[derive(Clone)]
@@ -86,7 +85,7 @@ fn vector_module() -> ModuleTx {
 fn store_script(args: u64) -> ScriptTx {
     ScriptTx::new(
         include_bytes!("assets/target/scripts/1_store_u64.mv").to_vec(),
-        vec![Value::u64(args)],
+        vec![ScriptArg::U64(args)],
         vec![],
         vec![CORE_CODE_ADDRESS],
     )
@@ -96,7 +95,7 @@ fn store_script(args: u64) -> ScriptTx {
 fn emit_event_script(args: u64) -> ScriptTx {
     ScriptTx::new(
         include_bytes!("assets/target/scripts/0_emit_event.mv").to_vec(),
-        vec![Value::u64(args)],
+        vec![ScriptArg::U64(args)],
         vec![],
         vec![CORE_CODE_ADDRESS],
     )

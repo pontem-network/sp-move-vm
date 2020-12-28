@@ -9,6 +9,7 @@ use libra_crypto::{
     HashValue,
 };
 use libra_crypto_derive::CryptoHasher;
+use parity_scale_codec::{Decode, Encode};
 #[cfg(any(test, feature = "fuzzing"))]
 use proptest_derive::Arbitrary;
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize, Serializer};
@@ -17,7 +18,7 @@ use sp_std::{convert::TryFrom, fmt, str::FromStr};
 use static_assertions::const_assert;
 
 /// A struct that represents an account address.
-#[derive(Ord, PartialOrd, Eq, PartialEq, Hash, Clone, Copy, CryptoHasher)]
+#[derive(Ord, PartialOrd, Eq, PartialEq, Hash, Clone, Copy, CryptoHasher, Encode, Decode)]
 #[cfg_attr(any(test, feature = "fuzzing"), derive(Arbitrary))]
 pub struct AccountAddress([u8; AccountAddress::LENGTH]);
 

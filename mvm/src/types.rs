@@ -3,6 +3,7 @@ use anyhow::*;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::language_storage::TypeTag;
 use move_vm_types::values::Value;
+use parity_scale_codec::{Decode, Encode};
 use sp_std::fmt;
 use vm::errors::VMError;
 
@@ -92,7 +93,7 @@ impl ScriptTx {
     /// Constructor.
     pub fn new(
         code: Vec<u8>,
-        args: Vec<Value>,
+        args: Vec<ScriptArg>,
         type_args: Vec<TypeTag>,
         senders: Vec<AccountAddress>,
     ) -> Result<Self> {
@@ -102,7 +103,7 @@ impl ScriptTx {
         );
         Ok(ScriptTx {
             code,
-            args,
+            args: args.into_iter().map(ScriptArg::into).collect(),
             type_args,
             senders,
         })
@@ -132,5 +133,36 @@ impl fmt::Debug for ScriptTx {
             .field("type_args", &self.type_args)
             .field("senders", &self.senders)
             .finish()
+    }
+}
+
+#[derive(Debug, Encode, Decode)]
+pub enum ScriptArg {
+    U8(u8),
+    U64(u64),
+    U128(u128),
+    Bool(bool),
+    Address(AccountAddress),
+    VectorU8(Vec<u8>),
+    VectorU64(Vec<u64>),
+    VectorU128(Vec<u128>),
+    VectorBool(Vec<bool>),
+    VectorAddress(Vec<AccountAddress>),
+}
+
+impl Into<Value> for ScriptArg {
+    fn into(self) -> Value {
+        match self {
+            ScriptArg::U8(val) => Value::u8(val),
+            ScriptArg::U64(val) => Value::u64(val),
+            ScriptArg::U128(val) => Value::u128(val),
+            ScriptArg::Bool(val) => Value::bool(val),
+            ScriptArg::Address(val) => Value::address(val),
+            ScriptArg::VectorU8(val) => Value::vector_u8(val),
+            ScriptArg::VectorU64(val) => Value::vector_u64(val),
+            ScriptArg::VectorU128(val) => Value::vector_u128(val),
+            ScriptArg::VectorBool(val) => Value::vector_bool(val),
+            ScriptArg::VectorAddress(val) => Value::vector_address(val),
+        }
     }
 }

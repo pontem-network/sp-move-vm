@@ -22,7 +22,7 @@ lcs = { path = "../../../lcs", package = "libra-canonical-serialization", defaul
 libra-crypto = { path = "../../../crypto/crypto", default-features = false }
 libra-crypto-derive = { path = "../../../crypto/crypto-derive", default-features = false }
 short-hex-str = { path = "../../../common/short-hex-str", default-features = false }
-
+parity-scale-codec = { version = "1.3.5", default-features = false }
 
 [features]
 default = ["std"]
@@ -33,4 +33,5 @@ std = [
 	"libra-crypto/std",
 	"libra-crypto-derive/std",
 	"short-hex-str/std",
+	"parity-scale-codec/std"
 ]
