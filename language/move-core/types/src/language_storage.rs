@@ -7,6 +7,7 @@ use crate::{
 };
 use libra_crypto::hash::CryptoHash;
 use libra_crypto_derive::{CryptoHasher, LCSCryptoHash};
+use parity_scale_codec::{Decode, Encode};
 use serde::{Deserialize, Serialize};
 use sp_std::borrow::ToOwned;
 use sp_std::boxed::Box;
@@ -21,7 +22,9 @@ pub const CORE_CODE_ADDRESS: AccountAddress = AccountAddress::new([
     0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 1u8,
 ]);
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Hash, Eq, Clone, PartialOrd, Ord)]
+#[derive(
+    Serialize, Deserialize, Debug, PartialEq, Hash, Eq, Clone, PartialOrd, Ord, Encode, Decode,
+)]
 pub enum TypeTag {
     Bool,
     U8,
@@ -45,6 +48,8 @@ pub enum TypeTag {
     Ord,
     CryptoHasher,
     LCSCryptoHash,
+    Encode,
+    Decode,
 )]
 pub struct StructTag {
     pub address: AccountAddress,
