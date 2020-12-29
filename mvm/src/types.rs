@@ -2,13 +2,10 @@ use alloc::vec::Vec;
 use anyhow::*;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::language_storage::TypeTag;
+use move_core_types::vm_status::StatusCode;
 use move_vm_types::values::Value;
 use parity_scale_codec::{Decode, Encode};
 use sp_std::fmt;
-use vm::errors::VMError;
-
-/// Result enum for ExecutionResult
-pub type VmResult = Result<(), VMError>;
 
 const GAS_AMOUNT_MAX_VALUE: u64 = u64::MAX / 1000;
 
@@ -16,9 +13,9 @@ const GAS_AMOUNT_MAX_VALUE: u64 = u64::MAX / 1000;
 #[derive(Debug)]
 pub struct Gas {
     /// Max gas units to be used in transaction execution.
-    max_gas_amount: u64,
+    pub(crate) max_gas_amount: u64,
     /// Price in `XFI` coins per unit of gas.
-    gas_unit_price: u64,
+    pub(crate) gas_unit_price: u64,
 }
 
 impl Gas {
@@ -133,6 +130,25 @@ impl fmt::Debug for ScriptTx {
             .field("type_args", &self.type_args)
             .field("senders", &self.senders)
             .finish()
+    }
+}
+
+/// Move VM result.
+#[derive(Debug)]
+pub struct VmResult {
+    /// Execution status code.
+    pub status_code: StatusCode,
+    /// Gas used.
+    pub gas_used: u64,
+}
+
+impl VmResult {
+    /// Create new Vm result
+    pub(crate) fn new(status_code: StatusCode, gas_used: u64) -> VmResult {
+        VmResult {
+            status_code,
+            gas_used,
+        }
     }
 }
 
