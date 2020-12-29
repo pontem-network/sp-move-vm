@@ -152,25 +152,28 @@ impl fmt::Display for Identifier {
 
 impl Encode for Identifier {
     fn size_hint(&self) -> usize {
-        self.0.as_ref().size_hint()
+        self.0.as_bytes().size_hint()
     }
 
     fn encode_to<T: Output>(&self, dest: &mut T) {
-        self.0.as_ref().encode_to(dest)
+        self.0.as_bytes().encode_to(dest)
     }
 
     fn encode(&self) -> Vec<u8> {
-        self.0.as_ref().encode()
+        self.0.as_bytes().encode()
     }
 
     fn using_encoded<R, F: FnOnce(&[u8]) -> R>(&self, f: F) -> R {
-        self.0.as_ref().using_encoded(f)
+        self.0.as_bytes().using_encoded(f)
     }
 }
 
 impl Decode for Identifier {
     fn decode<I: Input>(value: &mut I) -> Result<Self, PsError> {
-        Identifier::new(String::decode(value)?).map_err(|_| PsError::from("Invalid identifier"))
+        let ident_name = String::from_utf8(Vec::decode(value)?)
+            .map_err(|_| PsError::from("Invalid utf8 sequence"))?;
+
+        Identifier::new(ident_name).map_err(|_| PsError::from("Invalid identifier"))
     }
 }
 
