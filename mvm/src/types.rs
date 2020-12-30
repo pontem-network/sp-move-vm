@@ -45,7 +45,7 @@ impl Gas {
 }
 
 /// Module transaction.
-#[derive(Clone)]
+#[derive(Clone, Encode, Decode)]
 pub struct ModuleTx {
     code: Vec<u8>,
     sender: AccountAddress,
