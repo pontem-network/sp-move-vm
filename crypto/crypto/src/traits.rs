@@ -7,10 +7,10 @@
 //! [`bls12381`] modules.
 
 use alloc::string::String;
+use alloc::vec::Vec;
 use anyhow::Result;
 use core::convert::{From, TryFrom};
-use sp_std::prelude::Vec;
-use sp_std::{fmt, fmt::Debug, hash::Hash};
+use core::{fmt, fmt::Debug, hash::Hash};
 
 /// A deterministic seed for PRNGs related to keys
 pub const TEST_SEED: [u8; 32] = [0u8; 32];
@@ -79,7 +79,7 @@ pub trait ValidCryptoMaterial:
 pub trait ValidCryptoMaterialStringExt: ValidCryptoMaterial {
     /// When trying to convert from bytes, we simply decode the string into
     /// bytes before checking if we can convert.
-    fn from_encoded_string(encoded_str: &str) -> sp_std::result::Result<Self, CryptoMaterialError> {
+    fn from_encoded_string(encoded_str: &str) -> core::result::Result<Self, CryptoMaterialError> {
         let bytes_out = ::hex::decode(encoded_str);
         // We defer to `try_from` to make sure we only produce valid crypto materials.
         bytes_out

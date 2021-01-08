@@ -1,4 +1,4 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{interpreter::Interpreter, loader::Resolver, logging::LogContext};
@@ -9,7 +9,7 @@ use move_core_types::{
     account_address::AccountAddress, gas_schedule::CostTable, language_storage::CORE_CODE_ADDRESS,
     value::MoveTypeLayout, vm_status::StatusType,
 };
-use move_vm_natives::{account, debug, event, hash, lcs, signer, vector};
+use move_vm_natives::{account, bcs, debug, event, hash, signer, vector};
 use move_vm_types::{
     data_store::DataStore,
     gas_schedule::CostStrategy,
@@ -29,7 +29,7 @@ use vm::errors::PartialVMResult;
 pub(crate) enum NativeFunction {
     HashSha2_256,
     HashSha3_256,
-    LCSToBytes,
+    BCSToBytes,
     VectorLength,
     VectorEmpty,
     VectorBorrow,
@@ -47,7 +47,6 @@ pub(crate) enum NativeFunction {
 }
 
 impl NativeFunction {
-    #[allow(clippy::unnecessary_wraps)]
     pub(crate) fn resolve(
         module_address: &AccountAddress,
         module_name: &str,
@@ -59,7 +58,7 @@ impl NativeFunction {
         Some(match case {
             (&CORE_CODE_ADDRESS, "Hash", "sha2_256") => HashSha2_256,
             (&CORE_CODE_ADDRESS, "Hash", "sha3_256") => HashSha3_256,
-            (&CORE_CODE_ADDRESS, "LCS", "to_bytes") => LCSToBytes,
+            (&CORE_CODE_ADDRESS, "BCS", "to_bytes") => BCSToBytes,
             (&CORE_CODE_ADDRESS, "Vector", "length") => VectorLength,
             (&CORE_CODE_ADDRESS, "Vector", "empty") => VectorEmpty,
             (&CORE_CODE_ADDRESS, "Vector", "borrow") => VectorBorrow,
@@ -69,8 +68,8 @@ impl NativeFunction {
             (&CORE_CODE_ADDRESS, "Vector", "destroy_empty") => VectorDestroyEmpty,
             (&CORE_CODE_ADDRESS, "Vector", "swap") => VectorSwap,
             (&CORE_CODE_ADDRESS, "Event", "write_to_event_store") => AccountWriteEvent,
-            (&CORE_CODE_ADDRESS, "LibraAccount", "create_signer") => CreateSigner,
-            (&CORE_CODE_ADDRESS, "LibraAccount", "destroy_signer") => DestroySigner,
+            (&CORE_CODE_ADDRESS, "DiemAccount", "create_signer") => CreateSigner,
+            (&CORE_CODE_ADDRESS, "DiemAccount", "destroy_signer") => DestroySigner,
             (&CORE_CODE_ADDRESS, "Debug", "print") => DebugPrint,
             (&CORE_CODE_ADDRESS, "Debug", "print_stack_trace") => DebugPrintStackTrace,
             (&CORE_CODE_ADDRESS, "Signer", "borrow_address") => SignerBorrowAddress,
@@ -98,7 +97,7 @@ impl NativeFunction {
             Self::VectorSwap => vector::native_swap(ctx, t, v),
             // natives that need the full API of `NativeContext`
             Self::AccountWriteEvent => event::native_emit_event(ctx, t, v),
-            Self::LCSToBytes => lcs::native_to_bytes(ctx, t, v),
+            Self::BCSToBytes => bcs::native_to_bytes(ctx, t, v),
             Self::DebugPrint => debug::native_print(ctx, t, v),
             Self::DebugPrintStackTrace => debug::native_print_stack_trace(ctx, t, v),
             Self::SignerBorrowAddress => signer::native_borrow_address(ctx, t, v),

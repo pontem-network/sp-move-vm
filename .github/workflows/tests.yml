@@ -50,7 +50,7 @@ jobs:
       run: sudo chown -R $(whoami):$(id -ng) ~/.cargo/
 
     - name: Tests
-      run: cargo test --package mvm --tests --no-fail-fast -- --test-threads=4 --nocapture
+      run: cargo test --tests --no-fail-fast -- --test-threads=4 --nocapture
 
     - name: Code-style
       run: cargo fmt -- --check

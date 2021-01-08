@@ -1,0 +1,20 @@
+[package]
+name = "invalid-mutations"
+version = "0.1.0"
+edition = "2018"
+authors = ["Diem Association <opensource@diem.com>"]
+description = "Diem invalid mutations"
+repository = "https://github.com/diem/diem"
+homepage = "https://diem.com"
+license = "Apache-2.0"
+publish = false
+
+[dependencies]
+vm = { path = "../../vm", version = "0.1.0" }
+move-core-types = { path = "../../move-core/types", default-features = false }
+proptest = "0.10.1"
+diem-proptest-helpers = { path = "../../../common/proptest-helpers", version = "0.1.0" }
+
+[features]
+default = []
+fuzzing = []

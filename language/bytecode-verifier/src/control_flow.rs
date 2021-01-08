@@ -1,4 +1,4 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 //! This module implements a checker for verifies control flow. The following properties are
@@ -6,10 +6,10 @@
 //! - All forward jumps do not enter into the middle of a loop
 //! - All "breaks" (forward, loop-exiting jumps) go to the "end" of the loop
 //! - All "continues" (back jumps in a loop) are only to the current loop
+use alloc::vec::Vec;
+use core::convert::TryInto;
 use hashbrown::HashSet;
 use move_core_types::vm_status::StatusCode;
-use sp_std::convert::TryInto;
-use sp_std::prelude::Vec;
 use vm::{
     errors::{PartialVMError, PartialVMResult},
     file_format::{Bytecode, CodeOffset, CodeUnit, FunctionDefinitionIndex},

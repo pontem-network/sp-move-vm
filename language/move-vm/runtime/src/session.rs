@@ -1,4 +1,4 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
@@ -117,8 +117,8 @@ impl<'r, 'l, R: RemoteCache> Session<'r, 'l, R> {
         )
     }
 
-    pub fn num_mutated_accounts(&self) -> u64 {
-        self.data_cache.num_mutated_accounts()
+    pub fn num_mutated_accounts(&self, sender: &AccountAddress) -> u64 {
+        self.data_cache.num_mutated_accounts(sender)
     }
 
     /// Finish up the session and produce the side effects.

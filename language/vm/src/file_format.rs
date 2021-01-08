@@ -1,4 +1,4 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 //! Binary format for transactions and modules.
@@ -11,7 +11,7 @@
 //!
 //! Overall the binary format is structured in a number of sections:
 //! - **Header**: this must start at offset 0 in the binary. It contains a blob that starts every
-//! Libra binary, followed by the version of the VM used to compile the code, and last is the
+//! Diem binary, followed by the version of the VM used to compile the code, and last is the
 //! number of tables present in this binary.
 //! - **Table Specification**: it's a number of tuple of the form
 //! `(table type, starting_offset, byte_count)`. The number of entries is specified in the
@@ -73,14 +73,14 @@ macro_rules! define_index {
             }
         }
 
-        impl ::sp_std::fmt::Display for $name {
-            fn fmt(&self, f: &mut ::sp_std::fmt::Formatter) -> ::sp_std::fmt::Result {
+        impl ::core::fmt::Display for $name {
+            fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
                 write!(f, "{}", self.0)
             }
         }
 
-        impl ::sp_std::fmt::Debug for $name {
-            fn fmt(&self, f: &mut ::sp_std::fmt::Formatter) -> ::sp_std::fmt::Result {
+        impl ::core::fmt::Debug for $name {
+            fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
                 write!(f, "{}({})", stringify!($name), self.0)
             }
         }
@@ -97,69 +97,69 @@ macro_rules! define_index {
 }
 
 define_index! {
-     name: ModuleHandleIndex,
-     kind: ModuleHandle,
-     doc: "Index into the `ModuleHandle` table.",
+    name: ModuleHandleIndex,
+    kind: ModuleHandle,
+    doc: "Index into the `ModuleHandle` table.",
 }
 define_index! {
-     name: StructHandleIndex,
-     kind: StructHandle,
-     doc: "Index into the `StructHandle` table.",
+    name: StructHandleIndex,
+    kind: StructHandle,
+    doc: "Index into the `StructHandle` table.",
 }
 define_index! {
-     name: FunctionHandleIndex,
-     kind: FunctionHandle,
-     doc: "Index into the `FunctionHandle` table.",
+    name: FunctionHandleIndex,
+    kind: FunctionHandle,
+    doc: "Index into the `FunctionHandle` table.",
 }
 define_index! {
-     name: FieldHandleIndex,
-     kind: FieldHandle,
-     doc: "Index into the `FieldHandle` table.",
+    name: FieldHandleIndex,
+    kind: FieldHandle,
+    doc: "Index into the `FieldHandle` table.",
 }
 define_index! {
-     name: StructDefInstantiationIndex,
-     kind: StructDefInstantiation,
-     doc: "Index into the `StructInstantiation` table.",
+    name: StructDefInstantiationIndex,
+    kind: StructDefInstantiation,
+    doc: "Index into the `StructInstantiation` table.",
 }
 define_index! {
-     name: FunctionInstantiationIndex,
-     kind: FunctionInstantiation,
-     doc: "Index into the `FunctionInstantiation` table.",
+    name: FunctionInstantiationIndex,
+    kind: FunctionInstantiation,
+    doc: "Index into the `FunctionInstantiation` table.",
 }
 define_index! {
-     name: FieldInstantiationIndex,
-     kind: FieldInstantiation,
-     doc: "Index into the `FieldInstantiation` table.",
+    name: FieldInstantiationIndex,
+    kind: FieldInstantiation,
+    doc: "Index into the `FieldInstantiation` table.",
 }
 define_index! {
-     name: IdentifierIndex,
-     kind: Identifier,
-     doc: "Index into the `Identifier` table.",
+    name: IdentifierIndex,
+    kind: Identifier,
+    doc: "Index into the `Identifier` table.",
 }
 define_index! {
-     name: AddressIdentifierIndex,
-     kind: AddressIdentifier,
-     doc: "Index into the `AddressIdentifier` table.",
+    name: AddressIdentifierIndex,
+    kind: AddressIdentifier,
+    doc: "Index into the `AddressIdentifier` table.",
 }
 define_index! {
-     name: ConstantPoolIndex,
-     kind: ConstantPool,
-     doc: "Index into the `ConstantPool` table.",
+    name: ConstantPoolIndex,
+    kind: ConstantPool,
+    doc: "Index into the `ConstantPool` table.",
 }
 define_index! {
-     name: SignatureIndex,
-     kind: Signature,
-     doc: "Index into the `Signature` table.",
+    name: SignatureIndex,
+    kind: Signature,
+    doc: "Index into the `Signature` table.",
 }
 define_index! {
-     name: StructDefinitionIndex,
-     kind: StructDefinition,
-     doc: "Index into the `StructDefinition` table.",
+    name: StructDefinitionIndex,
+    kind: StructDefinition,
+    doc: "Index into the `StructDefinition` table.",
 }
 define_index! {
-     name: FunctionDefinitionIndex,
-     kind: FunctionDefinition,
-     doc: "Index into the `FunctionDefinition` table.",
+    name: FunctionDefinitionIndex,
+    kind: FunctionDefinition,
+    doc: "Index into the `FunctionDefinition` table.",
 }
 
 /// Index of a local variable in a function.
@@ -211,7 +211,7 @@ pub const NO_TYPE_ARGUMENTS: SignatureIndex = SignatureIndex(0);
 /// The `address` is a reference to the account that holds the code and the `name` is used as a
 /// key in order to load the module.
 ///
-/// Modules live in the *code* namespace of an LibraAccount.
+/// Modules live in the *code* namespace of an DiemAccount.
 ///
 /// Modules introduce a scope made of all types defined in the module and all functions.
 /// Type definitions (fields) are private to the module. Outside the module a
@@ -668,8 +668,8 @@ impl Arbitrary for SignatureToken {
     }
 }
 
-impl sp_std::fmt::Debug for SignatureToken {
-    fn fmt(&self, f: &mut ::sp_std::fmt::Formatter) -> ::sp_std::fmt::Result {
+impl core::fmt::Debug for SignatureToken {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         match self {
             SignatureToken::Bool => write!(f, "Bool"),
             SignatureToken::U8 => write!(f, "U8"),
@@ -707,7 +707,7 @@ impl SignatureToken {
             | Address
             | Signer
             | Struct(_)
-            | StructInstantiation(..)
+            | StructInstantiation(_, _)
             | Vector(_) => SignatureTokenKind::Value,
             // TODO: This is a temporary hack to please the verifier. SignatureTokenKind will soon
             // be completely removed. `SignatureTokenView::kind()` should be used instead.
@@ -725,7 +725,7 @@ impl SignatureToken {
             | Signer
             | Vector(_)
             | Struct(_)
-            | StructInstantiation(..)
+            | StructInstantiation(_, _)
             | Reference(_)
             | MutableReference(_)
             | TypeParameter(_) => false,
@@ -763,7 +763,7 @@ impl SignatureToken {
             Vector(inner) => inner.is_valid_for_constant(),
             Signer
             | Struct(_)
-            | StructInstantiation(..)
+            | StructInstantiation(_, _)
             | Reference(_)
             | MutableReference(_)
             | TypeParameter(_) => false,
@@ -779,12 +779,10 @@ impl SignatureToken {
             SignatureToken::StructInstantiation(ref mut wrapped, _) => *wrapped = sh_idx,
             SignatureToken::Reference(ref mut token)
             | SignatureToken::MutableReference(ref mut token) => token.debug_set_sh_idx(sh_idx),
-            other => {
-                panic!(
-                    "debug_set_sh_idx (to {}) called for non-struct token {:?}",
-                    sh_idx, other
-                )
-            }
+            other => panic!(
+                "debug_set_sh_idx (to {}) called for non-struct token {:?}",
+                sh_idx, other
+            ),
         }
     }
 
@@ -1237,8 +1235,8 @@ pub enum Bytecode {
 
 pub const NUMBER_OF_NATIVE_FUNCTIONS: usize = 18;
 
-impl ::sp_std::fmt::Debug for Bytecode {
-    fn fmt(&self, f: &mut ::sp_std::fmt::Formatter) -> ::sp_std::fmt::Result {
+impl ::core::fmt::Debug for Bytecode {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         match self {
             Bytecode::Pop => write!(f, "Pop"),
             Bytecode::Ret => write!(f, "Ret"),

@@ -1,4 +1,4 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
@@ -7,15 +7,15 @@ use crate::{
 };
 use alloc::string::String;
 use alloc::vec::Vec;
+use core::fmt;
 use move_core_types::{
     language_storage::ModuleId,
     vm_status::{self, StatusCode, StatusType, VMStatus},
 };
-use sp_std::fmt;
 
-pub type VMResult<T> = ::sp_std::result::Result<T, VMError>;
-pub type BinaryLoaderResult<T> = ::sp_std::result::Result<T, PartialVMError>;
-pub type PartialVMResult<T> = ::sp_std::result::Result<T, PartialVMError>;
+pub type VMResult<T> = ::core::result::Result<T, VMError>;
+pub type BinaryLoaderResult<T> = ::core::result::Result<T, PartialVMError>;
+pub type PartialVMResult<T> = ::core::result::Result<T, PartialVMError>;
 
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub enum Location {
@@ -100,7 +100,7 @@ impl VMError {
                 }
             }
 
-            (major_status, ..) => VMStatus::Error(major_status),
+            (major_status, _, _) => VMStatus::Error(major_status),
         }
     }
 
@@ -356,6 +356,7 @@ impl fmt::Display for VMError {
 ////////////////////////////////////////////////////////////////////////////
 /// Conversion functions from internal VM statuses into external VM statuses
 ////////////////////////////////////////////////////////////////////////////
+#[allow(clippy::from_over_into)]
 impl Into<VMStatus> for VMError {
     fn into(self) -> VMStatus {
         self.into_vm_status()

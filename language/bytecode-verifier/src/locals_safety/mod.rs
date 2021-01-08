@@ -1,4 +1,4 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 //! This module defines the transfer functions for verifying local safety of a
@@ -59,18 +59,16 @@ fn execute_inner(
             LocalState::Available => state.set_unavailable(*idx),
         },
 
-        Bytecode::CopyLoc(idx) => {
-            match state.local_state(*idx) {
-                LocalState::MaybeResourceful => {
-                    // checked in type checking
-                    return Err(state.error(StatusCode::VERIFIER_INVARIANT_VIOLATION, offset));
-                }
-                LocalState::Unavailable => {
-                    return Err(state.error(StatusCode::COPYLOC_UNAVAILABLE_ERROR, offset))
-                }
-                LocalState::Available => (),
+        Bytecode::CopyLoc(idx) => match state.local_state(*idx) {
+            LocalState::MaybeResourceful => {
+                // checked in type checking
+                return Err(state.error(StatusCode::VERIFIER_INVARIANT_VIOLATION, offset));
             }
-        }
+            LocalState::Unavailable => {
+                return Err(state.error(StatusCode::COPYLOC_UNAVAILABLE_ERROR, offset))
+            }
+            LocalState::Available => (),
+        },
 
         Bytecode::MutBorrowLoc(idx) | Bytecode::ImmBorrowLoc(idx) => {
             match state.local_state(*idx) {

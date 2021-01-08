@@ -1,0 +1,20 @@
+[package]
+name = "cell"
+version = "0.1.0"
+authors = [
+    "Alex Koz. <alexanderkozlovskii@wings.ai>",
+    "Dm. Yakushev <dmitryyakushev@wings.ai>",
+]
+edition = "2018"
+publish = false
+license = "Apache-2.0"
+
+
+[dependencies]
+once_cell = { version = "1.5.2", default-features = false, features = ["unstable", "alloc"] }
+
+[features]
+default = ["std"]
+std = [
+    "once_cell/std"
+]

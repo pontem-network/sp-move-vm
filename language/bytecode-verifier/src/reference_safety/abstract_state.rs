@@ -1,4 +1,4 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 //! This module defines the abstract state for the type and memory safety analysis.
@@ -6,11 +6,11 @@ use crate::{
     absint::{AbstractDomain, JoinResult},
     binary_views::FunctionView,
 };
+use alloc::collections::{BTreeMap, BTreeSet};
+use alloc::vec::Vec;
 use borrow_graph::references::RefID;
 use mirai_annotations::{checked_postcondition, checked_precondition, checked_verify};
 use move_core_types::vm_status::StatusCode;
-use sp_std::collections::{btree_map::BTreeMap, btree_set::BTreeSet};
-use sp_std::prelude::Vec;
 use vm::{
     errors::{PartialVMError, PartialVMResult},
     file_format::{
@@ -61,8 +61,8 @@ enum Label {
 }
 
 // Needed for debugging with the borrow graph
-impl sp_std::fmt::Display for Label {
-    fn fmt(&self, f: &mut sp_std::fmt::Formatter<'_>) -> sp_std::fmt::Result {
+impl core::fmt::Display for Label {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Label::Local(i) => write!(f, "local#{}", i),
             Label::Global(i) => write!(f, "resource@{}", i),

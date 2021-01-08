@@ -1,8 +1,8 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 use alloc::borrow::ToOwned;
-use sp_std::prelude::Vec;
+use alloc::vec::Vec;
 
 pub type PathSlice<Lbl> = [Lbl];
 pub type Path<Lbl> = Vec<Lbl>;

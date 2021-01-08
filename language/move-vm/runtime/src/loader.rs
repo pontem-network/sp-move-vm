@@ -1,18 +1,20 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{logging::LogContext, native_functions::NativeFunction};
+use alloc::borrow::ToOwned;
+use alloc::boxed::Box;
+use alloc::string::{String, ToString};
+use alloc::sync::Arc;
+use alloc::vec::Vec;
 use bytecode_verifier::{
     constants, instantiation_loops::InstantiationLoopChecker, verify_main_signature,
     CodeUnitVerifier, DependencyChecker, DuplicationChecker, InstructionConsistency,
     RecursiveStructDefChecker, ResourceTransitiveChecker, SignatureChecker,
 };
-use libra_crypto::HashValue;
-// use libra_logger::prelude::*;
-use alloc::borrow::ToOwned;
-use alloc::boxed::Box;
-use alloc::string::{String, ToString};
-use alloc::vec::Vec;
+use core::cell::RefCell;
+use core::{fmt::Debug, hash::Hash};
+use diem_crypto::HashValue;
 use hashbrown::HashMap;
 use mirai_annotations::assume;
 use move_core_types::{
@@ -25,8 +27,6 @@ use move_vm_types::{
     data_store::DataStore,
     loaded_data::runtime_types::{StructType, Type},
 };
-use sp_std::cell::RefCell;
-use sp_std::{fmt::Debug, hash::Hash, sync::Arc};
 use vm::{
     access::{ModuleAccess, ScriptAccess},
     errors::{verification_error, Location, PartialVMError, PartialVMResult, VMError, VMResult},
@@ -425,7 +425,6 @@ pub(crate) struct Loader {
 
 impl Loader {
     pub(crate) fn new() -> Self {
-        //println!("new loader");
         Self {
             scripts: RefCell::new(ScriptCache::new()),
             module_cache: RefCell::new(ModuleCache::new()),
@@ -963,7 +962,6 @@ impl<'a> Resolver<'a> {
     //
     // Function resolution
     //
-
     pub(crate) fn function_from_handle(&self, idx: FunctionHandleIndex) -> Arc<Function> {
         let idx = match &self.binary {
             BinaryType::Module(module) => module.function_at(idx.0),
@@ -1014,7 +1012,6 @@ impl<'a> Resolver<'a> {
     //
     // Type resolution
     //
-
     pub(crate) fn struct_from_definition(&self, idx: StructDefinitionIndex) -> Arc<StructType> {
         match &self.binary {
             BinaryType::Module(module) => {
@@ -1597,14 +1594,12 @@ impl Function {
     pub(crate) fn pretty_string(&self) -> String {
         match &self.scope {
             Scope::Script(_) => "Script::main".into(),
-            Scope::Module(id) => {
-                format!(
-                    "0x{}::{}::{}",
-                    id.address(),
-                    id.name().as_str(),
-                    self.name.as_str()
-                )
-            }
+            Scope::Module(id) => format!(
+                "0x{}::{}::{}",
+                id.address(),
+                id.name().as_str(),
+                self.name.as_str()
+            ),
         }
     }
 

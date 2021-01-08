@@ -20,10 +20,10 @@ move-vm-runtime = { path = "../language/move-vm/runtime", default-features = fal
 move-vm-types = { path = "../language/move-vm/types", default-features = false }
 move-core-types = { path = "../language/move-core/types", default-features = false }
 vm = { path = "../language/vm", default-features = false }
-libra-crypto = { path = "../crypto/crypto", default-features = false }
+diem-crypto = { path = "../crypto/crypto", default-features = false }
 
 [dev-dependencies]
-lcs = { path = "../lcs", package = "libra-canonical-serialization", default-features = false }
+bcs = { path = "../bcs", default-features = false }
 [features]
 default = ["std"]
 std = [

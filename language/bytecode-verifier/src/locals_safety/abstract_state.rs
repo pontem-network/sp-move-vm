@@ -1,9 +1,10 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 //! This module defines the abstract state for the local safety analysis.
 
 use crate::absint::{AbstractDomain, JoinResult};
+use alloc::vec::Vec;
 use mirai_annotations::{checked_precondition, checked_verify};
 use move_core_types::vm_status::StatusCode;
 use vm::{
@@ -23,7 +24,6 @@ pub(crate) enum LocalState {
     Available,
 }
 use crate::binary_views::{BinaryIndexedView, FunctionView};
-use sp_std::prelude::Vec;
 use LocalState::*;
 
 #[derive(Clone, Debug, Eq, PartialEq)]

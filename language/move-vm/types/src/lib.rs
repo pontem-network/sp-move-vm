@@ -1,8 +1,11 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![forbid(unsafe_code)]
+
+#[macro_use]
+extern crate alloc;
 
 macro_rules! debug_write {
     ($($toks: tt)*) => {
@@ -22,11 +25,11 @@ macro_rules! debug_writeln {
     };
 }
 
-#[macro_use]
-extern crate alloc;
-
 pub mod data_store;
 pub mod gas_schedule;
 pub mod loaded_data;
 pub mod natives;
 pub mod values;
+
+#[cfg(test)]
+mod unit_tests;

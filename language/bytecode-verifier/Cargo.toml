@@ -1,16 +1,15 @@
 [package]
 name = "bytecode-verifier"
 version = "0.1.0"
-authors = ["Libra Association <opensource@libra.org>"]
-description = "Libra bytecode verifier"
-repository = "https://github.com/libra/libra"
-homepage = "https://libra.org"
+authors = ["Diem Association <opensource@diem.com>"]
+description = "Diem bytecode verifier"
+repository = "https://github.com/diem/diem"
+homepage = "https://diem.com"
 license = "Apache-2.0"
 publish = false
 edition = "2018"
 
 [dependencies]
-sp-std = { version = "2.0.0", default-features = false }
 hashbrown = "0.9"
 anyhow = {version ="1.0.34", default-features = false}
 mirai-annotations = { path = "../../mirai-annotations", default-features = false }
@@ -19,11 +18,15 @@ borrow-graph = { path = "../borrow-graph", default-features = false }
 vm = { path = "../vm", version = "0.1.0", default-features = false }
 move-core-types = { path = "../move-core/types", default-features = false }
 
+[dev-dependencies]
+invalid-mutations = { path = "invalid-mutations", version = "0.1.0" }
+
 [features]
 default = ["std"]
+fuzzing = []
+
 std = [
 	"anyhow/std",
-	"sp-std/std",
 	"move-core-types/std",
 	"borrow-graph/std",
 	"vm/std",

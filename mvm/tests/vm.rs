@@ -28,6 +28,12 @@ impl StorageMock {
     }
 }
 
+impl Default for StorageMock {
+    fn default() -> Self {
+        StorageMock::new()
+    }
+}
+
 impl Storage for StorageMock {
     fn get(&self, key: &[u8]) -> Option<Vec<u8>> {
         let data = self.data.borrow();
@@ -111,7 +117,7 @@ struct StoreU64 {
 fn test_public_module() {
     let mock = StorageMock::new();
     let vm = Mvm::new(mock.clone(), EventHandlerMock::default());
-    let state = State::new(mock.clone());
+    let state = State::new(mock);
     assert_eq!(
         StatusCode::EXECUTED,
         vm.publish_module(gas(), store_module()).status_code
@@ -128,8 +134,8 @@ fn test_execute_script() {
     let test_value = 13;
     let mock = StorageMock::new();
     let event_handler = EventHandlerMock::default();
-    let vm = Mvm::new(mock.clone(), event_handler.clone());
-    let state = State::new(mock.clone());
+    let vm = Mvm::new(mock.clone(), event_handler);
+    let state = State::new(mock);
     assert_eq!(
         StatusCode::EXECUTED,
         vm.publish_module(gas(), store_module()).status_code
@@ -150,7 +156,7 @@ fn test_execute_script() {
         .get_resource(&CORE_CODE_ADDRESS, &tag)
         .unwrap()
         .unwrap();
-    let store: StoreU64 = lcs::from_bytes(&blob).unwrap();
+    let store: StoreU64 = bcs::from_bytes(&blob).unwrap();
     assert_eq!(test_value, store.val);
 }
 
@@ -177,7 +183,7 @@ fn test_store_event() {
     let (guid, seq, tag, msg) = event_handler.data.borrow_mut().remove(0);
     assert_eq!(guid, b"GUID".to_vec());
     assert_eq!(seq, 1);
-    assert_eq!(test_value, lcs::from_bytes::<StoreU64>(&msg).unwrap().val);
+    assert_eq!(test_value, bcs::from_bytes::<StoreU64>(&msg).unwrap().val);
     assert_eq!(
         TypeTag::Struct(StructTag {
             address: CORE_CODE_ADDRESS,

@@ -166,9 +166,9 @@ pub enum ScriptArg {
     VectorAddress(Vec<AccountAddress>),
 }
 
-impl Into<Value> for ScriptArg {
-    fn into(self) -> Value {
-        match self {
+impl From<ScriptArg> for Value {
+    fn from(arg: ScriptArg) -> Self {
+        match arg {
             ScriptArg::U8(val) => Value::u8(val),
             ScriptArg::U64(val) => Value::u64(val),
             ScriptArg::U128(val) => Value::u128(val),

@@ -1,4 +1,4 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 //! This module lays out the basic abstract costing schedule for bytecode instructions.
@@ -77,7 +77,6 @@ impl<'a> CostStrategy<'a> {
         if !self.charge {
             return Ok(());
         }
-        debug_assert!(amount.get() > 0);
         if self
             .gas_left
             .app(&amount, |curr_gas, gas_amt| curr_gas >= gas_amt)
@@ -98,7 +97,7 @@ impl<'a> CostStrategy<'a> {
         size: AbstractMemorySize<GasCarrier>,
     ) -> PartialVMResult<()> {
         // Make sure that the size is always non-zero
-        let size = size.map(|x| sp_std::cmp::max(1, x));
+        let size = size.map(|x| core::cmp::max(1, x));
         debug_assert!(size.get() > 0);
         self.deduct_gas(
             self.cost_table
@@ -301,7 +300,7 @@ pub enum NativeCostIndex {
     SHA3_256 = 1,
     ED25519_VERIFY = 2,
     ED25519_THRESHOLD_VERIFY = 3,
-    LCS_TO_BYTES = 4,
+    BCS_TO_BYTES = 4,
     LENGTH = 5,
     EMPTY = 6,
     BORROW = 7,

@@ -2,6 +2,7 @@
 members = [
     "common/num-variants",
     "common/short-hex-str",
+    "common/cell",
     "crypto/crypto",
     "crypto/crypto-derive",
     "language/borrow-graph",
@@ -11,7 +12,10 @@ members = [
     "language/move-vm/runtime",
     "language/move-vm/natives",
     "language/move-vm/types",
+    "language/move-vm/test-utils",
     "mvm",
-    "lcs",
-    "mirai-annotations"
+    "bcs",
+    "mirai-annotations",
+    "common/nibble",
+    "common/proptest-helpers",
 ]

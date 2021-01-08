@@ -1,7 +1,8 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 use alloc::collections::VecDeque;
+use alloc::vec::Vec;
 use move_core_types::gas_schedule::GasAlgebra;
 use move_vm_types::{
     gas_schedule::NativeCostIndex,
@@ -9,7 +10,6 @@ use move_vm_types::{
     natives::function::{native_gas, NativeContext, NativeResult},
     values::Value,
 };
-use sp_std::prelude::Vec;
 use vm::errors::PartialVMResult;
 
 pub fn native_emit_event(

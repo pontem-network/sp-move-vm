@@ -1,13 +1,17 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+#[cfg(feature = "std")]
+use crate::paths::PathSlice;
 use crate::{
     paths::{self, Path},
     references::*,
 };
+use alloc::collections::{BTreeMap, BTreeSet};
+#[cfg(feature = "std")]
+use alloc::string::String;
+use alloc::vec::Vec;
 use mirai_annotations::{debug_checked_postcondition, debug_checked_precondition};
-use sp_std::collections::{btree_map::BTreeMap, btree_set::BTreeSet};
-use sp_std::prelude::Vec;
 
 //**************************************************************************************************
 // Definitions
@@ -418,5 +422,42 @@ impl<Loc: Copy, Lbl: Clone + Ord> BorrowGraph<Loc, Lbl> {
     /// Returns all ref ids in the map
     pub fn all_refs(&self) -> BTreeSet<RefID> {
         self.0.keys().cloned().collect()
+    }
+
+    /// Prints out a view of the borrow graph
+    #[allow(dead_code)]
+    #[cfg(feature = "std")]
+    pub fn display(&self)
+    where
+        Lbl: core::fmt::Display,
+    {
+        fn path_to_string<Lbl: core::fmt::Display>(p: &PathSlice<Lbl>) -> String {
+            p.iter()
+                .map(|l| l.to_string())
+                .collect::<Vec<_>>()
+                .join(".")
+        }
+
+        for (id, ref_info) in &self.0 {
+            if ref_info.borrowed_by.0.is_empty() && ref_info.borrows_from.is_empty() {
+                println!("{}", id.0);
+            }
+            for (borrower, edges) in &ref_info.borrowed_by.0 {
+                for edge in edges {
+                    let edisp = if edge.strong { "=" } else { "-" };
+                    println!(
+                        "{} {}{}{}> {}",
+                        id.0,
+                        edisp,
+                        path_to_string(&edge.path),
+                        edisp,
+                        borrower.0,
+                    );
+                }
+            }
+            for parent in &ref_info.borrows_from {
+                println!("{} <- {}", parent.0, id.0);
+            }
+        }
     }
 }
