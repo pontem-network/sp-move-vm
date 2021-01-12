@@ -3,8 +3,8 @@ on:
   pull_request:
   push:
     branches:
-    - master
-    - release-*
+      - master
+      - release-*
 
 jobs:
   build:
@@ -19,11 +19,11 @@ jobs:
       fail-fast: false
       matrix:
         os:
-        - macos-latest
-        - ubuntu-latest
+          - macos-latest
+          - ubuntu-latest
         rust:
-        # - "1.45.2"
-        - "stable"
+          # - "1.45.2"
+          - "stable"
         # - "nightly"
 
     env:
@@ -34,26 +34,37 @@ jobs:
       CARGO_NET_RETRY: 10
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
 
-    - name: Rust Toolchain
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: ${{ matrix.rust }}
-        profile: minimal
-        override: true
-        components: rustfmt, clippy
+      - name: Rust Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          profile: minimal
+          override: true
+          components: rustfmt, clippy
+          target: wasm32-unknown-unknown
 
-    - name: fix permissions
-      if: matrix.os == 'ubuntu-latest'
-      run: sudo chown -R $(whoami):$(id -ng) ~/.cargo/
+      - name: fix permissions
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo chown -R $(whoami):$(id -ng) ~/.cargo/
 
-    - name: Tests
-      run: cargo test --package mvm --tests --no-fail-fast -- --test-threads=4 --nocapture
+      - name: Code-style
+        run: cargo fmt -- --check
 
-    - name: Code-style
-      run: cargo fmt -- --check
+      - name: Tests
+        run: cargo test --package mvm --tests --no-fail-fast -- --test-threads=4 --nocapture
 
-    - name: Clippy
-      run: cargo clippy --examples -- -Dwarnings
+      - name: Build with std
+        run: |
+          cd mvm
+          cargo build --package mvm --no-default-features --features="std"
+
+      - name: Build without std to wasm
+        run: |
+          cd mvm
+          cargo build --package mvm --target wasm32-unknown-unknown --no-default-features
+
+      - name: Clippy
+        run: cargo clippy --examples -- -Dwarnings
