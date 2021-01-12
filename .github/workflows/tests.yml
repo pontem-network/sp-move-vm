@@ -6,8 +6,15 @@ on:
       - master
       - release-*
 
+env:
+  RUSTFLAGS: -D warnings
+  RUST_BACKTRACE: full
+  CARGO_INCREMENTAL: 0
+  RUSTUP_MAX_RETRIES: 10
+  CARGO_NET_RETRY: 10
+
 jobs:
-  build:
+  test:
     name: Tests
     runs-on: ${{ matrix.os }}
 
@@ -22,16 +29,7 @@ jobs:
           - macos-latest
           - ubuntu-latest
         rust:
-          # - "1.45.2"
           - "stable"
-        # - "nightly"
-
-    env:
-      RUSTFLAGS: -D warnings
-      RUST_BACKTRACE: full
-      CARGO_INCREMENTAL: 1
-      RUSTUP_MAX_RETRIES: 10
-      CARGO_NET_RETRY: 10
 
     steps:
       - name: Checkout
@@ -44,27 +42,51 @@ jobs:
           profile: minimal
           override: true
           components: rustfmt, clippy
-          target: wasm32-unknown-unknown
-
-      - name: fix permissions
-        if: matrix.os == 'ubuntu-latest'
-        run: sudo chown -R $(whoami):$(id -ng) ~/.cargo/
 
       - name: Code-style
         run: cargo fmt -- --check
-
-      - name: Build with std
-        run: |
-          cd mvm
-          cargo build --package mvm --no-default-features --features="std"
-
-      - name: Build without std to wasm
-        run: |
-          cd mvm
-          cargo build --package mvm --target wasm32-unknown-unknown --no-default-features
 
       - name: Tests
         run: cargo test --package mvm --tests --no-fail-fast -- --test-threads=4 --nocapture
 
       - name: Clippy
         run: cargo clippy --examples -- -Dwarnings
+
+  build:
+    name: Build
+    runs-on: ${{ matrix.os }}
+
+    defaults:
+      run:
+        shell: bash
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+        rust:
+          - "nightly-2020-10-05"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Rust Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          profile: minimal
+          override: true
+          target: wasm32-unknown-unknown
+
+      - name: Build WASM -std
+        run: |
+          cd mvm
+          cargo build --package mvm --target wasm32-unknown-unknown --no-default-features
+
+      - name: Build with +std
+        run: |
+          cd mvm
+          cargo build --package mvm --no-default-features --features="std"
