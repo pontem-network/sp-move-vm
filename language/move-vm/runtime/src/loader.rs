@@ -425,12 +425,18 @@ pub(crate) struct Loader {
 
 impl Loader {
     pub(crate) fn new() -> Self {
-        //println!("new loader");
         Self {
             scripts: RefCell::new(ScriptCache::new()),
             module_cache: RefCell::new(ModuleCache::new()),
             type_cache: RefCell::new(TypeCache::new()),
         }
+    }
+
+    /// Clears loader cache.
+    pub(crate) fn clear(&self) {
+        *self.scripts.borrow_mut() = ScriptCache::new();
+        *self.module_cache.borrow_mut() = ModuleCache::new();
+        *self.type_cache.borrow_mut() = TypeCache::new();
     }
 
     //
