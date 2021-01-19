@@ -356,6 +356,7 @@ impl fmt::Display for VMError {
 ////////////////////////////////////////////////////////////////////////////
 /// Conversion functions from internal VM statuses into external VM statuses
 ////////////////////////////////////////////////////////////////////////////
+#[allow(clippy::from_over_into)]
 impl Into<VMStatus> for VMError {
     fn into(self) -> VMStatus {
         self.into_vm_status()
