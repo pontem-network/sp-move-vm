@@ -432,6 +432,13 @@ impl Loader {
         }
     }
 
+    /// Clears loader cache.
+    pub(crate) fn clear(&self) {
+        *self.scripts.borrow_mut() = ScriptCache::new();
+        *self.module_cache.borrow_mut() = ModuleCache::new();
+        *self.type_cache.borrow_mut() = TypeCache::new();
+    }
+
     //
     // Script verification and loading
     //

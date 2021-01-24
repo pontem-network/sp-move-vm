@@ -18,5 +18,5 @@ pub trait Vm {
     /// Execute script.
     fn execute_script(&self, gas: Gas, tx: ScriptTx) -> VmResult;
     /// Clear vm cache.
-    fn clear(&mut self);
+    fn clear(&self);
 }

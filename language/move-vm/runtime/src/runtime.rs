@@ -44,6 +44,11 @@ impl VMRuntime {
         }
     }
 
+    /// Clear loader.
+    pub(crate) fn clear(&self) {
+        self.loader.clear();
+    }
+
     // See Session::publish_module for what contracts to follow.
     pub(crate) fn publish_module(
         &self,

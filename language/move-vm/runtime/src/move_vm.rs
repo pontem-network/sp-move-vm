@@ -31,6 +31,11 @@ impl MoveVM {
     pub fn new_session<'r, R: RemoteCache>(&self, remote: &'r R) -> Session<'r, '_, R> {
         self.runtime.new_session(remote)
     }
+
+    /// Clears vm state.
+    pub fn clear(&self) {
+        self.runtime.clear();
+    }
 }
 
 impl Default for MoveVM {

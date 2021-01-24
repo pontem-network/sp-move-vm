@@ -161,7 +161,7 @@ where
         self.handle_vm_result(cost_strategy, gas, result)
     }
 
-    fn clear(&mut self) {
-        self.vm = MoveVM::new();
+    fn clear(&self) {
+        self.vm.clear();
     }
 }
