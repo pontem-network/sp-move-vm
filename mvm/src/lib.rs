@@ -9,6 +9,7 @@ pub mod data;
 pub mod gas_schedule;
 pub mod mvm;
 pub mod types;
+pub mod vm_config;
 
 use crate::types::{Gas, ModuleTx, ScriptTx, VmResult};
 
