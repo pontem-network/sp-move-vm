@@ -28,7 +28,7 @@ pub mod loader {
     use move_core_types::language_storage::StructTag;
     use parity_scale_codec::{Decode, Encode};
 
-    const IDENTIFIER: &'static str = "MVMConfig";
+    const IDENTIFIER: &str = "MVMConfig";
     const CONFIG_ADDRESS_STR: &str = "0xA550C18";
 
     fn config_address() -> AccountAddress {
