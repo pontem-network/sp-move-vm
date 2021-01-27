@@ -84,7 +84,7 @@ jobs:
       - name: Build WASM -std
         run: |
           cd mvm
-          cargo build --package mvm --target wasm32-unknown-unknown --no-default-features -Z avoid-dev-deps
+          cargo build --package mvm --target wasm32-unknown-unknown --no-default-features
 
       - name: Build with +std
         run: |
