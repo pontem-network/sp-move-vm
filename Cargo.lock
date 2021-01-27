@@ -593,6 +593,7 @@ dependencies = [
  "criterion",
  "diem-crypto-derive",
  "diem-nibble",
+ "ed25519-dalek",
  "hex",
  "mirai-annotations",
  "proptest",

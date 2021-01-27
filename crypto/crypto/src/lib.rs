@@ -13,6 +13,7 @@ extern crate alloc;
 #[cfg(test)]
 mod unit_tests;
 
+pub mod ed25519;
 pub mod hash;
 pub mod serde_name;
 pub mod test_utils;
