@@ -1,7 +1,9 @@
 use crate::access_path::AccessPath;
 use crate::data::{EventHandler, State, Storage, WriteEffects};
 use crate::types::{Gas, ModuleTx, ScriptTx, VmResult};
-use crate::{gas_schedule, Vm};
+use crate::vm_config::loader::load_vm_config;
+use crate::Vm;
+use anyhow::Error;
 use move_core_types::gas_schedule::CostTable;
 use move_core_types::gas_schedule::{AbstractMemorySize, GasAlgebra, GasUnits};
 use move_core_types::vm_status::StatusCode;
@@ -11,7 +13,6 @@ use move_vm_runtime::move_vm::MoveVM;
 use move_vm_types::gas_schedule::CostStrategy;
 use vm::errors::{Location, PartialVMError, VMError};
 use vm::CompiledModule;
-
 /// MoveVM.
 pub struct Mvm<S, E>
 where
@@ -30,13 +31,15 @@ where
     E: EventHandler,
 {
     /// Creates a new move vm with given store and event handler.
-    pub fn new(store: S, event_handler: E) -> Mvm<S, E> {
-        Mvm {
+    pub fn new(store: S, event_handler: E) -> Result<Mvm<S, E>, Error> {
+        let config = load_vm_config(&store)?;
+
+        Ok(Mvm {
             vm: MoveVM::new(),
-            cost_table: gas_schedule::cost_table(),
+            cost_table: config.gas_schedule,
             state: State::new(store),
             event_handler,
-        }
+        })
     }
 
     /// Stores write set into storage and handle events.

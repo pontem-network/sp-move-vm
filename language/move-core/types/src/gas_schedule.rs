@@ -12,6 +12,7 @@ use core::{
     u64,
 };
 use mirai_annotations::*;
+use parity_scale_codec::{Decode, Encode};
 use serde::{Deserialize, Serialize};
 
 /// The underlying carrier for gas-related units and costs. Data with this type should not be
@@ -98,7 +99,7 @@ macro_rules! define_gas_unit {
         carrier: $carrier: ty,
         doc: $comment: literal
     } => {
-        #[derive(Debug, Hash, Eq, PartialEq, Copy, Clone, Serialize, Deserialize)]
+        #[derive(Debug, Hash, Eq, PartialEq, Copy, Clone, Serialize, Deserialize, Encode, Decode)]
         #[doc=$comment]
         pub struct $name<GasCarrier>(GasCarrier);
         impl GasAlgebra<$carrier> for $name<$carrier> {
@@ -156,7 +157,7 @@ pub const MIN_EXISTS_DATA_SIZE: AbstractMemorySize<GasCarrier> = AbstractMemoryS
 
 pub const MAX_TRANSACTION_SIZE_IN_BYTES: GasCarrier = 4096;
 
-#[derive(Clone, Debug, Serialize, PartialEq, Deserialize)]
+#[derive(Clone, Debug, Serialize, PartialEq, Deserialize, Encode, Decode)]
 pub struct GasConstants {
     /// The cost per-byte read from global storage.
     pub global_memory_per_byte_cost: GasUnits<GasCarrier>,
@@ -215,7 +216,7 @@ impl Default for GasConstants {
 /// The cost tables, keyed by the serialized form of the bytecode instruction.  We use the
 /// serialized form as opposed to the instruction enum itself as the key since this will be the
 /// on-chain representation of bytecode instructions in the future.
-#[derive(Clone, Debug, Serialize, PartialEq, Deserialize)]
+#[derive(Clone, Debug, Serialize, PartialEq, Deserialize, Encode, Decode)]
 pub struct CostTable {
     pub instruction_table: Vec<GasCost>,
     pub native_table: Vec<GasCost>,
@@ -239,7 +240,7 @@ impl CostTable {
 /// The  `GasCost` tracks:
 /// - instruction cost: how much time/computational power is needed to perform the instruction
 /// - memory cost: how much memory is required for the instruction, and storage overhead
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Encode, Decode)]
 pub struct GasCost {
     pub instruction_gas: GasUnits<GasCarrier>,
     pub memory_gas: GasUnits<GasCarrier>,
