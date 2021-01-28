@@ -1,4 +1,4 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 #![forbid(unsafe_code)]
@@ -9,11 +9,11 @@
 //! - the `SilentDebug` and SilentDisplay macros are meant to be used on private key types, and
 //!   elide their input for confidentiality.
 //! - the `Deref` macro helps derive the canonical instances on new types.
-//! - the derive macros for `libra_crypto::traits`, namely `ValidCryptoMaterial`, `PublicKey`, `PrivateKey`,
+//! - the derive macros for `diem_crypto::traits`, namely `ValidCryptoMaterial`, `PublicKey`, `PrivateKey`,
 //!   `VerifyingKey`, `SigningKey` and `Signature` are meant to be derived on simple unions of types
 //!   implementing these traits.
-//! - the derive macro for `libra_crypto::hash::CryptoHasher`, which defines
-//!   the domain-separation hasher structures described in `libra_crypto::hash`
+//! - the derive macro for `diem_crypto::hash::CryptoHasher`, which defines
+//!   the domain-separation hasher structures described in `diem_crypto::hash`
 //!   (look there for details). This derive macro has for sole difference that it
 //!   automatically picks a unique salt for you, using the Serde name. For a container `Foo`,
 //!   this is usually equivalent to:
@@ -51,12 +51,12 @@
 //!
 //! ```ignore
 //! # #[macro_use] extern crate crypto-derive;
-//! use libra_crypto::{
+//! use diem_crypto::{
 //!     hash::HashValue,
 //!     bls12381::{BLS12381PrivateKey, BLS12381PublicKey, BLS12381Signature},
 //!     ed25519::{Ed25519PrivateKey, Ed25519PublicKey, Ed25519Signature},
 //! };
-//! use libra_crypto_derive::{
+//! use diem_crypto_derive::{
 //!     SilentDebug, PrivateKey, PublicKey, Signature, SigningKey, ValidCryptoMaterial, VerifyingKey,
 //! };
 //!
@@ -140,70 +140,6 @@ pub fn silent_debug(source: TokenStream) -> TokenStream {
     gen.into()
 }
 
-/// Deserialize from a human readable format where applicable
-#[proc_macro_derive(DeserializeKey)]
-pub fn deserialize_key(source: TokenStream) -> TokenStream {
-    let ast: DeriveInput = syn::parse(source).expect("Incorrect macro input");
-    let name = &ast.ident;
-    let name_string = name.to_string();
-    let gen = quote! {
-         impl<'de> ::serde::Deserialize<'de> for #name {
-              fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-              where
-                    D: ::serde::Deserializer<'de>,
-              {
-                    if deserializer.is_human_readable() {
-                         let encoded_key = <String>::deserialize(deserializer)?;
-                         ValidCryptoMaterialStringExt::from_encoded_string(encoded_key.as_str())
-                              .map_err(<D::Error as ::serde::de::Error>::custom)
-                    } else {
-                         // In order to preserve the Serde data model and help analysis tools,
-                         // make sure to wrap our value in a container with the same name
-                         // as the original type.
-                         #[derive(::serde::Deserialize)]
-                         #[serde(rename = #name_string)]
-                         struct Value<'a>(&'a [u8]);
-
-                         let value = Value::deserialize(deserializer)?;
-                         #name::try_from(value.0).map_err(|s| {
-                              <D::Error as ::serde::de::Error>::custom(format!("{} with {}", s, #name_string))
-                         })
-                    }
-              }
-         }
-    };
-    gen.into()
-}
-
-/// Serialize into a human readable format where applicable
-#[proc_macro_derive(SerializeKey)]
-pub fn serialize_key(source: TokenStream) -> TokenStream {
-    let ast: DeriveInput = syn::parse(source).expect("Incorrect macro input");
-    let name = &ast.ident;
-    let name_string = name.to_string();
-    let gen = quote! {
-         impl ::serde::Serialize for #name {
-              fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-              where
-                    S: ::serde::Serializer,
-              {
-                    if serializer.is_human_readable() {
-                         self.to_encoded_string()
-                              .map_err(<S::Error as ::serde::ser::Error>::custom)
-                              .and_then(|str| serializer.serialize_str(&str[..]))
-                    } else {
-                         // See comment in deserialize_key.
-                         serializer.serialize_newtype_struct(
-                              #name_string,
-                              serde_bytes::Bytes::new(&ValidCryptoMaterial::to_bytes(self).as_slice()),
-                         )
-                    }
-              }
-         }
-    };
-    gen.into()
-}
-
 #[proc_macro_derive(Deref)]
 pub fn derive_deref(input: TokenStream) -> TokenStream {
     let item = syn::parse(input).expect("Incorrect macro input");
@@ -213,15 +149,15 @@ pub fn derive_deref(input: TokenStream) -> TokenStream {
     let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
 
     quote!(
-         impl #impl_generics ::std::ops::Deref for #name #ty_generics
-         #where_clause
-         {
-              type Target = #field_ty;
+        impl #impl_generics ::std::ops::Deref for #name #ty_generics
+        #where_clause
+        {
+            type Target = #field_ty;
 
-              fn deref(&self) -> &Self::Target {
-                    #field_access
-              }
-         }
+            fn deref(&self) -> &Self::Target {
+                #field_access
+            }
+        }
     )
     .into()
 }
@@ -319,7 +255,7 @@ pub fn derive_enum_signature(input: TokenStream) -> TokenStream {
 }
 
 // There is a unit test for this logic in the crypto crate, at
-// libra_crypto::unit_tests::cryptohasher — you may have to modify it if you
+// diem_crypto::unit_tests::cryptohasher — you may have to modify it if you
 // edit the below.
 #[proc_macro_derive(CryptoHasher)]
 pub fn hasher_dispatch(input: TokenStream) -> TokenStream {
@@ -343,113 +279,93 @@ pub fn hasher_dispatch(input: TokenStream) -> TokenStream {
         quote!()
     } else {
         let args = proc_macro2::TokenStream::from_iter(
-            std::iter::repeat(quote!(())).take(item.generics.params.len()),
+            core::iter::repeat(quote!(())).take(item.generics.params.len()),
         );
         quote!(<#args>)
     };
 
     let out = quote!(
-         /// Cryptographic hasher for an LCS-serializable #item
-         #[derive(Clone)]
-         pub struct #hasher_name(libra_crypto::hash::DefaultHasher);
+        /// Cryptographic hasher for an BCS-serializable #item
+        #[derive(Clone)]
+        pub struct #hasher_name(diem_crypto::hash::DefaultHasher);
 
-        #[cfg(feature = "std")]
-        static #static_seed_name: libra_crypto::_once_cell::sync::OnceCell<[u8; 32]>
-            = libra_crypto::_once_cell::sync::OnceCell::new();
+        static #static_seed_name: diem_crypto::OnceCell<[u8; 32]> = diem_crypto::OnceCell::new();
 
-        #[cfg(not(feature = "std"))]
-        static #static_seed_name: libra_crypto::_once_cell::race::OnceBox<[u8; 32]>
-            = libra_crypto::_once_cell::race::OnceBox::new();
-
-         impl #hasher_name {
-              fn new() -> Self {
-                    let name = libra_crypto::serde_name::trace_name::<#type_name #param>()
-                         .expect("The `CryptoHasher` macro only applies to structs and enums");
-                    #hasher_name(
-                         libra_crypto::hash::DefaultHasher::new(&name.as_bytes()))
-              }
-
-              fn write(&mut self, bytes: &[u8]) -> usize {
-                    use libra_crypto::hash::CryptoHasher;
-
-                    self.0.update(bytes);
-                    bytes.len()
-              }
-         }
-
-        #[cfg(feature = "std")]
-        static #static_hasher_name: libra_crypto::_once_cell::sync::OnceCell<#hasher_name>
-            = libra_crypto::_once_cell::sync::OnceCell::new();
-
-        #[cfg(not(feature = "std"))]
-        static #static_hasher_name: libra_crypto::_once_cell::race::OnceBox<#hasher_name>
-            = libra_crypto::_once_cell::race::OnceBox::new();
-
-        #[cfg(feature = "std")]
-        impl sp_std::default::Default for #hasher_name {
-            fn default() -> Self {
-                 #static_hasher_name.get_or_init(|| #hasher_name::new()).clone()
+        impl #hasher_name {
+            fn new() -> Self {
+                let name = diem_crypto::serde_name::trace_name::<#type_name #param>()
+                    .expect("The `CryptoHasher` macro only applies to structs and enums");
+                #hasher_name(
+                    diem_crypto::hash::DefaultHasher::new(&name.as_bytes()))
             }
         }
 
-        #[cfg(not(feature = "std"))]
-        impl sp_std::default::Default for #hasher_name {
+        static #static_hasher_name: diem_crypto::Lazy<#hasher_name> =
+            diem_crypto::Lazy::new(|| #hasher_name::new());
+
+
+        impl core::default::Default for #hasher_name
+        {
             fn default() -> Self {
-                 #static_hasher_name.get_or_init(|| alloc::boxed::Box::new(#hasher_name::new())).clone()
+                #static_hasher_name.clone()
             }
         }
 
-         impl libra_crypto::hash::CryptoHasher for #hasher_name {
-              #[cfg(feature = "std")]
-              fn seed() -> &'static [u8; 32] {
-                    #static_seed_name.get_or_init(|| {
-                         let name = libra_crypto::serde_name::trace_name::<#type_name #param>()
-                              .expect("The `CryptoHasher` macro only applies to structs and enums.").as_bytes();
-                         libra_crypto::hash::DefaultHasher::prefixed_hash(&name)
-                    })
-              }
+        impl diem_crypto::hash::CryptoHasher for #hasher_name {
+            fn seed() -> &'static [u8; 32] {
+                #static_seed_name.get_or_init(|| {
+                    let name = diem_crypto::serde_name::trace_name::<#type_name #param>()
+                        .expect("The `CryptoHasher` macro only applies to structs and enums.").as_bytes();
+                    diem_crypto::hash::DefaultHasher::prefixed_hash(&name)
+                })
+            }
 
-              #[cfg(not(feature = "std"))]
-              fn seed() -> &'static [u8; 32] {
-                    #static_seed_name.get_or_init(|| {
-                         let name = libra_crypto::serde_name::trace_name::<#type_name #param>()
-                              .expect("The `CryptoHasher` macro only applies to structs and enums.").as_bytes();
-                         alloc::boxed::Box::new(libra_crypto::hash::DefaultHasher::prefixed_hash(&name))
-                    })
-              }
+            fn update(&mut self, bytes: &[u8]) {
+                self.0.update(bytes);
+            }
 
-              fn update(&mut self, bytes: &[u8]) {
-                    self.0.update(bytes);
-              }
+            fn finish(self) -> diem_crypto::hash::HashValue {
+                self.0.finish()
+            }
+        }
 
-              fn finish(self) -> libra_crypto::hash::HashValue {
-                    self.0.finish()
-              }
-         }
+        #[cfg(feature = "std")]
+        impl std::io::Write for #hasher_name {
+            fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+                use diem_crypto::hash::CryptoHasher;
+
+                self.0.update(bytes);
+                Ok(bytes.len())
+            }
+            fn flush(&mut self) -> std::io::Result<()> {
+                Ok(())
+            }
+        }
+
     );
     out.into()
 }
 
-#[proc_macro_derive(LCSCryptoHash)]
-pub fn lcs_crypto_hash_dispatch(input: TokenStream) -> TokenStream {
+#[proc_macro_derive(BCSCryptoHash)]
+pub fn bcs_crypto_hash_dispatch(input: TokenStream) -> TokenStream {
     let ast = parse_macro_input!(input as DeriveInput);
     let name = &ast.ident;
     let hasher_name = Ident::new(&format!("{}Hasher", &name.to_string()), Span::call_site());
     let error_msg = syn::LitStr::new(
-        &format!("LCS serialization of {} should not fail", name.to_string()),
+        &format!("BCS serialization of {} should not fail", name.to_string()),
         Span::call_site(),
     );
     let generics = add_trait_bounds(ast.generics);
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
     let out = quote!(
-         impl #impl_generics libra_crypto::hash::CryptoHash for #name #ty_generics #where_clause {
-              type Hasher = #hasher_name;
+        impl #impl_generics diem_crypto::hash::CryptoHash for #name #ty_generics #where_clause {
+            type Hasher = #hasher_name;
 
-              fn hash(&self) -> libra_crypto::hash::HashValue {
-                    use libra_crypto::hash::CryptoHasher;
+            fn hash(&self) -> diem_crypto::hash::HashValue {
+                use diem_crypto::hash::CryptoHasher;
 
                     let mut state = Self::Hasher::default();
-                    state.write(&lcs::to_bytes(&self).expect(#error_msg));
+                    state.update(&bcs::to_bytes(&self).expect(#error_msg));
                     state.finish()
               }
          }

@@ -1,4 +1,4 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
@@ -6,11 +6,12 @@ use crate::{
     logging::LogContext,
     native_functions::FunctionContext,
 };
-// use libra_logger::prelude::*;
 use alloc::borrow::ToOwned;
 use alloc::collections::VecDeque;
 use alloc::string::{String, ToString};
+use alloc::sync::Arc;
 use alloc::vec::Vec;
+use core::{cmp::min, fmt::Write};
 use move_core_types::{
     account_address::AccountAddress,
     gas_schedule::{AbstractMemorySize, GasAlgebra, GasCarrier},
@@ -24,7 +25,6 @@ use move_vm_types::{
         self, GlobalValue, IntegerValue, Locals, Reference, Struct, StructRef, VMValueCast, Value,
     },
 };
-use sp_std::{cmp::min, fmt::Write, sync::Arc};
 use vm::{
     errors::*,
     file_format::{Bytecode, FunctionHandleIndex, FunctionInstantiationIndex, Signature},
@@ -413,7 +413,8 @@ impl<L: LogContext> Interpreter<L> {
     //
 
     /// Given an `VMStatus` generate a core dump if the error is an `InvariantViolation`.
-    fn maybe_core_dump(&self, mut err: VMError, _current_frame: &Frame) -> VMError {
+    #[allow(unused_variables)]
+    fn maybe_core_dump(&self, mut err: VMError, current_frame: &Frame) -> VMError {
         // a verification error cannot happen at runtime so change it into an invariant violation.
         if err.status_type() == StatusType::Verification {
             self.log_context.alert();
@@ -440,9 +441,9 @@ impl<L: LogContext> Interpreter<L> {
     }
 
     #[allow(dead_code)]
-    fn debug_print_frame<B: Write>(
+    fn debug_print_frame(
         &self,
-        buf: &mut B,
+        buf: &mut String,
         loader: &Loader,
         idx: usize,
         frame: &Frame,
@@ -639,7 +640,7 @@ impl CallStack {
     }
 
     /// Push a `Frame` on the call stack.
-    fn push(&mut self, frame: Frame) -> ::sp_std::result::Result<(), Frame> {
+    fn push(&mut self, frame: Frame) -> ::core::result::Result<(), Frame> {
         if self.0.len() < CALL_STACK_SIZE_LIMIT {
             self.0.push(frame);
             Ok(())

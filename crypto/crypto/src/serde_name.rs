@@ -7,7 +7,7 @@
 //!
 //! ```rust
 //! # use serde::Deserialize;
-//! # use serde_name::trace_name;
+//! # use diem_crypto::serde_name::trace_name;
 //! #[derive(Deserialize)]
 //! struct Foo {
 //!   bar: Bar,

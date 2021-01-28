@@ -1,18 +1,19 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
     account_address::AccountAddress,
     identifier::{IdentStr, Identifier},
 };
-use libra_crypto::hash::CryptoHash;
-use libra_crypto_derive::{CryptoHasher, LCSCryptoHash};
+use alloc::borrow::ToOwned;
+use alloc::boxed::Box;
+use alloc::vec::Vec;
+use core::fmt::{Display, Formatter};
+use diem_crypto_derive::{BCSCryptoHash, CryptoHasher};
 use parity_scale_codec::{Decode, Encode};
+#[cfg(any(test, feature = "fuzzing"))]
+use proptest_derive::Arbitrary;
 use serde::{Deserialize, Serialize};
-use sp_std::borrow::ToOwned;
-use sp_std::boxed::Box;
-use sp_std::fmt::{Display, Formatter};
-use sp_std::prelude::Vec;
 
 pub const CODE_TAG: u8 = 0;
 pub const RESOURCE_TAG: u8 = 1;
@@ -47,7 +48,7 @@ pub enum TypeTag {
     PartialOrd,
     Ord,
     CryptoHasher,
-    LCSCryptoHash,
+    BCSCryptoHash,
     Encode,
     Decode,
 )]
@@ -60,11 +61,12 @@ pub struct StructTag {
 }
 
 impl StructTag {
+    #[allow(clippy::vec_init_then_push)]
     pub fn access_vector(&self) -> Vec<u8> {
         let mut key = vec![];
         key.push(RESOURCE_TAG);
 
-        key.append(&mut self.hash().to_vec());
+        key.append(&mut bcs::to_bytes(self).unwrap());
         key
     }
 
@@ -77,8 +79,8 @@ impl StructTag {
 /// the struct tag
 #[derive(Serialize, Deserialize, Debug, PartialEq, Hash, Eq, Clone, PartialOrd, Ord)]
 pub struct ResourceKey {
-    address: AccountAddress,
-    type_: StructTag,
+    pub address: AccountAddress,
+    pub type_: StructTag,
 }
 
 impl ResourceKey {
@@ -110,8 +112,12 @@ impl ResourceKey {
     PartialOrd,
     Ord,
     CryptoHasher,
-    LCSCryptoHash,
+    BCSCryptoHash,
+    Encode,
+    Decode,
 )]
+#[cfg_attr(any(test, feature = "fuzzing"), derive(Arbitrary))]
+#[cfg_attr(any(test, feature = "fuzzing"), proptest(no_params))]
 pub struct ModuleId {
     address: AccountAddress,
     name: Identifier,
@@ -136,23 +142,24 @@ impl ModuleId {
         &self.address
     }
 
+    #[allow(clippy::vec_init_then_push)]
     pub fn access_vector(&self) -> Vec<u8> {
         let mut key = vec![];
         key.push(CODE_TAG);
 
-        key.append(&mut self.hash().to_vec());
+        key.append(&mut bcs::to_bytes(self).unwrap());
         key
     }
 }
 
 impl Display for ModuleId {
-    fn fmt(&self, f: &mut Formatter) -> sp_std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> core::fmt::Result {
         write!(f, "{}::{}", self.address, self.name)
     }
 }
 
 impl Display for StructTag {
-    fn fmt(&self, f: &mut Formatter) -> sp_std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> core::fmt::Result {
         write!(
             f,
             "0x{}::{}::{}",
@@ -173,7 +180,7 @@ impl Display for StructTag {
 }
 
 impl Display for TypeTag {
-    fn fmt(&self, f: &mut Formatter) -> sp_std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> core::fmt::Result {
         match self {
             TypeTag::Struct(s) => write!(f, "{}", s),
             TypeTag::Vector(ty) => write!(f, "Vector<{}>", ty),

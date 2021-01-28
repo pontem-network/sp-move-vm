@@ -4,15 +4,15 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[macro_use]
+extern crate alloc;
+#[macro_use]
 extern crate move_vm_types;
 
-#[macro_use]
-extern crate alloc;
-
 pub mod account;
+pub mod bcs;
 pub mod debug;
 pub mod event;
 pub mod hash;
-pub mod lcs;
+pub mod signature;
 pub mod signer;
 pub mod vector;

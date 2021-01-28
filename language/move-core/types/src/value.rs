@@ -1,16 +1,16 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::account_address::AccountAddress;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use anyhow::{Error, Result as AResult};
+use core::fmt::{self, Debug};
 use serde::{
     de::Error as DeError,
     ser::{SerializeSeq, SerializeTuple},
     Deserialize, Serialize,
 };
-use sp_std::fmt::{self, Debug};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct MoveStruct(Vec<MoveValue>);
@@ -97,11 +97,11 @@ impl MoveKindInfo {
 
 impl MoveValue {
     pub fn simple_deserialize(blob: &[u8], ty: &MoveTypeLayout) -> AResult<Self> {
-        Ok(lcs::from_bytes_seed(ty, blob).map_err(Error::msg)?)
+        bcs::from_bytes_seed(ty, blob).map_err(Error::msg)
     }
 
     pub fn simple_serialize(&self) -> Option<Vec<u8>> {
-        lcs::to_bytes(self).ok()
+        bcs::to_bytes(self).ok()
     }
 
     pub fn vector_u8(v: Vec<u8>) -> Self {
@@ -115,7 +115,7 @@ impl MoveStruct {
     }
 
     pub fn simple_deserialize(blob: &[u8], ty: &MoveStructLayout) -> AResult<Self> {
-        Ok(lcs::from_bytes_seed(ty, blob).map_err(Error::msg)?)
+        bcs::from_bytes_seed(ty, blob).map_err(Error::msg)
     }
 
     pub fn fields(&self) -> &[MoveValue] {

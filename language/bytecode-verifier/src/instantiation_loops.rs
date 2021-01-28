@@ -1,4 +1,4 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 //! This implements an algorithm that detects loops during the instantiation of generics.
@@ -13,6 +13,7 @@
 //! terminate eventually.
 
 use alloc::string::String;
+use alloc::vec::Vec;
 use hashbrown::{hash_map, HashMap, HashSet};
 use move_core_types::vm_status::StatusCode;
 use petgraph::{
@@ -21,7 +22,6 @@ use petgraph::{
     visit::EdgeRef,
     Graph,
 };
-use sp_std::prelude::Vec;
 use vm::{
     access::ModuleAccess,
     errors::{Location, PartialVMError, PartialVMResult, VMResult},

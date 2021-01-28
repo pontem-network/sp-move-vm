@@ -1,4 +1,4 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 //! This module lays out the basic abstract costing schedule for bytecode instructions.
@@ -6,10 +6,14 @@
 //! It is important to note that the cost schedule defined in this file does not track hashing
 //! operations or other native operations; the cost of each native operation will be returned by the
 //! native function itself.
+use alloc::vec::Vec;
+use core::{
+    ops::{Add, Div, Mul, Sub},
+    u64,
+};
 use mirai_annotations::*;
+use parity_scale_codec::{Decode, Encode};
 use serde::{Deserialize, Serialize};
-use sp_std::ops::{Add, Div, Mul, Sub};
-use sp_std::prelude::Vec;
 
 /// The underlying carrier for gas-related units and costs. Data with this type should not be
 /// manipulated directly, but instead be manipulated using the newtype wrappers defined around
@@ -95,7 +99,7 @@ macro_rules! define_gas_unit {
         carrier: $carrier: ty,
         doc: $comment: literal
     } => {
-        #[derive(Debug, Hash, Eq, PartialEq, Copy, Clone, Serialize, Deserialize)]
+        #[derive(Debug, Hash, Eq, PartialEq, Copy, Clone, Serialize, Deserialize, Encode, Decode)]
         #[doc=$comment]
         pub struct $name<GasCarrier>(GasCarrier);
         impl GasAlgebra<$carrier> for $name<$carrier> {
@@ -110,21 +114,21 @@ macro_rules! define_gas_unit {
 }
 
 define_gas_unit! {
-     name: AbstractMemorySize,
-     carrier: GasCarrier,
-     doc: "A newtype wrapper that represents the (abstract) memory size that the instruction will take up."
+    name: AbstractMemorySize,
+    carrier: GasCarrier,
+    doc: "A newtype wrapper that represents the (abstract) memory size that the instruction will take up."
 }
 
 define_gas_unit! {
-     name: GasUnits,
-     carrier: GasCarrier,
-     doc: "A newtype wrapper around the underlying carrier for the gas cost."
+    name: GasUnits,
+    carrier: GasCarrier,
+    doc: "A newtype wrapper around the underlying carrier for the gas cost."
 }
 
 define_gas_unit! {
-     name: GasPrice,
-     carrier: GasCarrier,
-     doc: "A newtype wrapper around the gas price for each unit of gas consumed."
+    name: GasPrice,
+    carrier: GasCarrier,
+    doc: "A newtype wrapper around the gas price for each unit of gas consumed."
 }
 
 /// One unit of gas
@@ -153,7 +157,7 @@ pub const MIN_EXISTS_DATA_SIZE: AbstractMemorySize<GasCarrier> = AbstractMemoryS
 
 pub const MAX_TRANSACTION_SIZE_IN_BYTES: GasCarrier = 4096;
 
-#[derive(Clone, Debug, Serialize, PartialEq, Deserialize)]
+#[derive(Clone, Debug, Serialize, PartialEq, Deserialize, Encode, Decode)]
 pub struct GasConstants {
     /// The cost per-byte read from global storage.
     pub global_memory_per_byte_cost: GasUnits<GasCarrier>,
@@ -212,7 +216,7 @@ impl Default for GasConstants {
 /// The cost tables, keyed by the serialized form of the bytecode instruction.  We use the
 /// serialized form as opposed to the instruction enum itself as the key since this will be the
 /// on-chain representation of bytecode instructions in the future.
-#[derive(Clone, Debug, Serialize, PartialEq, Deserialize)]
+#[derive(Clone, Debug, Serialize, PartialEq, Deserialize, Encode, Decode)]
 pub struct CostTable {
     pub instruction_table: Vec<GasCost>,
     pub native_table: Vec<GasCost>,
@@ -236,7 +240,7 @@ impl CostTable {
 /// The  `GasCost` tracks:
 /// - instruction cost: how much time/computational power is needed to perform the instruction
 /// - memory cost: how much memory is required for the instruction, and storage overhead
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Encode, Decode)]
 pub struct GasCost {
     pub instruction_gas: GasUnits<GasCarrier>,
     pub memory_gas: GasUnits<GasCarrier>,

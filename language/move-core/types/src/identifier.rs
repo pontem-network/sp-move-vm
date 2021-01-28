@@ -1,4 +1,4 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 //! An identifier is the name of an entity (module, resource, function, etc) in Move.
@@ -26,16 +26,17 @@
 //! * specify keys for lookups in storage
 //! * do cross-module lookups while executing transactions
 
-use anyhow::{bail, Error, Result};
-
 use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
 use alloc::string::String;
+use alloc::vec::Vec;
+use anyhow::{bail, Error, Result};
+use core::{borrow::Borrow, fmt, ops::Deref};
 use parity_scale_codec::{Decode, Encode, Error as PsError, Input, Output};
+#[cfg(any(test, feature = "fuzzing"))]
+use proptest::prelude::*;
 use ref_cast::RefCast;
 use serde::{Deserialize, Serialize};
-use sp_std::prelude::Vec;
-use sp_std::{borrow::Borrow, fmt, ops::Deref};
 
 /// Describes what identifiers are allowed.
 ///
@@ -239,5 +240,20 @@ impl ToOwned for IdentStr {
 impl fmt::Display for IdentStr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", &self.0)
+    }
+}
+
+#[cfg(any(test, feature = "fuzzing"))]
+impl Arbitrary for Identifier {
+    type Parameters = ();
+    type Strategy = BoxedStrategy<Self>;
+
+    fn arbitrary_with((): ()) -> Self::Strategy {
+        ALLOWED_NO_SELF_IDENTIFIERS
+            .prop_map(|s| {
+                // Identifier::new will verify that generated identifiers are correct.
+                Identifier::new(s).unwrap()
+            })
+            .boxed()
     }
 }

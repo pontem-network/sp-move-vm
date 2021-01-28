@@ -1,61 +1,18 @@
 #[macro_use]
 extern crate alloc;
+mod common;
 
-use serde::Deserialize;
-
-use alloc::rc::Rc;
-use core::cell::RefCell;
-use hashbrown::HashMap;
 use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS};
 use move_core_types::vm_status::StatusCode;
 use move_vm_runtime::data_cache::RemoteCache;
-use mvm::data::{EventHandler, State, Storage};
+use mvm::data::State;
 use mvm::mvm::Mvm;
 use mvm::types::{Gas, ModuleTx, ScriptArg, ScriptTx};
 use mvm::Vm;
+use serde::Deserialize;
 
-#[derive(Clone)]
-pub struct StorageMock {
-    pub data: Rc<RefCell<HashMap<Vec<u8>, Vec<u8>>>>,
-}
-
-impl StorageMock {
-    pub fn new() -> StorageMock {
-        StorageMock {
-            data: Rc::new(RefCell::new(Default::default())),
-        }
-    }
-}
-
-impl Storage for StorageMock {
-    fn get(&self, key: &[u8]) -> Option<Vec<u8>> {
-        let data = self.data.borrow();
-        data.get(key).map(|blob| blob.to_owned())
-    }
-
-    fn insert(&self, key: &[u8], value: &[u8]) {
-        let mut data = self.data.borrow_mut();
-        data.insert(key.to_owned(), value.to_owned());
-    }
-
-    fn remove(&self, key: &[u8]) {
-        let mut data = self.data.borrow_mut();
-        data.remove(key);
-    }
-}
-
-#[derive(Clone, Default)]
-pub struct EventHandlerMock {
-    pub data: Rc<RefCell<Vec<(Vec<u8>, u64, TypeTag, Vec<u8>)>>>,
-}
-
-impl EventHandler for EventHandlerMock {
-    fn on_event(&self, guid: Vec<u8>, seq_num: u64, ty_tag: TypeTag, message: Vec<u8>) {
-        let mut data = self.data.borrow_mut();
-        data.push((guid, seq_num, ty_tag, message));
-    }
-}
+use common::{EventHandlerMock, StorageMock};
 
 fn gas() -> Gas {
     Gas::new(10_000, 1).unwrap()
@@ -110,8 +67,8 @@ struct StoreU64 {
 #[test]
 fn test_public_module() {
     let mock = StorageMock::new();
-    let vm = Mvm::new(mock.clone(), EventHandlerMock::default());
-    let state = State::new(mock.clone());
+    let vm = Mvm::new(mock.clone(), EventHandlerMock::default()).unwrap();
+    let state = State::new(mock);
     assert_eq!(
         StatusCode::EXECUTED,
         vm.publish_module(gas(), store_module()).status_code
@@ -128,8 +85,8 @@ fn test_execute_script() {
     let test_value = 13;
     let mock = StorageMock::new();
     let event_handler = EventHandlerMock::default();
-    let vm = Mvm::new(mock.clone(), event_handler.clone());
-    let state = State::new(mock.clone());
+    let vm = Mvm::new(mock.clone(), event_handler).unwrap();
+    let state = State::new(mock);
     assert_eq!(
         StatusCode::EXECUTED,
         vm.publish_module(gas(), store_module()).status_code
@@ -150,7 +107,7 @@ fn test_execute_script() {
         .get_resource(&CORE_CODE_ADDRESS, &tag)
         .unwrap()
         .unwrap();
-    let store: StoreU64 = lcs::from_bytes(&blob).unwrap();
+    let store: StoreU64 = bcs::from_bytes(&blob).unwrap();
     assert_eq!(test_value, store.val);
 }
 
@@ -159,7 +116,7 @@ fn test_store_event() {
     let test_value = 13;
     let mock = StorageMock::new();
     let event_handler = EventHandlerMock::default();
-    let vm = Mvm::new(mock, event_handler.clone());
+    let vm = Mvm::new(mock, event_handler.clone()).unwrap();
     assert_eq!(
         StatusCode::EXECUTED,
         vm.publish_module(gas(), vector_module()).status_code
@@ -177,7 +134,7 @@ fn test_store_event() {
     let (guid, seq, tag, msg) = event_handler.data.borrow_mut().remove(0);
     assert_eq!(guid, b"GUID".to_vec());
     assert_eq!(seq, 1);
-    assert_eq!(test_value, lcs::from_bytes::<StoreU64>(&msg).unwrap().val);
+    assert_eq!(test_value, bcs::from_bytes::<StoreU64>(&msg).unwrap().val);
     assert_eq!(
         TypeTag::Struct(StructTag {
             address: CORE_CODE_ADDRESS,

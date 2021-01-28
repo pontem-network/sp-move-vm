@@ -6,11 +6,17 @@
 //! For examples on how to use these traits, see the implementations of the [`ed25519`] or
 //! [`bls12381`] modules.
 
+use crate::hash::CryptoHash;
 use alloc::string::String;
+use alloc::vec::Vec;
 use anyhow::Result;
 use core::convert::{From, TryFrom};
-use sp_std::prelude::Vec;
-use sp_std::{fmt, fmt::Debug, hash::Hash};
+use core::{fmt, fmt::Debug, hash::Hash};
+#[cfg(feature = "std")]
+use rand::prelude::StdRng;
+#[cfg(feature = "std")]
+use rand_core::{CryptoRng, RngCore, SeedableRng};
+use serde::Serialize;
 
 /// A deterministic seed for PRNGs related to keys
 pub const TEST_SEED: [u8; 32] = [0u8; 32];
@@ -65,8 +71,8 @@ pub trait Length {
 /// This provides an implementation for a validation that relies on a
 /// round-trip to bytes and corresponding [`TryFrom`][TryFrom].
 pub trait ValidCryptoMaterial:
-    // The for<'a> exactly matches the assumption "deserializable from any lifetime".
-    for<'a> TryFrom<&'a [u8], Error = CryptoMaterialError>
+// The for<'a> exactly matches the assumption "deserializable from any lifetime".
+    for<'a> TryFrom<&'a [u8], Error=CryptoMaterialError>
 {
     /// Convert the valid crypto material to bytes.
     fn to_bytes(&self) -> Vec<u8>;
@@ -79,7 +85,7 @@ pub trait ValidCryptoMaterial:
 pub trait ValidCryptoMaterialStringExt: ValidCryptoMaterial {
     /// When trying to convert from bytes, we simply decode the string into
     /// bytes before checking if we can convert.
-    fn from_encoded_string(encoded_str: &str) -> sp_std::result::Result<Self, CryptoMaterialError> {
+    fn from_encoded_string(encoded_str: &str) -> core::result::Result<Self, CryptoMaterialError> {
         let bytes_out = ::hex::decode(encoded_str);
         // We defer to `try_from` to make sure we only produce valid crypto materials.
         bytes_out
@@ -126,6 +132,19 @@ pub trait SigningKey:
     type VerifyingKeyMaterial: VerifyingKey<SigningKeyMaterial = Self>;
     /// The associated signature type for this signing key.
     type SignatureMaterial: Signature<SigningKeyMaterial = Self>;
+
+    /// Signs an object that has an distinct domain-separation hasher and
+    /// that we know how to serialize. There is no pre-hashing into a
+    /// `HashValue` to be done by the caller.
+    ///
+    /// Note: this assumes serialization is unfaillible. See diem_common::bcs::ser
+    /// for a discussion of this assumption.
+    fn sign<T: CryptoHash + Serialize>(&self, message: &T) -> Self::SignatureMaterial;
+
+    /// Signs a non-hash input message. For testing only.
+    #[cfg(any(test, feature = "fuzzing"))]
+    fn sign_arbitrary_message(&self, message: &[u8]) -> Self::SignatureMaterial;
+
     /// Returns the associated verifying key
     fn verifying_key(&self) -> Self::VerifyingKeyMaterial {
         self.public_key()
@@ -138,20 +157,20 @@ pub trait SigningKey:
 /// This convertibility requirement ensures the existence of a
 /// deterministic, canonical public key construction from a private key.
 pub trait PublicKey: Sized + Clone + Eq + Hash +
-    // This unsightly turbofish type parameter is the precise constraint
-    // needed to require that there exists an
-    //
-    // ```
-    // impl From<&MyPrivateKeyMaterial> for MyPublicKeyMaterial
-    // ```
-    //
-    // declaration, for any `MyPrivateKeyMaterial`, `MyPublicKeyMaterial`
-    // on which we register (respectively) `PublicKey` and `PrivateKey`
-    // implementations.
+// This unsightly turbofish type parameter is the precise constraint
+// needed to require that there exists an
+//
+// ```
+// impl From<&MyPrivateKeyMaterial> for MyPublicKeyMaterial
+// ```
+//
+// declaration, for any `MyPrivateKeyMaterial`, `MyPublicKeyMaterial`
+// on which we register (respectively) `PublicKey` and `PrivateKey`
+// implementations.
     for<'a> From<&'a <Self as PublicKey>::PrivateKeyMaterial> {
     /// We require public / private types to be coupled, i.e. their
     /// associated type is each other.
-    type PrivateKeyMaterial: PrivateKey<PublicKeyMaterial = Self>;
+    type PrivateKeyMaterial: PrivateKey<PublicKeyMaterial=Self>;
 }
 
 /// A type family of public keys that are used for signing.
@@ -170,6 +189,27 @@ pub trait VerifyingKey:
     type SigningKeyMaterial: SigningKey<VerifyingKeyMaterial = Self>;
     /// The associated signature type for this verifying key.
     type SignatureMaterial: Signature<VerifyingKeyMaterial = Self>;
+}
+
+/// A type family for schemes which know how to generate key material from
+/// a cryptographically-secure [`CryptoRng`][::rand::CryptoRng].
+#[cfg(feature = "std")]
+pub trait Uniform {
+    /// Generate key material from an RNG. This should generally not be used for production
+    /// purposes even with a good source of randomness. When possible use hardware crypto to generate and
+    /// store private keys.
+    fn generate<R>(rng: &mut R) -> Self
+    where
+        R: RngCore + CryptoRng;
+
+    /// Generate a random key using the shared TEST_SEED
+    fn generate_for_testing() -> Self
+    where
+        Self: Sized,
+    {
+        let mut rng: StdRng = SeedableRng::from_seed(TEST_SEED);
+        Self::generate(&mut rng)
+    }
 }
 
 /// A type family for signature material that knows which public key type
@@ -201,6 +241,14 @@ pub trait Signature:
     /// The associated signing key type for this signature
     type SigningKeyMaterial: SigningKey<SignatureMaterial = Self>;
 
+    /// Verification for a struct we unabmiguously know how to serialize and
+    /// that we have a domain separation prefix for.
+    fn verify<T: CryptoHash + Serialize>(
+        &self,
+        message: &T,
+        public_key: &Self::VerifyingKeyMaterial,
+    ) -> Result<()>;
+
     /// Native verification function.
     fn verify_arbitrary_msg(
         &self,
@@ -210,6 +258,19 @@ pub trait Signature:
 
     /// Convert the signature into a byte representation.
     fn to_bytes(&self) -> Vec<u8>;
+
+    /// The implementer can override a batch verification implementation
+    /// that by default iterates over each signature. More efficient
+    /// implementations exist and should be implemented for many schemes.
+    fn batch_verify<T: CryptoHash + Serialize>(
+        message: &T,
+        keys_and_signatures: Vec<(Self::VerifyingKeyMaterial, Self)>,
+    ) -> Result<()> {
+        for (key, signature) in keys_and_signatures {
+            signature.verify(message, &key)?
+        }
+        Ok(())
+    }
 }
 
 /// A type family with a by-convention notion of genesis private key.
@@ -225,7 +286,7 @@ pub(crate) mod private {
     pub trait Sealed {}
 
     // Implement for the ed25519, multi-ed25519 signatures
-    // impl Sealed for crate::ed25519::Ed25519PrivateKey {}
-    // impl Sealed for crate::ed25519::Ed25519PublicKey {}
-    // impl Sealed for crate::ed25519::Ed25519Signature {}
+    impl Sealed for crate::ed25519::Ed25519PrivateKey {}
+    impl Sealed for crate::ed25519::Ed25519PublicKey {}
+    impl Sealed for crate::ed25519::Ed25519Signature {}
 }

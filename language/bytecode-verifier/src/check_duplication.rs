@@ -1,4 +1,4 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 //! This module implements a checker for verifying that each vector in a CompiledModule contains
@@ -8,10 +8,10 @@
 //! - struct and field definitions are consistent
 //! - the handles in struct and function definitions point to the self module index
 //! - all struct and function handles pointing to the self module index have a definition
+use core::hash::Hash;
 use hashbrown::HashSet;
 use move_core_types::vm_status::StatusCode;
 use move_core_types::{account_address::AccountAddress, identifier::Identifier};
-use sp_std::hash::Hash;
 use vm::{
     access::{ModuleAccess, ScriptAccess},
     errors::{verification_error, Location, PartialVMResult, VMResult},

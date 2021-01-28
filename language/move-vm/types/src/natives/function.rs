@@ -1,4 +1,4 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 //! Native Function Support
@@ -24,8 +24,8 @@ use move_core_types::{
 use vm::errors::PartialVMResult;
 
 use alloc::string::String;
+use alloc::vec::Vec;
 pub use move_core_types::vm_status::StatusCode;
-use sp_std::prelude::Vec;
 pub use vm::errors::PartialVMError;
 
 /// `NativeContext` - Native function context.
@@ -94,7 +94,7 @@ impl NativeResult {
 /// The key is the specific native function index known to `CostTable`.
 pub fn native_gas(table: &CostTable, key: NativeCostIndex, size: usize) -> GasUnits<GasCarrier> {
     let gas_amt = table.native_cost(key as u8);
-    let memory_size = AbstractMemorySize::new(sp_std::cmp::max(1, size) as GasCarrier);
+    let memory_size = AbstractMemorySize::new(core::cmp::max(1, size) as GasCarrier);
     debug_assert!(memory_size.get() > 0);
     gas_amt.total().mul(memory_size)
 }

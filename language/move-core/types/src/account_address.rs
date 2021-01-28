@@ -1,20 +1,22 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use anyhow::{ensure, Error, Result};
-use libra_crypto::{
+use core::{convert::TryFrom, fmt, str::FromStr};
+use diem_crypto::{
     hash::{CryptoHash, CryptoHasher},
     HashValue,
 };
-use libra_crypto_derive::CryptoHasher;
+use diem_crypto_derive::CryptoHasher;
 use parity_scale_codec::{Decode, Encode};
 #[cfg(any(test, feature = "fuzzing"))]
 use proptest_derive::Arbitrary;
+#[cfg(feature = "std")]
+use rand::{rngs::OsRng, Rng};
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize, Serializer};
 use short_hex_str::ShortHexStr;
-use sp_std::{convert::TryFrom, fmt, str::FromStr};
 use static_assertions::const_assert;
 
 /// A struct that represents an account address.
@@ -32,6 +34,13 @@ impl AccountAddress {
 
     /// Hex address: 0x0
     pub const ZERO: Self = Self([0u8; Self::LENGTH]);
+
+    #[cfg(feature = "std")]
+    pub fn random() -> Self {
+        let mut rng = OsRng;
+        let buf: [u8; Self::LENGTH] = rng.gen();
+        Self(buf)
+    }
 
     // Helpful in log messages
     pub fn short_str(&self) -> ShortHexStr {
@@ -83,19 +92,6 @@ impl AccountAddress {
 
         AccountAddress::try_from(padded_result)
     }
-
-    // Note: This is inconsistent with current types because AccountAddress is derived
-    // from consensus key which is of type Ed25519PublicKey. Since AccountAddress does
-    // not mean anything in a setting without remote authentication, we use the network
-    // public key to generate a peer_id for the peer.
-    // See this issue for potential improvements: https://github.com/libra/libra/issues/3960
-    // pub fn from_identity_public_key(identity_public_key: x25519::PublicKey) -> Self {
-    //     let mut array = [0u8; Self::LENGTH];
-    //     let pubkey_slice = identity_public_key.as_slice();
-    //     // keep only the last 16 bytes
-    //     array.copy_from_slice(&pubkey_slice[x25519::PUBLIC_KEY_SIZE - Self::LENGTH..]);
-    //     Self(array)
-    // }
 }
 
 impl CryptoHash for AccountAddress {
@@ -217,14 +213,13 @@ impl FromStr for AccountAddress {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self> {
-        ::hex::decode(s)
-            .map_err(Error::msg)
-            .and_then(|bytes_out| AccountAddress::try_from(bytes_out.as_slice()))
+        let bytes_out = ::hex::decode(s).map_err(Error::msg)?;
+        AccountAddress::try_from(bytes_out.as_slice())
     }
 }
 
 impl<'de> Deserialize<'de> for AccountAddress {
-    fn deserialize<D>(deserializer: D) -> sp_std::result::Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> core::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -246,7 +241,7 @@ impl<'de> Deserialize<'de> for AccountAddress {
 }
 
 impl Serialize for AccountAddress {
-    fn serialize<S>(&self, serializer: S) -> sp_std::result::Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> core::result::Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -266,12 +261,12 @@ mod tests {
 
     #[test]
     fn test_short_str_lossless() {
-        let hex = Vec::from_hex("00c0f1f95c5b1c5f0eda533eff269000")
+        let hex = Vec::from_hex("00c0f1f95c5b1c5f0eda533eff26900000c0f1f95c5b1c5f0eda533eff269000")
             .expect("You must provide a valid Hex format");
 
         let address: AccountAddress = AccountAddress::try_from(&hex[..]).unwrap_or_else(|_| {
             panic!(
-                "The address {:?} is of invalid length. Addresses must be 16-bytes long",
+                "The address {:?} is of invalid length. Addresses must be 32-bytes long",
                 &hex
             )
         });
@@ -279,19 +274,19 @@ mod tests {
         let string_lossless = address.short_str_lossless();
 
         assert_eq!(
-            "c0f1f95c5b1c5f0eda533eff269000".to_string(),
+            "c0f1f95c5b1c5f0eda533eff26900000c0f1f95c5b1c5f0eda533eff269000".to_string(),
             string_lossless
         );
     }
 
     #[test]
     fn test_short_str_lossless_zero() {
-        let hex = Vec::from_hex("00000000000000000000000000000000")
+        let hex = Vec::from_hex("0000000000000000000000000000000000000000000000000000000000000000")
             .expect("You must provide a valid Hex format");
 
         let address: AccountAddress = AccountAddress::try_from(&hex[..]).unwrap_or_else(|_| {
             panic!(
-                "The address {:?} is of invalid length. Addresses must be 16-bytes long",
+                "The address {:?} is of invalid length. Addresses must be 32-bytes long",
                 &hex
             )
         });

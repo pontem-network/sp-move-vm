@@ -1,4 +1,4 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::file_format::{Constant, SignatureToken};
@@ -19,7 +19,7 @@ fn sig_to_ty(sig: &SignatureToken) -> Option<MoveTypeLayout> {
         | SignatureToken::MutableReference(_)
         | SignatureToken::Struct(_)
         | SignatureToken::TypeParameter(_)
-        | SignatureToken::StructInstantiation(..) => None,
+        | SignatureToken::StructInstantiation(_, _) => None,
     }
 }
 

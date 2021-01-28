@@ -1,4 +1,4 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 use alloc::string::{String, ToString};
@@ -24,12 +24,12 @@ impl NoContextLog {
     }
 }
 
-impl LogContext for NoContextLog {
-    fn alert(&self) {}
-}
-
 impl Default for NoContextLog {
     fn default() -> Self {
-        NoContextLog::new()
+        Self::new()
     }
+}
+
+impl LogContext for NoContextLog {
+    fn alert(&self) {}
 }

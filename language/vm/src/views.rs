@@ -1,4 +1,4 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 //! An alternate representation of the file format built on top of the existing format.
@@ -11,14 +11,14 @@
 //!   immediately -- the views are a convenience to make that simpler. They've been written as lazy
 //!   iterators to aid understanding of the file format and to make it easy to generate views.
 
-use sp_std::iter::DoubleEndedIterator;
+use core::iter::DoubleEndedIterator;
 
 use crate::{access::ModuleAccess, file_format::*, SignatureTokenKind};
-use sp_std::collections::btree_set::BTreeSet;
+use alloc::collections::btree_set::BTreeSet;
 
+use alloc::collections::BTreeMap;
 use alloc::vec::Vec;
 use move_core_types::{identifier::IdentStr, language_storage::ModuleId};
-use sp_std::collections::btree_map::BTreeMap;
 
 /// Represents a lazily evaluated abstraction over a module.
 ///

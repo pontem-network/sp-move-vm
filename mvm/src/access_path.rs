@@ -38,7 +38,7 @@
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::fmt;
-use libra_crypto::hash::HashValue;
+use diem_crypto::hash::HashValue;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::language_storage::{ModuleId, ResourceKey, StructTag, CODE_TAG, RESOURCE_TAG};
 

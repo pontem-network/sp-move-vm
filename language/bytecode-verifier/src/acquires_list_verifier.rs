@@ -1,4 +1,4 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 //! This module implements a checker for verifying properties about the acquires list on function
@@ -10,9 +10,9 @@
 //! - No missing resources (any resource acquired must be present)
 //! - No additional resources (no extraneous resources not actually acquired)
 
+use alloc::collections::BTreeSet;
 use hashbrown::HashMap;
 use move_core_types::vm_status::StatusCode;
-use sp_std::collections::btree_set::BTreeSet;
 use vm::{
     access::ModuleAccess,
     errors::{PartialVMError, PartialVMResult},

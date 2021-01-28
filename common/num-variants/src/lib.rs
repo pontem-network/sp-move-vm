@@ -1,4 +1,4 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 //! Add an associated constant to an enum describing the number of variants it has.
@@ -7,14 +7,12 @@
 #![warn(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
-extern crate proc_macro;
-use proc_macro2::{Ident, Span, TokenStream};
-
 extern crate alloc;
-use alloc::vec::Vec;
+extern crate proc_macro;
 
+use alloc::vec::Vec;
+use proc_macro2::{Ident, Span, TokenStream};
 use quote::quote;
-// use sp_std::prelude::Vec;
 use syn::{
     parse_macro_input, spanned::Spanned, Attribute, Data, DeriveInput, Error, Lit, Meta,
     MetaNameValue, Result,
@@ -42,10 +40,10 @@ fn derive_num_variants_impl(input: DeriveInput) -> Result<TokenStream> {
     let num_variants = compute_num_variants(&input.data, input_span)?;
 
     let expanded = quote! {
-         impl #impl_generics #name #ty_generics #where_clause {
-              /// The number of variants in this enum.
-              pub const #const_name: usize = #num_variants;
-         }
+        impl #impl_generics #name #ty_generics #where_clause {
+            /// The number of variants in this enum.
+            pub const #const_name: usize = #num_variants;
+        }
     };
 
     Ok(expanded)

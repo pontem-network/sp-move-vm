@@ -1,7 +1,18 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::natives::function::NativeResult;
+use alloc::boxed::Box;
+use alloc::rc::Rc;
+use alloc::string::String;
+use alloc::vec::Vec;
+use core::{
+    cell::RefCell,
+    fmt::{self, Debug, Display},
+    iter,
+    mem::size_of,
+    ops::Add,
+};
 use move_core_types::{
     account_address::AccountAddress,
     gas_schedule::{
@@ -10,14 +21,6 @@ use move_core_types::{
     },
     value::{MoveKind, MoveKindInfo, MoveStructLayout, MoveTypeLayout},
     vm_status::{sub_status::NFE_VECTOR_ERROR_BASE, StatusCode},
-};
-use sp_std::{
-    cell::RefCell,
-    fmt::{self, Debug, Display},
-    iter,
-    mem::size_of,
-    ops::Add,
-    rc::Rc,
 };
 use vm::{
     errors::*,
@@ -357,30 +360,28 @@ impl ValueImpl {
             | ValueImpl::U64(_)
             | ValueImpl::U128(_)
             | ValueImpl::Address(_) => true,
-            ValueImpl::Container(c) => {
-                match c {
-                    Container::VecBool(_)
-                    | Container::VecU8(_)
-                    | Container::VecU64(_)
-                    | Container::VecU128(_)
-                    | Container::VecAddress(_) => true,
-                    Container::VecC(values) => {
-                        // this is not verifying vector consistency because it cannot always.
-                        // It's simply checking that every elements in the vector is itself
-                        // a constant or a vector
-                        for value in &*values.borrow() {
-                            if !value.is_constant() {
-                                return false;
-                            }
+            ValueImpl::Container(c) => match c {
+                Container::VecBool(_)
+                | Container::VecU8(_)
+                | Container::VecU64(_)
+                | Container::VecU128(_)
+                | Container::VecAddress(_) => true,
+                Container::VecC(values) => {
+                    // this is not verifying vector consistency because it cannot always.
+                    // It's simply checking that every elements in the vector is itself
+                    // a constant or a vector
+                    for value in &*values.borrow() {
+                        if !value.is_constant() {
+                            return false;
                         }
-                        true
                     }
-                    Container::Locals(_)
-                    | Container::StructC(_)
-                    | Container::StructR(_)
-                    | Container::VecR(_) => false,
+                    true
                 }
-            }
+                Container::Locals(_)
+                | Container::StructC(_)
+                | Container::StructR(_)
+                | Container::VecR(_) => false,
+            },
             ValueImpl::ContainerRef(_) | ValueImpl::IndexedRef(_) | ValueImpl::Invalid => false,
         }
     }
@@ -1140,7 +1141,7 @@ impl Locals {
                         .with_message("moving container with dangling references".to_string()));
                     }
                 }
-                Ok(Value(sp_std::mem::replace(v, x.0)))
+                Ok(Value(core::mem::replace(v, x.0)))
             }
             None => Err(
                 PartialVMError::new(StatusCode::VERIFIER_INVARIANT_VIOLATION).with_message(
@@ -1733,7 +1734,7 @@ impl IntegerValue {
         match self {
             U8(x) => Ok(x),
             U64(x) => {
-                if x > (u8::MAX as u64) {
+                if x > (core::u8::MAX as u64) {
                     Err(PartialVMError::new(StatusCode::ARITHMETIC_ERROR)
                         .with_message(format!("Cannot cast u64({}) to u8", x)))
                 } else {
@@ -1741,7 +1742,7 @@ impl IntegerValue {
                 }
             }
             U128(x) => {
-                if x > (u8::MAX as u128) {
+                if x > (core::u8::MAX as u128) {
                     Err(PartialVMError::new(StatusCode::ARITHMETIC_ERROR)
                         .with_message(format!("Cannot cast u128({}) to u8", x)))
                 } else {
@@ -1758,7 +1759,7 @@ impl IntegerValue {
             U8(x) => Ok(x as u64),
             U64(x) => Ok(x),
             U128(x) => {
-                if x > (u64::MAX as u128) {
+                if x > (core::u64::MAX as u128) {
                     Err(PartialVMError::new(StatusCode::ARITHMETIC_ERROR)
                         .with_message(format!("Cannot cast u128({}) to u64", x)))
                 } else {
@@ -1787,7 +1788,7 @@ impl IntegerValue {
 *
 *   TODO: split the code into two parts:
 *         1) Internal vector APIs that define & implements the core operations
-                 (and operations only).
+             (and operations only).
 *         2) Native function adapters that the dispatcher can call into. These will
 *            check if arguments are valid and deal with gas metering.
 *
@@ -2229,11 +2230,11 @@ impl GlobalValueImpl {
             Self::None | Self::Deleted => {
                 return Err(PartialVMError::new(StatusCode::MISSING_DATA))
             }
-            Self::Fresh { .. } => match sp_std::mem::replace(self, Self::None) {
+            Self::Fresh { .. } => match core::mem::replace(self, Self::None) {
                 Self::Fresh { fields } => fields,
                 _ => unreachable!(),
             },
-            Self::Cached { .. } => match sp_std::mem::replace(self, Self::Deleted) {
+            Self::Cached { .. } => match core::mem::replace(self, Self::Deleted) {
                 Self::Cached { fields, .. } => fields,
                 _ => unreachable!(),
             },
@@ -2295,6 +2296,18 @@ impl GlobalValueImpl {
             },
         })
     }
+
+    fn is_mutated(&self) -> bool {
+        match self {
+            Self::None => false,
+            Self::Deleted => true,
+            Self::Fresh { fields: _ } => true,
+            Self::Cached { fields: _, status } => match &*status.borrow() {
+                GlobalDataStatus::Dirty => true,
+                GlobalDataStatus::Clean => false,
+            },
+        }
+    }
 }
 
 impl GlobalValue {
@@ -2331,6 +2344,10 @@ impl GlobalValue {
             GlobalValueEffect::Deleted => GlobalValueEffect::Deleted,
             GlobalValueEffect::Changed(v) => GlobalValueEffect::Changed(Value(v)),
         })
+    }
+
+    pub fn is_mutated(&self) -> bool {
+        self.0.is_mutated()
     }
 }
 
@@ -2382,15 +2399,13 @@ impl Display for ContainerRef {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Local(c) => write!(f, "({}, {})", c.rc_count(), c),
-            Self::Global { status, container } => {
-                write!(
-                    f,
-                    "({:?}, {}, {})",
-                    &*status.borrow(),
-                    container.rc_count(),
-                    container
-                )
-            }
+            Self::Global { status, container } => write!(
+                f,
+                "({:?}, {}, {})",
+                &*status.borrow(),
+                container.rc_count(),
+                container
+            ),
         }
     }
 }
@@ -2443,33 +2458,33 @@ impl Display for Locals {
 #[allow(dead_code)]
 pub mod debug {
     use super::*;
-    use sp_std::fmt::Write;
+    use core::fmt::Write;
 
-    fn print_invalid<B: Write>(buf: &mut B) -> PartialVMResult<()> {
+    fn print_invalid(buf: &mut String) -> PartialVMResult<()> {
         debug_write!(buf, "-")
     }
 
-    fn print_u8<B: Write>(buf: &mut B, x: &u8) -> PartialVMResult<()> {
+    fn print_u8(buf: &mut String, x: &u8) -> PartialVMResult<()> {
         debug_write!(buf, "{}", x)
     }
 
-    fn print_u64<B: Write>(buf: &mut B, x: &u64) -> PartialVMResult<()> {
+    fn print_u64(buf: &mut String, x: &u64) -> PartialVMResult<()> {
         debug_write!(buf, "{}", x)
     }
 
-    fn print_u128<B: Write>(buf: &mut B, x: &u128) -> PartialVMResult<()> {
+    fn print_u128(buf: &mut String, x: &u128) -> PartialVMResult<()> {
         debug_write!(buf, "{}", x)
     }
 
-    fn print_bool<B: Write>(buf: &mut B, x: &bool) -> PartialVMResult<()> {
+    fn print_bool(buf: &mut String, x: &bool) -> PartialVMResult<()> {
         debug_write!(buf, "{}", x)
     }
 
-    fn print_address<B: Write>(buf: &mut B, x: &AccountAddress) -> PartialVMResult<()> {
+    fn print_address(buf: &mut String, x: &AccountAddress) -> PartialVMResult<()> {
         debug_write!(buf, "{}", x)
     }
 
-    fn print_value_impl<B: Write>(buf: &mut B, val: &ValueImpl) -> PartialVMResult<()> {
+    fn print_value_impl(buf: &mut String, val: &ValueImpl) -> PartialVMResult<()> {
         match val {
             ValueImpl::Invalid => print_invalid(buf),
 
@@ -2486,18 +2501,17 @@ pub mod debug {
         }
     }
 
-    fn print_list<'a, B, I, X, F>(
-        buf: &mut B,
+    fn print_list<'a, I, X, F>(
+        buf: &mut String,
         begin: &str,
         items: I,
         print: F,
         end: &str,
     ) -> PartialVMResult<()>
     where
-        B: Write,
         X: 'a,
         I: IntoIterator<Item = &'a X>,
-        F: Fn(&mut B, &X) -> PartialVMResult<()>,
+        F: Fn(&mut String, &X) -> PartialVMResult<()>,
     {
         debug_write!(buf, "{}", begin)?;
         let mut it = items.into_iter();
@@ -2512,7 +2526,7 @@ pub mod debug {
         Ok(())
     }
 
-    fn print_container<B: Write>(buf: &mut B, c: &Container) -> PartialVMResult<()> {
+    fn print_container(buf: &mut String, c: &Container) -> PartialVMResult<()> {
         match c {
             Container::VecC(r) | Container::VecR(r) => {
                 print_list(buf, "[", r.borrow().iter(), print_value_impl, "]")
@@ -2535,15 +2549,19 @@ pub mod debug {
         }
     }
 
-    fn print_container_ref<B: Write>(buf: &mut B, r: &ContainerRef) -> PartialVMResult<()> {
+    fn print_container_ref(buf: &mut String, r: &ContainerRef) -> PartialVMResult<()> {
         debug_write!(buf, "(&) ")?;
         print_container(buf, r.container())
     }
 
-    fn print_slice_elem<B, X, F>(buf: &mut B, v: &[X], idx: usize, print: F) -> PartialVMResult<()>
+    fn print_slice_elem<X, F>(
+        buf: &mut String,
+        v: &[X],
+        idx: usize,
+        print: F,
+    ) -> PartialVMResult<()>
     where
-        B: Write,
-        F: FnOnce(&mut B, &X) -> PartialVMResult<()>,
+        F: FnOnce(&mut String, &X) -> PartialVMResult<()>,
     {
         match v.get(idx) {
             Some(x) => print(buf, x),
@@ -2554,7 +2572,7 @@ pub mod debug {
         }
     }
 
-    fn print_indexed_ref<B: Write>(buf: &mut B, r: &IndexedRef) -> PartialVMResult<()> {
+    fn print_indexed_ref(buf: &mut String, r: &IndexedRef) -> PartialVMResult<()> {
         let idx = r.idx;
         match r.container_ref.container() {
             Container::Locals(r)
@@ -2571,14 +2589,14 @@ pub mod debug {
         }
     }
 
-    pub fn print_reference<B: Write>(buf: &mut B, r: &Reference) -> PartialVMResult<()> {
+    pub fn print_reference(buf: &mut String, r: &Reference) -> PartialVMResult<()> {
         match &r.0 {
             ReferenceImpl::ContainerRef(r) => print_container_ref(buf, r),
             ReferenceImpl::IndexedRef(r) => print_indexed_ref(buf, r),
         }
     }
 
-    pub fn print_locals<B: Write>(buf: &mut B, locals: &Locals) -> PartialVMResult<()> {
+    pub fn print_locals(buf: &mut String, locals: &Locals) -> PartialVMResult<()> {
         // REVIEW: The number of spaces in the indent is currently hard coded.
         for (idx, val) in locals.0.borrow().iter().enumerate() {
             debug_write!(buf, "            [{}] ", idx)?;
@@ -2588,7 +2606,7 @@ pub mod debug {
         Ok(())
     }
 
-    pub fn print_value<B: Write>(buf: &mut B, val: &Value) -> PartialVMResult<()> {
+    pub fn print_value(buf: &mut String, val: &Value) -> PartialVMResult<()> {
         print_value_impl(buf, &val.0)
     }
 }
@@ -2597,7 +2615,7 @@ pub mod debug {
  *
  * Serialization & Deserialization
  *
- *   LCS implementation for VM values. Note although values are represented as Rust
+ *   BCS implementation for VM values. Note although values are represented as Rust
  *   enums that carry type info in the tags, we should NOT rely on them for
  *   serialization:
  *     1) Depending on the specific internal representation, it may be impossible to
@@ -2613,9 +2631,7 @@ pub mod debug {
  *
  **************************************************************************************/
 use crate::{loaded_data::runtime_types::Type, natives::function::NativeContext};
-use alloc::boxed::Box;
-use alloc::string::{String, ToString};
-use alloc::vec::Vec;
+use alloc::string::ToString;
 use serde::{
     de::Error as DeError,
     ser::{Error as SerError, SerializeSeq, SerializeTuple},
@@ -2628,11 +2644,11 @@ impl Value {
         kind_info: &MoveKindInfo,
         layout: &MoveTypeLayout,
     ) -> Option<Value> {
-        lcs::from_bytes_seed(SeedWrapper { kind_info, layout }, blob).ok()
+        bcs::from_bytes_seed(SeedWrapper { kind_info, layout }, blob).ok()
     }
 
     pub fn simple_serialize(&self, layout: &MoveTypeLayout) -> Option<Vec<u8>> {
-        lcs::to_bytes(&AnnotatedValue {
+        bcs::to_bytes(&AnnotatedValue {
             layout,
             val: &self.0,
         })
@@ -2647,7 +2663,7 @@ impl Struct {
         field_kinds: &[MoveKindInfo],
         layout: &MoveStructLayout,
     ) -> Option<Struct> {
-        lcs::from_bytes_seed(
+        bcs::from_bytes_seed(
             SeedWrapper {
                 kind_info: (MoveKind::from_bool(is_resource), field_kinds),
                 layout,
@@ -2658,7 +2674,7 @@ impl Struct {
     }
 
     pub fn simple_serialize(&self, layout: &MoveStructLayout) -> Option<Vec<u8>> {
-        lcs::to_bytes(&AnnotatedValue {
+        bcs::to_bytes(&AnnotatedValue {
             layout,
             val: &self.fields,
         })
@@ -2969,7 +2985,7 @@ impl Value {
                 )
             }
             // Not yet supported
-            S::Struct(_) | S::StructInstantiation(..) => return None,
+            S::Struct(_) | S::StructInstantiation(_, _) => return None,
             // Not allowed/Not meaningful
             S::TypeParameter(_) | S::Reference(_) | S::MutableReference(_) => return None,
         })
@@ -3096,12 +3112,12 @@ pub mod prop {
         use MoveTypeLayout as L;
 
         let leaf = prop_oneof![
-             1 => Just((L::U8, K::Base(T::Copyable))),
-             1 => Just((L::U64, K::Base(T::Copyable))),
-             1 => Just((L::U128, K::Base(T::Copyable))),
-             1 => Just((L::Bool, K::Base(T::Copyable))),
-             1 => Just((L::Address, K::Base(T::Copyable))),
-             1 => Just((L::Signer, K::Base(T::Resource))),
+            1 => Just((L::U8, K::Base(T::Copyable))),
+            1 => Just((L::U64, K::Base(T::Copyable))),
+            1 => Just((L::U128, K::Base(T::Copyable))),
+            1 => Just((L::Bool, K::Base(T::Copyable))),
+            1 => Just((L::Address, K::Base(T::Copyable))),
+            1 => Just((L::Signer, K::Base(T::Resource))),
         ];
 
         leaf.prop_recursive(8, 32, 2, |inner| prop_oneof![

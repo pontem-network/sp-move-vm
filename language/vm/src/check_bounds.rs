@@ -1,4 +1,4 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
@@ -15,6 +15,7 @@ use crate::{
     internals::ModuleIndex,
     IndexKind,
 };
+use alloc::format;
 use move_core_types::vm_status::StatusCode;
 
 pub struct BoundsChecker<'a> {
@@ -448,7 +449,7 @@ impl<'a> BoundsChecker<'a> {
                 | Reference(_)
                 | MutableReference(_)
                 | Vector(_)
-                | StructInstantiation(..) => (),
+                | StructInstantiation(_, _) => (),
             }
         }
         Ok(())
@@ -488,10 +489,7 @@ impl<'a> BoundsChecker<'a> {
     ) -> PartialVMError {
         match self.current_function {
             None => {
-                let msg = format!(
-					        "Indexing into bytecode {} during bounds checking but 'current_function' was not set",
-					        cur_bytecode_offset
-					);
+                let msg = format!("Indexing into bytecode {} during bounds checking but 'current_function' was not set", cur_bytecode_offset);
                 PartialVMError::new(StatusCode::UNKNOWN_INVARIANT_VIOLATION_ERROR).with_message(msg)
             }
             Some(current_function_index) => offset_out_of_bounds_error(

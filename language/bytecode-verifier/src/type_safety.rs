@@ -1,4 +1,4 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 //! This module defines the transfer functions for verifying type safety of a procedure body.
@@ -9,9 +9,9 @@ use crate::{
     control_flow_graph::ControlFlowGraph,
 };
 use alloc::boxed::Box;
+use alloc::vec::Vec;
 use mirai_annotations::*;
 use move_core_types::vm_status::StatusCode;
-use sp_std::prelude::Vec;
 use vm::{
     errors::{PartialVMError, PartialVMResult},
     file_format::{

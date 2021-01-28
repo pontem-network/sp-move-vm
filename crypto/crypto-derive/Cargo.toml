@@ -1,8 +1,8 @@
 [package]
-name = "libra-crypto-derive"
+name = "diem-crypto-derive"
 version = "0.1.0"
 authors = ["Libra Association <opensource@libra.org>"]
-description = "Libra custom derives for `libra-crypto`"
+description = "Libra custom derives for `diem-crypto`"
 repository = "https://github.com/libra/libra"
 homepage = "https://libra.org"
 license = "Apache-2.0"

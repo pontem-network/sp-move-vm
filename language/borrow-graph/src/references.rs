@@ -1,16 +1,12 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
     paths::{self, Path},
     shared::*,
 };
-use sp_std::{
-    cmp::Ordering,
-    collections::{btree_map::BTreeMap, btree_set::BTreeSet},
-    fmt,
-    fmt::Debug,
-};
+use alloc::collections::{BTreeMap, BTreeSet};
+use core::{cmp::Ordering, fmt, fmt::Debug};
 
 //**************************************************************************************************
 // Definitions

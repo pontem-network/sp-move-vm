@@ -1,10 +1,10 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 //! This module defines the control-flow graph uses for bytecode verification.
-use sp_std::boxed::Box;
-use sp_std::collections::{btree_map::BTreeMap, btree_set::BTreeSet};
-use sp_std::prelude::Vec;
+use alloc::boxed::Box;
+use alloc::collections::{BTreeMap, BTreeSet};
+use alloc::vec::Vec;
 use vm::file_format::{Bytecode, CodeOffset};
 
 // BTree/Hash agnostic type wrappers
@@ -50,6 +50,19 @@ pub struct VMControlFlowGraph {
     blocks: Map<BlockId, BasicBlock>,
 }
 
+impl BasicBlock {
+    #[cfg(feature = "std")]
+    pub fn display(&self) {
+        println!("+=======================+");
+        println!("| Enter:  {}            |", self.entry);
+        println!("+-----------------------+");
+        println!("==> Children: {:?}", self.successors);
+        println!("+-----------------------+");
+        println!("| Exit:   {}            |", self.exit);
+        println!("+=======================+");
+    }
+}
+
 const ENTRY_BLOCK_ID: BlockId = 0;
 
 impl VMControlFlowGraph {
@@ -83,6 +96,13 @@ impl VMControlFlowGraph {
 
         assert_eq!(entry, code.len() as CodeOffset);
         cfg
+    }
+
+    #[cfg(feature = "std")]
+    pub fn display(&self) {
+        for block in self.blocks.values() {
+            block.display();
+        }
     }
 
     fn is_end_of_block(pc: CodeOffset, code: &[Bytecode], block_ids: &Set<BlockId>) -> bool {

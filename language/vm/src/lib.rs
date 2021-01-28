@@ -1,13 +1,14 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 #![forbid(unsafe_code)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
+extern crate mirai_annotations;
 #[macro_use]
 extern crate alloc;
-extern crate mirai_annotations;
-use sp_std::fmt;
+
+use core::fmt;
 
 pub mod access;
 pub mod check_bounds;
@@ -19,8 +20,14 @@ pub mod deserializer;
 pub mod file_format;
 pub mod file_format_common;
 pub mod internals;
+pub mod normalized;
+#[cfg(any(test, feature = "fuzzing"))]
+pub mod proptest_types;
 pub mod serializer;
 pub mod views;
+
+#[cfg(test)]
+mod unit_tests;
 
 pub use file_format::CompiledModule;
 

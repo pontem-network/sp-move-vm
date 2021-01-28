@@ -1,8 +1,9 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::loader::Loader;
 
+use alloc::collections::btree_map::BTreeMap;
 use alloc::vec::Vec;
 use move_core_types::{
     account_address::AccountAddress,
@@ -15,7 +16,6 @@ use move_vm_types::{
     loaded_data::runtime_types::Type,
     values::{GlobalValue, GlobalValueEffect, Value},
 };
-use sp_std::collections::btree_map::BTreeMap;
 use vm::errors::*;
 
 /// Trait for the Move VM to abstract storage operations.
@@ -83,7 +83,6 @@ pub(crate) struct TransactionDataCache<'r, 'l, R> {
 /// Collection of side effects produced by a Session.
 ///
 /// The Move VM MUST guarantee that no duplicate entries exist.
-#[derive(Debug)]
 pub struct TransactionEffects {
     pub resources: Vec<(
         AccountAddress,
@@ -159,8 +158,15 @@ impl<'r, 'l, R: RemoteCache> TransactionDataCache<'r, 'l, R> {
         })
     }
 
-    pub(crate) fn num_mutated_accounts(&self) -> u64 {
-        self.account_map.keys().len() as u64
+    pub(crate) fn num_mutated_accounts(&self, sender: &AccountAddress) -> u64 {
+        // The sender's account will always be mutated.
+        let mut total_mutated_accounts: u64 = 1;
+        for (addr, entry) in self.account_map.iter() {
+            if addr != sender && entry.data_map.values().any(|(_, v)| v.is_mutated()) {
+                total_mutated_accounts += 1;
+            }
+        }
+        total_mutated_accounts
     }
 
     fn get_mut_or_insert_with<'a, K, V, F>(map: &'a mut BTreeMap<K, V>, k: &K, gen: F) -> &'a mut V

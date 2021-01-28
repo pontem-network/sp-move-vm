@@ -1,13 +1,13 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 //! This module contains the public APIs supported by the bytecode verifier.
 use crate::binary_views::BinaryIndexedView;
 use alloc::borrow::ToOwned;
+use alloc::collections::BTreeMap;
 use hashbrown::HashMap;
 use move_core_types::vm_status::StatusCode;
 use move_core_types::{identifier::Identifier, language_storage::ModuleId};
-use sp_std::collections::btree_map::BTreeMap;
 use vm::{
     access::{ModuleAccess, ScriptAccess},
     errors::{verification_error, Location, PartialVMError, PartialVMResult, VMResult},
