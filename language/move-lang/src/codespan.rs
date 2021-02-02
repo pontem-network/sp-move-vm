@@ -23,6 +23,3 @@ impl Span {
         self.end
     }
 }
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize, Serialize)]
-pub struct FileId(u32);
