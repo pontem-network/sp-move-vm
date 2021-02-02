@@ -1251,6 +1251,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "move-lang"
+version = "0.0.1"
+dependencies = [
+ "alt_serde",
+ "hashbrown 0.9.1",
+ "hex",
+ "petgraph",
+]
+
+[[package]]
 name = "move-vm-natives"
 version = "0.1.0"
 dependencies = [
@@ -1316,6 +1326,7 @@ dependencies = [
  "hashbrown 0.9.1",
  "hex",
  "move-core-types",
+ "move-lang",
  "move-vm-runtime",
  "move-vm-types",
  "parity-scale-codec",
