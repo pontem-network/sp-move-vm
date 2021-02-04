@@ -8,6 +8,7 @@ members = [
     "language/borrow-graph",
     "language/bytecode-verifier",
     "language/move-core/types",
+    "language/move-lang",
     "language/vm",
     "language/move-vm/runtime",
     "language/move-vm/natives",
