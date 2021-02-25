@@ -4,14 +4,14 @@ mod common;
 use common::StorageMock;
 use mvm::gas_schedule::cost_table;
 use mvm::vm_config::loader::{load_vm_config, store_vm_config};
-use mvm::vm_config::VMConfig;
+use mvm::vm_config::VmConfig;
 
 #[test]
 fn load_store_test() {
     let mut cost_table = cost_table();
     cost_table.instruction_table.remove(0);
 
-    let vm_config = VMConfig {
+    let vm_config = VmConfig {
         gas_schedule: cost_table,
     };
     let mock = StorageMock::new();
@@ -25,5 +25,5 @@ fn load_store_test() {
 #[test]
 fn load_from_empty_store_test() {
     let loaded_vm_config = load_vm_config(&StorageMock::new()).unwrap();
-    assert_eq!(VMConfig::default(), loaded_vm_config);
+    assert_eq!(VmConfig::default(), loaded_vm_config);
 }

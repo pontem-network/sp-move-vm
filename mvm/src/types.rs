@@ -99,17 +99,13 @@ impl ScriptTx {
         args: Vec<ScriptArg>,
         type_args: Vec<TypeTag>,
         senders: Vec<AccountAddress>,
-    ) -> Result<Self> {
-        ensure!(
-            !senders.is_empty(),
-            "senders value must be in the range from 0 to ",
-        );
-        Ok(ScriptTx {
+    ) -> Self {
+        ScriptTx {
             code,
             args: args.into_iter().map(ScriptArg::into).collect(),
             type_args,
             senders,
-        })
+        }
     }
 
     /// Script bytecode.
@@ -297,7 +293,7 @@ impl Transaction {
             signers.len() == self.signers_count as usize,
             "Invalid signers count."
         );
-        ScriptTx::new(self.code, self.args, self.type_args, signers)
+        Ok(ScriptTx::new(self.code, self.args, self.type_args, signers))
     }
 
     pub fn signers_count(&self) -> u8 {
