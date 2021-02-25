@@ -309,6 +309,6 @@ impl TryFrom<&[u8]> for Transaction {
     type Error = Error;
 
     fn try_from(blob: &[u8]) -> Result<Self, Self::Error> {
-        bcs::from_bytes(&blob).map_err(|err| Error::msg(err))
+        bcs::from_bytes(&blob).map_err(Error::msg)
     }
 }
