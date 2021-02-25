@@ -1,5 +1,6 @@
 use alloc::vec::Vec;
 use anyhow::*;
+use core::convert::TryFrom;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::{StructTag, TypeTag};
@@ -9,6 +10,7 @@ use move_lang::parser::lexer::{Lexer, Tok};
 use move_lang::parser::syntax::parse_type;
 use move_vm_types::values::Value;
 use parity_scale_codec::{Decode, Encode};
+use serde::{Deserialize, Serialize};
 use sp_std::fmt;
 
 const GAS_AMOUNT_MAX_VALUE: u64 = u64::MAX / 1000;
@@ -115,9 +117,14 @@ impl ScriptTx {
         &self.code
     }
 
-    /// Parameters passed to main() function.
+    /// Parameters passed to the main function.
     pub fn args(&self) -> &[Value] {
         &self.args
+    }
+
+    /// Type parameters passed to the main function.
+    pub fn type_parameters(&self) -> &[TypeTag] {
+        &self.type_args
     }
 
     /// Convert into internal data.
@@ -156,7 +163,7 @@ impl VmResult {
     }
 }
 
-#[derive(Clone, Debug, Encode, Decode, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, PartialOrd)]
 pub enum ScriptArg {
     U8(u8),
     U64(u64),
@@ -273,4 +280,35 @@ fn unwrap_spanned_ty_(ty: Type, this: Option<AccountAddress>) -> Result<TypeTag,
     };
 
     Ok(st)
+}
+
+/// Transaction model.
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Transaction {
+    signers_count: u8,
+    code: Vec<u8>,
+    args: Vec<ScriptArg>,
+    type_args: Vec<TypeTag>,
+}
+
+impl Transaction {
+    pub fn into_script(self, signers: Vec<AccountAddress>) -> Result<ScriptTx> {
+        ensure!(
+            signers.len() == self.signers_count as usize,
+            "Invalid signers count."
+        );
+        ScriptTx::new(self.code, self.args, self.type_args, signers)
+    }
+
+    pub fn signers_count(&self) -> u8 {
+        self.signers_count
+    }
+}
+
+impl TryFrom<&[u8]> for Transaction {
+    type Error = Error;
+
+    fn try_from(blob: &[u8]) -> Result<Self, Self::Error> {
+        bcs::from_bytes(&blob).map_err(Error::msg)
+    }
 }

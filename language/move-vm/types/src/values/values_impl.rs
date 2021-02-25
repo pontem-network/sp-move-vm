@@ -38,7 +38,7 @@ use vm::{
  **************************************************************************************/
 
 /// Runtime representation of a Move value.
-#[derive(Debug)]
+#[derive(Debug, PartialOrd, PartialEq)]
 enum ValueImpl {
     Invalid,
 
@@ -63,7 +63,7 @@ enum ValueImpl {
 ///
 /// Except when not owned by the VM stack, a container always lives inside an Rc<RefCell<>>,
 /// making it possible to be shared by references.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialOrd, PartialEq)]
 enum Container {
     Locals(Rc<RefCell<Vec<ValueImpl>>>),
     VecR(Rc<RefCell<Vec<ValueImpl>>>),
@@ -80,7 +80,7 @@ enum Container {
 /// A ContainerRef is a direct reference to a container, which could live either in the frame
 /// or in global storage. In the latter case, it also keeps a status flag indicating whether
 /// the container has been possibly modified.
-#[derive(Debug)]
+#[derive(Debug, PartialOrd, PartialEq)]
 enum ContainerRef {
     Local(Container),
     Global {
@@ -92,14 +92,14 @@ enum ContainerRef {
 /// Status for global (on-chain) data:
 /// Clean - the data was only read.
 /// Dirty - the data was possibly modified.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialOrd, PartialEq)]
 enum GlobalDataStatus {
     Clean,
     Dirty,
 }
 
 /// A Move reference pointing to an element in a container.
-#[derive(Debug)]
+#[derive(Debug, PartialOrd, PartialEq)]
 struct IndexedRef {
     idx: usize,
     container_ref: ContainerRef,
@@ -158,7 +158,7 @@ pub struct Reference(ReferenceImpl);
 
 /// A Move value -- a wrapper around `ValueImpl` which can be created only through valid
 /// means.
-#[derive(Debug)]
+#[derive(Debug, PartialOrd, PartialEq)]
 pub struct Value(ValueImpl);
 
 /// The locals for a function frame. It allows values to be read, written or taken

@@ -22,8 +22,6 @@ move-core-types = { path = "../language/move-core/types", default-features = fal
 vm = { path = "../language/vm", default-features = false }
 diem-crypto = { path = "../crypto/crypto", default-features = false }
 move-lang = {path = "../language/move-lang", default-features = false }
-
-[dev-dependencies]
 bcs = { path = "../bcs", default-features = false }
 
 [features]
