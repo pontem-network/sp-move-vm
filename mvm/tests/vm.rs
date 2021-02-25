@@ -46,7 +46,6 @@ fn store_script(args: u64) -> ScriptTx {
         vec![],
         vec![CORE_CODE_ADDRESS],
     )
-    .unwrap()
 }
 
 fn emit_event_script(args: u64) -> ScriptTx {
@@ -54,9 +53,8 @@ fn emit_event_script(args: u64) -> ScriptTx {
         include_bytes!("assets/target/scripts/0_emit_event.mv").to_vec(),
         vec![ScriptArg::U64(args)],
         vec![],
-        vec![CORE_CODE_ADDRESS],
+        vec![],
     )
-    .unwrap()
 }
 
 #[derive(Deserialize)]

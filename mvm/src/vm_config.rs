@@ -5,13 +5,13 @@ use serde::{Deserialize, Serialize};
 
 /// Defines all the on chain configuration data needed by VM.
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Encode, Decode)]
-pub struct VMConfig {
+pub struct VmConfig {
     pub gas_schedule: CostTable,
 }
 
-impl Default for VMConfig {
+impl Default for VmConfig {
     fn default() -> Self {
-        VMConfig {
+        VmConfig {
             gas_schedule: cost_table(),
         }
     }
@@ -20,7 +20,7 @@ impl Default for VMConfig {
 pub mod loader {
     use crate::access_path::AccessPath;
     use crate::data::Storage;
-    use crate::vm_config::VMConfig;
+    use crate::vm_config::VmConfig;
     use alloc::vec::Vec;
     use anyhow::{Error, Result};
     use move_core_types::account_address::AccountAddress;
@@ -59,17 +59,17 @@ pub mod loader {
     }
 
     /// Loads vm config from storage. Returns default configuration if the config does not exists in the storage.
-    pub fn load_vm_config<S: Storage>(storage: &S) -> Result<VMConfig, Error> {
+    pub fn load_vm_config<S: Storage>(storage: &S) -> Result<VmConfig, Error> {
         if let Some(blob) = storage.get(&make_storage_key()) {
             let mut input = blob.as_slice();
-            VMConfig::decode(&mut input).map_err(|_| Error::msg("failed to decode VMConfig."))
+            VmConfig::decode(&mut input).map_err(|_| Error::msg("failed to decode VMConfig."))
         } else {
-            Ok(VMConfig::default())
+            Ok(VmConfig::default())
         }
     }
 
     /// Stores vm configuration to the storage.
-    pub fn store_vm_config<S: Storage>(storage: &S, config: &VMConfig) {
+    pub fn store_vm_config<S: Storage>(storage: &S, config: &VmConfig) {
         storage.insert(&make_storage_key(), &config.encode());
     }
 }
