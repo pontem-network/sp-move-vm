@@ -11,6 +11,7 @@ members = [
     "language/move-core/types",
     "language/move-lang",
     "language/vm",
+    "language/vm/serializer-tests",
     "language/move-vm/runtime",
     "language/move-vm/natives",
     "language/move-vm/types",

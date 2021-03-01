@@ -22,9 +22,9 @@ impl CompiledScript {
 }
 
 fn write_as_uleb128<T1, T2>(binary: &mut BinaryData, x: T1, max: T2) -> Result<()>
-where
-    T1: Into<u64>,
-    T2: Into<u64>,
+    where
+        T1: Into<u64>,
+        T2: Into<u64>,
 {
     let x: u64 = x.into();
     let max: u64 = max.into();

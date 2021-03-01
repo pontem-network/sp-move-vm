@@ -159,9 +159,9 @@ impl StructDefinitionGen {
         } else {
             self.is_nominal_resource
                 || fields.iter().any(|field| {
-                    let field_sig = &field.signature.0;
-                    state.contains_nominal_resource(field_sig)
-                })
+                let field_sig = &field.signature.0;
+                state.contains_nominal_resource(field_sig)
+            })
         };
         let handle = StructHandle {
             // 0 represents the current module

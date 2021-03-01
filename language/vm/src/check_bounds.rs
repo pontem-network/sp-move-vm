@@ -296,7 +296,7 @@ impl<'a> BoundsChecker<'a> {
                     )?;
                     // check type parameters in call are bound to the function type parameters
                     if let Some(func_inst) =
-                        self.module.function_instantiations.get(idx.into_index())
+                    self.module.function_instantiations.get(idx.into_index())
                     {
                         if let Some(sig) = self
                             .module
@@ -326,7 +326,7 @@ impl<'a> BoundsChecker<'a> {
                     )?;
                     // check type parameters in type operations are bound to the function type parameters
                     if let Some(struct_inst) =
-                        self.module.struct_def_instantiations.get(idx.into_index())
+                    self.module.struct_def_instantiations.get(idx.into_index())
                     {
                         if let Some(sig) = self
                             .module
@@ -392,10 +392,10 @@ impl<'a> BoundsChecker<'a> {
                             return Err(PartialVMError::new(
                                 StatusCode::NUMBER_OF_TYPE_ARGUMENTS_MISMATCH,
                             )
-                            .with_message(format!(
-                                "expected {} type parameters got 0 (Struct)",
-                                sh.type_parameters.len(),
-                            )));
+                                .with_message(format!(
+                                    "expected {} type parameters got 0 (Struct)",
+                                    sh.type_parameters.len(),
+                                )));
                         }
                     }
                 }
@@ -406,11 +406,11 @@ impl<'a> BoundsChecker<'a> {
                             return Err(PartialVMError::new(
                                 StatusCode::NUMBER_OF_TYPE_ARGUMENTS_MISMATCH,
                             )
-                            .with_message(format!(
-                                "expected {} type parameters got {}",
-                                sh.type_parameters.len(),
-                                type_params.len(),
-                            )));
+                                .with_message(format!(
+                                    "expected {} type parameters got {}",
+                                    sh.type_parameters.len(),
+                                    type_params.len(),
+                                )));
                         }
                     }
                 }
@@ -461,8 +461,8 @@ impl<'a> BoundsChecker<'a> {
         idx: I,
         bytecode_offset: usize,
     ) -> PartialVMResult<()>
-    where
-        I: ModuleIndex,
+        where
+            I: ModuleIndex,
     {
         let idx = idx.into_index();
         let len = pool.len();
@@ -505,8 +505,8 @@ impl<'a> BoundsChecker<'a> {
 }
 
 fn check_bounds_impl<T, I>(pool: &[T], idx: I) -> PartialVMResult<()>
-where
-    I: ModuleIndex,
+    where
+        I: ModuleIndex,
 {
     let idx = idx.into_index();
     let len = pool.len();

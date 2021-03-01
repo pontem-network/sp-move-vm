@@ -401,8 +401,8 @@ pub struct FunctionDefinition {
     pub acquires_global_resources: Vec<StructDefinitionIndex>,
     /// Code for this function.
     #[cfg_attr(
-        any(test, feature = "fuzzing"),
-        proptest(strategy = "any_with::<CodeUnit>(params).prop_map(Some)")
+    any(test, feature = "fuzzing"),
+    proptest(strategy = "any_with::<CodeUnit>(params).prop_map(Some)")
     )]
     pub code: Option<CodeUnit>,
 }
@@ -444,14 +444,14 @@ pub struct TypeSignature(pub SignatureToken);
 pub struct FunctionSignature {
     /// The list of return types.
     #[cfg_attr(
-        any(test, feature = "fuzzing"),
-        proptest(strategy = "vec(any::<SignatureToken>(), 0..=params)")
+    any(test, feature = "fuzzing"),
+    proptest(strategy = "vec(any::<SignatureToken>(), 0..=params)")
     )]
     pub return_: Vec<SignatureToken>,
     /// The list of arguments to the function.
     #[cfg_attr(
-        any(test, feature = "fuzzing"),
-        proptest(strategy = "vec(any::<SignatureToken>(), 0..=params)")
+    any(test, feature = "fuzzing"),
+    proptest(strategy = "vec(any::<SignatureToken>(), 0..=params)")
     )]
     pub parameters: Vec<SignatureToken>,
     /// The type formals (identified by their index into the vec) and their kind constraints
@@ -467,8 +467,8 @@ pub struct FunctionSignature {
 #[cfg_attr(any(test, feature = "fuzzing"), proptest(params = "usize"))]
 pub struct Signature(
     #[cfg_attr(
-        any(test, feature = "fuzzing"),
-        proptest(strategy = "vec(any::<SignatureToken>(), 0..=params)")
+    any(test, feature = "fuzzing"),
+    proptest(strategy = "vec(any::<SignatureToken>(), 0..=params)")
     )]
     pub Vec<SignatureToken>,
 );
@@ -518,10 +518,7 @@ impl Kind {
     pub fn is_sub_kind_of(self, k: Kind) -> bool {
         use Kind::*;
 
-        matches!(
-            (self, k),
-            (_, All) | (Resource, Resource) | (Copyable, Copyable)
-        )
+        matches!((self, k), (_, All) | (Resource, Resource) | (Copyable, Copyable))
     }
 
     /// Helper function to determine the kind of a struct instance by taking the kind of a type
@@ -552,9 +549,9 @@ pub enum SignatureToken {
     U64,
     /// Unsigned integers, 128 bits length.
     U128,
-    /// Address, a 32 bytes immutable type.
+    /// Address, a 16 bytes immutable type.
     Address,
-    /// Signer, a 32 bytes immutable type representing the capability to publish at an address
+    /// Signer, a 16 bytes immutable type representing the capability to publish at an address
     Signer,
     /// Vector
     Vector(Box<SignatureToken>),
@@ -664,7 +661,7 @@ impl Arbitrary for SignatureToken {
                 ]
             },
         )
-        .boxed()
+            .boxed()
     }
 }
 
@@ -816,8 +813,8 @@ pub struct CodeUnit {
     pub locals: SignatureIndex,
     /// Code stream, function body.
     #[cfg_attr(
-        any(test, feature = "fuzzing"),
-        proptest(strategy = "vec(any::<Bytecode>(), 0..=params)")
+    any(test, feature = "fuzzing"),
+    proptest(strategy = "vec(any::<Bytecode>(), 0..=params)")
     )]
     pub code: Vec<Bytecode>,
 }
@@ -1462,7 +1459,7 @@ impl CompiledScriptMut {
     ///
     /// TODO: rewrite things that depend on this and get this removed.
     #[deprecated(
-        note = "This function is deprecated and will be removed soon. Please do not introduce new dependencies."
+    note = "This function is deprecated and will be removed soon. Please do not introduce new dependencies."
     )]
     pub fn into_module(mut self) -> (ScriptConversionInfo, CompiledModuleMut) {
         // Add the "<SELF>" identifier if it isn't present.
@@ -1650,13 +1647,13 @@ impl Arbitrary for CompiledScriptMut {
         )
             .prop_map(
                 |(
-                    (module_handles, struct_handles, function_handles),
-                    signatures,
-                    (identifiers, address_identifiers),
-                    type_parameters,
-                    parameters,
-                    code,
-                )| {
+                     (module_handles, struct_handles, function_handles),
+                     signatures,
+                     (identifiers, address_identifiers),
+                     type_parameters,
+                     parameters,
+                     code,
+                 )| {
                     // TODO actual constant generation
                     CompiledScriptMut {
                         module_handles,
@@ -1703,12 +1700,12 @@ impl Arbitrary for CompiledModuleMut {
         )
             .prop_map(
                 |(
-                    (module_handles, struct_handles, function_handles),
-                    self_module_handle_idx,
-                    signatures,
-                    (identifiers, address_identifiers),
-                    (struct_defs, function_defs),
-                )| {
+                     (module_handles, struct_handles, function_handles),
+                     self_module_handle_idx,
+                     signatures,
+                     (identifiers, address_identifiers),
+                     (struct_defs, function_defs),
+                 )| {
                     // TODO actual constant generation
                     CompiledModuleMut {
                         module_handles,
@@ -1809,7 +1806,7 @@ impl CompiledModule {
     /// into_module on some instance of CompiledScript. This function is the inverse of
     /// into_module, i.e., script.into_module().into_script() == script.
     #[deprecated(
-        note = "This function is deprecated and will be removed soon. Please do not introduce new dependencies."
+    note = "This function is deprecated and will be removed soon. Please do not introduce new dependencies."
     )]
     pub fn into_script(self, conv_info: ScriptConversionInfo) -> CompiledScript {
         let mut inner = self.into_inner();

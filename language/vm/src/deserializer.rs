@@ -83,8 +83,8 @@ fn read_u128_internal(cursor: &mut Cursor<&[u8]>) -> BinaryLoaderResult<u128> {
 // Helpers to read all uleb128 encoded integers.
 //
 fn read_uleb_internal<T>(cursor: &mut Cursor<&[u8]>, max: u64) -> BinaryLoaderResult<T>
-where
-    u64: TryInto<T>,
+    where
+        u64: TryInto<T>,
 {
     let x = read_uleb128_as_u64(cursor).map_err(|_| {
         PartialVMError::new(StatusCode::MALFORMED).with_message("Bad Uleb".to_string())
@@ -275,7 +275,6 @@ fn deserialize_compiled_script(binary: &[u8]) -> BinaryLoaderResult<CompiledScri
 }
 
 /// Module internal function that manages deserialization of modules.
-#[allow(clippy::field_reassign_with_default)]
 fn deserialize_compiled_module(binary: &[u8]) -> BinaryLoaderResult<CompiledModuleMut> {
     let binary_len = binary.len();
     let mut cursor = Cursor::new(binary);
