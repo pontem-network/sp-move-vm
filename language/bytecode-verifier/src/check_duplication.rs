@@ -197,7 +197,7 @@ impl<'a> DuplicationChecker<'a> {
     fn check_struct_definitions(&self) -> PartialVMResult<()> {
         // StructDefinition - contained StructHandle defines uniqueness
         if let Some(idx) =
-            Self::first_duplicate_element(self.module.struct_defs().iter().map(|x| x.struct_handle))
+        Self::first_duplicate_element(self.module.struct_defs().iter().map(|x| x.struct_handle))
         {
             return Err(verification_error(
                 StatusCode::DUPLICATE_ELEMENT,
@@ -260,7 +260,7 @@ impl<'a> DuplicationChecker<'a> {
     fn check_function_defintions(&self) -> PartialVMResult<()> {
         // FunctionDefinition - contained FunctionHandle defines uniqueness
         if let Some(idx) =
-            Self::first_duplicate_element(self.module.function_defs().iter().map(|x| x.function))
+        Self::first_duplicate_element(self.module.function_defs().iter().map(|x| x.function))
         {
             return Err(verification_error(
                 StatusCode::DUPLICATE_ELEMENT,
@@ -311,9 +311,9 @@ impl<'a> DuplicationChecker<'a> {
     }
 
     fn first_duplicate_element<T>(iter: T) -> Option<TableIndex>
-    where
-        T: IntoIterator,
-        T::Item: Eq + Hash,
+        where
+            T: IntoIterator,
+            T::Item: Eq + Hash,
     {
         let mut uniq = HashSet::new();
         for (i, x) in iter.into_iter().enumerate() {

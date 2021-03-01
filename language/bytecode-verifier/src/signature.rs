@@ -100,7 +100,7 @@ impl<'a> SignatureChecker<'a> {
                     &field_def.signature.0,
                     &struct_handle.type_parameters,
                 )
-                .map_err(|err| err_handler(err, field_offset))?;
+                    .map_err(|err| err_handler(err, field_offset))?;
             }
         }
         Ok(())

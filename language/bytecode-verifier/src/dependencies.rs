@@ -226,7 +226,7 @@ impl<'a> DependencyChecker<'a> {
                         &def_params.0,
                         owner_module,
                     )
-                    .map_err(|e| e.at_index(IndexKind::FunctionHandle, idx as TableIndex))?;
+                        .map_err(|e| e.at_index(IndexKind::FunctionHandle, idx as TableIndex))?;
 
                     // same return_
                     let handle_return = self.resolver.signature_at(function_handle.return_);
@@ -245,7 +245,7 @@ impl<'a> DependencyChecker<'a> {
                         &def_return.0,
                         owner_module,
                     )
-                    .map_err(|e| e.at_index(IndexKind::FunctionHandle, idx as TableIndex))?;
+                        .map_err(|e| e.at_index(IndexKind::FunctionHandle, idx as TableIndex))?;
                 }
                 None => {
                     return Err(verification_error(
