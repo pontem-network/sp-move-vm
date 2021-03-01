@@ -2099,10 +2099,10 @@ dependencies = [
 name = "short-hex-str"
 version = "0.1.0"
 dependencies = [
+ "alt_serde",
  "hex",
  "mirai-annotations",
  "proptest",
- "sp-std",
 ]
 
 [[package]]
