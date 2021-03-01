@@ -21,8 +21,8 @@ trait RepeatVecMethods<T>: fmt::Debug {
 }
 
 impl<T> RepeatVecMethods<T> for RepeatVec<T>
-where
-    T: fmt::Debug,
+    where
+        T: fmt::Debug,
 {
     fn len(&self) -> usize {
         self.len()
@@ -58,8 +58,8 @@ impl<T> NaiveRepeatVec<T> {
 }
 
 impl<T> RepeatVecMethods<T> for NaiveRepeatVec<T>
-where
-    T: Clone + fmt::Debug,
+    where
+        T: Clone + fmt::Debug,
 {
     fn len(&self) -> usize {
         self.items.len()
