@@ -170,9 +170,9 @@ impl<'r, 'l, R: RemoteCache> TransactionDataCache<'r, 'l, R> {
     }
 
     fn get_mut_or_insert_with<'a, K, V, F>(map: &'a mut BTreeMap<K, V>, k: &K, gen: F) -> &'a mut V
-    where
-        F: FnOnce() -> (K, V),
-        K: Ord,
+        where
+            F: FnOnce() -> (K, V),
+            K: Ord,
     {
         if !map.contains_key(k) {
             let (k, v) = gen();
@@ -201,9 +201,9 @@ impl<'r, 'l, C: RemoteCache> DataStore for TransactionDataCache<'r, 'l, C> {
                 TypeTag::Struct(s_tag) => s_tag,
                 _ =>
                 // non-struct top-level value; can't happen
-                {
-                    return Err(PartialVMError::new(StatusCode::INTERNAL_TYPE_ERROR))
-                }
+                    {
+                        return Err(PartialVMError::new(StatusCode::INTERNAL_TYPE_ERROR))
+                    }
             };
             let ty_layout = self.loader.type_to_type_layout(ty)?;
 
@@ -218,7 +218,7 @@ impl<'r, 'l, C: RemoteCache> DataStore for TransactionDataCache<'r, 'l, C> {
                             return Err(PartialVMError::new(
                                 StatusCode::FAILED_TO_DESERIALIZE_RESOURCE,
                             )
-                            .with_message(msg));
+                                .with_message(msg));
                         }
                     };
 

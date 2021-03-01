@@ -25,14 +25,14 @@ pub fn native_print(
 
     // No-op if the feature flag is not present.
     #[cfg(feature = "debug_module")]
-    {
-        let ty = ty_args.pop().unwrap();
-        let r = pop_arg!(args, Reference);
+        {
+            let ty = ty_args.pop().unwrap();
+            let r = pop_arg!(args, Reference);
 
-        let mut buf = String::new();
-        print_reference(&mut buf, &r)?;
-        println!("[debug] {}", buf);
-    }
+            let mut buf = String::new();
+            print_reference(&mut buf, &r)?;
+            println!("[debug] {}", buf);
+        }
 
     Ok(NativeResult::ok(ONE_GAS_UNIT, vec![]))
 }
@@ -50,7 +50,7 @@ pub fn native_print_stack_trace(
     {
         let mut s = String::new();
         context.print_stack_trace(&mut s)?;
-        info!("{}", s);
+        println!("{}", s);
     }
 
     Ok(NativeResult::ok(ONE_GAS_UNIT, vec![]))

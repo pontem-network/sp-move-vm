@@ -8,7 +8,6 @@ use crate::{
     logging::LogContext,
     session::Session,
 };
-// use diem_logger::prelude::*;
 use alloc::string::ToString;
 use alloc::vec::Vec;
 use move_core_types::{
@@ -63,7 +62,6 @@ impl VMRuntime {
         let compiled_module = match CompiledModule::deserialize(&module) {
             Ok(module) => module,
             Err(err) => {
-                // warn!(*log_context, "[VM] module deserialization failed {:?}", err);
                 return Err(err.finish(Location::Undefined));
             }
         };
@@ -77,7 +75,7 @@ impl VMRuntime {
                 IndexKind::AddressIdentifier,
                 compiled_module.self_handle_idx().0,
             )
-            .finish(Location::Undefined));
+                .finish(Location::Undefined));
         }
 
         // Make sure that there is not already a module with this name published

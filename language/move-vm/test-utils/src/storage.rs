@@ -8,7 +8,6 @@ use move_core_types::{
     language_storage::{ModuleId, StructTag},
 };
 use move_vm_runtime::data_cache::RemoteCache;
-// use move_vm_txn_effect_converter::convert_txn_effects_to_move_changeset_and_events;
 use std::collections::{btree_map, BTreeMap};
 use vm::errors::{PartialVMResult, VMResult};
 
@@ -96,9 +95,9 @@ fn apply_changes<K, V, F, E>(
     changes: impl IntoIterator<Item = (K, Option<V>)>,
     make_err: F,
 ) -> std::result::Result<(), E>
-where
-    K: Ord,
-    F: FnOnce(K) -> E,
+    where
+        K: Ord,
+        F: FnOnce(K) -> E,
 {
     for (k, v_opt) in changes.into_iter() {
         match (tree.entry(k), v_opt) {

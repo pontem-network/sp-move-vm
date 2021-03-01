@@ -43,8 +43,8 @@ impl Type {
     }
 
     fn apply_subst<F>(&self, subst: F, depth: usize) -> PartialVMResult<Type>
-    where
-        F: Fn(usize, usize) -> PartialVMResult<Type> + Copy,
+        where
+            F: Fn(usize, usize) -> PartialVMResult<Type> + Copy,
     {
         if depth > TYPE_DEPTH_MAX {
             return Err(PartialVMError::new(StatusCode::VM_MAX_TYPE_DEPTH_REACHED));

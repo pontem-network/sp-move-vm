@@ -454,8 +454,8 @@ impl_vm_value_ref!(AccountAddress, Address);
 
 impl ValueImpl {
     fn as_value_ref<T>(&self) -> PartialVMResult<&T>
-    where
-        Self: VMValueRef<T>,
+        where
+            Self: VMValueRef<T>,
     {
         VMValueRef::value_ref(self)
     }
@@ -869,15 +869,15 @@ impl ContainerRef {
                         return Err(PartialVMError::new(
                             StatusCode::UNKNOWN_INVARIANT_VIOLATION_ERROR,
                         )
-                        .with_message(
-                            "failed to write_ref: resource implicitly destroyed".to_string(),
-                        ))
+                            .with_message(
+                                "failed to write_ref: resource implicitly destroyed".to_string(),
+                            ))
                     }
                     Container::Locals(_) => {
                         return Err(PartialVMError::new(
                             StatusCode::UNKNOWN_INVARIANT_VIOLATION_ERROR,
                         )
-                        .with_message("cannot overwrite Container::Locals".to_string()))
+                            .with_message("cannot overwrite Container::Locals".to_string()))
                     }
                 }
                 self.mark_dirty();
@@ -1119,7 +1119,7 @@ impl Locals {
             Some(ValueImpl::Invalid) => Err(PartialVMError::new(
                 StatusCode::UNKNOWN_INVARIANT_VIOLATION_ERROR,
             )
-            .with_message(format!("cannot copy invalid value at index {}", idx))),
+                .with_message(format!("cannot copy invalid value at index {}", idx))),
             Some(v) => Ok(Value(v.copy_value()?)),
             None => Err(
                 PartialVMError::new(StatusCode::VERIFIER_INVARIANT_VIOLATION).with_message(
@@ -1138,7 +1138,7 @@ impl Locals {
                         return Err(PartialVMError::new(
                             StatusCode::UNKNOWN_INVARIANT_VIOLATION_ERROR,
                         )
-                        .with_message("moving container with dangling references".to_string()));
+                            .with_message("moving container with dangling references".to_string()));
                     }
                 }
                 Ok(Value(core::mem::replace(v, x.0)))
@@ -1156,7 +1156,7 @@ impl Locals {
             Value(ValueImpl::Invalid) => Err(PartialVMError::new(
                 StatusCode::UNKNOWN_INVARIANT_VIOLATION_ERROR,
             )
-            .with_message(format!("cannot move invalid value at index {}", idx))),
+                .with_message(format!("cannot move invalid value at index {}", idx))),
             v => Ok(v),
         }
     }
@@ -1435,8 +1435,8 @@ impl VMValueCast<Vector> for Value {
 
 impl Value {
     pub fn value_as<T>(self) -> PartialVMResult<T>
-    where
-        Self: VMValueCast<T>,
+        where
+            Self: VMValueCast<T>,
     {
         VMValueCast::cast(self)
     }
@@ -1474,8 +1474,8 @@ impl VMValueCast<u128> for IntegerValue {
 
 impl IntegerValue {
     pub fn value_as<T>(self) -> PartialVMResult<T>
-    where
-        Self: VMValueCast<T>,
+        where
+            Self: VMValueCast<T>,
     {
         VMValueCast::cast(self)
     }
@@ -1818,17 +1818,17 @@ fn check_elem_layout(
 
         (Type::Struct(_), Container::VecC(_))
         | (Type::StructInstantiation(_, _), Container::VecC(_))
-            if !is_resource =>
-        {
-            Ok(())
-        }
+        if !is_resource =>
+            {
+                Ok(())
+            }
 
         (Type::Struct(_), Container::VecR(_))
         | (Type::StructInstantiation(_, _), Container::VecR(_))
-            if is_resource =>
-        {
-            Ok(())
-        }
+        if is_resource =>
+            {
+                Ok(())
+            }
 
         (Type::Reference(_), _) | (Type::MutableReference(_), _) | (Type::TyParam(_), _) => Err(
             PartialVMError::new(StatusCode::UNKNOWN_INVARIANT_VIOLATION_ERROR)
@@ -1846,10 +1846,10 @@ fn check_elem_layout(
         | (Type::StructInstantiation(_, _), _) => Err(PartialVMError::new(
             StatusCode::UNKNOWN_INVARIANT_VIOLATION_ERROR,
         )
-        .with_message(format!(
-            "vector elem layout mismatch, expected {:?}, got {:?}",
-            ty, v
-        ))),
+            .with_message(format!(
+                "vector elem layout mismatch, expected {:?}, got {:?}",
+                ty, v
+            ))),
     }
 }
 
@@ -2380,9 +2380,9 @@ impl Display for ValueImpl {
 }
 
 fn display_list_of_items<T, I>(items: I, f: &mut fmt::Formatter) -> fmt::Result
-where
-    T: Display,
-    I: IntoIterator<Item = T>,
+    where
+        T: Display,
+        I: IntoIterator<Item = T>,
 {
     write!(f, "[")?;
     let mut items = items.into_iter();
@@ -2545,7 +2545,7 @@ pub mod debug {
             Container::Locals(_) => Err(PartialVMError::new(
                 StatusCode::UNKNOWN_INVARIANT_VIOLATION_ERROR,
             )
-            .with_message("debug print - invalid container: Locals".to_string())),
+                .with_message("debug print - invalid container: Locals".to_string())),
         }
     }
 
@@ -2652,7 +2652,7 @@ impl Value {
             layout,
             val: &self.0,
         })
-        .ok()
+            .ok()
     }
 }
 
@@ -2670,7 +2670,7 @@ impl Struct {
             },
             blob,
         )
-        .ok()
+            .ok()
     }
 
     pub fn simple_serialize(&self, layout: &MoveStructLayout) -> Option<Vec<u8>> {
@@ -2678,7 +2678,7 @@ impl Struct {
             layout,
             val: &self.fields,
         })
-        .ok()
+            .ok()
     }
 }
 
@@ -2713,7 +2713,7 @@ impl<'a, 'b> serde::Serialize for AnnotatedValue<'a, 'b, MoveTypeLayout, ValueIm
                 layout: struct_layout,
                 val: &*r.borrow(),
             })
-            .serialize(serializer),
+                .serialize(serializer),
 
             (MoveTypeLayout::Vector(layout), ValueImpl::Container(c)) => {
                 let layout = &**layout;
@@ -2758,7 +2758,7 @@ impl<'a, 'b> serde::Serialize for AnnotatedValue<'a, 'b, MoveTypeLayout, ValueIm
                     layout: &MoveTypeLayout::Address,
                     val: &v[0],
                 })
-                .serialize(serializer)
+                    .serialize(serializer)
             }
 
             (ty, val) => Err(invariant_violation::<S>(format!(
@@ -2827,7 +2827,7 @@ impl<'d> serde::de::DeserializeSeed<'d> for SeedWrapper<&MoveKindInfo, &MoveType
                     kind_info: (*k, field_kinds.as_slice()),
                     layout: struct_layout,
                 }
-                .deserialize(deserializer)?,
+                    .deserialize(deserializer)?,
             )),
 
             (K::Vector(k, elem_k), L::Vector(layout)) => {
@@ -2876,7 +2876,7 @@ impl<'d> serde::de::DeserializeSeed<'d> for SeedWrapper<&MoveKindInfo, &MoveType
 }
 
 impl<'d> serde::de::DeserializeSeed<'d>
-    for SeedWrapper<(MoveKind, &[MoveKindInfo]), &MoveStructLayout>
+for SeedWrapper<(MoveKind, &[MoveKindInfo]), &MoveStructLayout>
 {
     type Value = Struct;
 
@@ -2915,8 +2915,8 @@ impl<'d, 'a> serde::de::Visitor<'d> for VectorElementVisitor<'a> {
     }
 
     fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-    where
-        A: serde::de::SeqAccess<'d>,
+        where
+            A: serde::de::SeqAccess<'d>,
     {
         let mut vals = Vec::new();
         while let Some(elem) = seq.next_element_seed(self.0.clone())? {
@@ -2936,8 +2936,8 @@ impl<'d, 'a> serde::de::Visitor<'d> for StructFieldVisitor<'a> {
     }
 
     fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-    where
-        A: serde::de::SeqAccess<'d>,
+        where
+            A: serde::de::SeqAccess<'d>,
     {
         let mut val = Vec::new();
         for (i, (field_kind, field_layout)) in self.0.iter().zip(self.1.iter()).enumerate() {
