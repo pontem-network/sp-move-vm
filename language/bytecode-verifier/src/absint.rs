@@ -43,7 +43,7 @@ pub(crate) struct BlockInvariant<State, AnalysisError> {
 /// A map from block id's to the pre/post of each block after a fixed point is reached.
 #[allow(dead_code)]
 pub(crate) type InvariantMap<State, AnalysisError> =
-HashMap<BlockId, BlockInvariant<State, AnalysisError>>;
+    HashMap<BlockId, BlockInvariant<State, AnalysisError>>;
 
 /// Take a pre-state + instruction and mutate it to produce a post-state
 /// Auxiliary data can be stored in self.

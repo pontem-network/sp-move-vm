@@ -75,7 +75,7 @@ impl VMRuntime {
                 IndexKind::AddressIdentifier,
                 compiled_module.self_handle_idx().0,
             )
-                .finish(Location::Undefined));
+            .finish(Location::Undefined));
         }
 
         // Make sure that there is not already a module with this name published

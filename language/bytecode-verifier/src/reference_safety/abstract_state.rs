@@ -355,11 +355,11 @@ impl AbstractState {
     ) -> PartialVMResult<AbstractValue> {
         match (v1, v2) {
             (AbstractValue::Reference(id1), AbstractValue::Reference(id2))
-            if !self.is_readable(id1, None) || !self.is_readable(id2, None) =>
-                {
-                    // TODO better error code
-                    return Err(self.error(StatusCode::READREF_EXISTS_MUTABLE_BORROW_ERROR, offset));
-                }
+                if !self.is_readable(id1, None) || !self.is_readable(id2, None) =>
+            {
+                // TODO better error code
+                return Err(self.error(StatusCode::READREF_EXISTS_MUTABLE_BORROW_ERROR, offset));
+            }
             (AbstractValue::Reference(id1), AbstractValue::Reference(id2)) => {
                 self.release(id1);
                 self.release(id2)
@@ -589,11 +589,11 @@ impl AbstractState {
     fn is_canonical(&self) -> bool {
         self.num_locals + 1 == self.next_id
             && self.locals.iter().all(|(local, value)| {
-            value
-                .ref_id()
-                .map(|id| RefID::new(*local as usize) == id)
-                .unwrap_or(true)
-        })
+                value
+                    .ref_id()
+                    .map(|id| RefID::new(*local as usize) == id)
+                    .unwrap_or(true)
+            })
     }
 
     fn iter_locals(&self) -> impl Iterator<Item = LocalIndex> {

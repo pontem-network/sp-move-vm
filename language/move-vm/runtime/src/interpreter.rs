@@ -261,16 +261,16 @@ impl<L: LogContext> Interpreter<L> {
             function.clone(),
             ty_args,
         )
-            .map_err(|e| match function.module_id() {
-                Some(id) => e
-                    .at_code_offset(function.index(), 0)
-                    .finish(Location::Module(id.clone())),
-                None => {
-                    let err = PartialVMError::new(StatusCode::UNKNOWN_INVARIANT_VIOLATION_ERROR)
-                        .with_message("Unexpected native function not located in a module".to_owned());
-                    self.set_location(err)
-                }
-            })
+        .map_err(|e| match function.module_id() {
+            Some(id) => e
+                .at_code_offset(function.index(), 0)
+                .finish(Location::Module(id.clone())),
+            None => {
+                let err = PartialVMError::new(StatusCode::UNKNOWN_INVARIANT_VIOLATION_ERROR)
+                    .with_message("Unexpected native function not located in a module".to_owned());
+                self.set_location(err)
+            }
+        })
     }
 
     fn call_native_impl(
@@ -301,9 +301,9 @@ impl<L: LogContext> Interpreter<L> {
 
     /// Perform a binary operation to two values at the top of the stack.
     fn binop<F, T>(&mut self, f: F) -> PartialVMResult<()>
-        where
-            Value: VMValueCast<T>,
-            F: FnOnce(T, T) -> PartialVMResult<Value>,
+    where
+        Value: VMValueCast<T>,
+        F: FnOnce(T, T) -> PartialVMResult<Value>,
     {
         let rhs = self.operand_stack.pop_as::<T>()?;
         let lhs = self.operand_stack.pop_as::<T>()?;
@@ -313,8 +313,8 @@ impl<L: LogContext> Interpreter<L> {
 
     /// Perform a binary operation for integer values.
     fn binop_int<F>(&mut self, f: F) -> PartialVMResult<()>
-        where
-            F: FnOnce(IntegerValue, IntegerValue) -> PartialVMResult<IntegerValue>,
+    where
+        F: FnOnce(IntegerValue, IntegerValue) -> PartialVMResult<IntegerValue>,
     {
         self.binop(|lhs, rhs| {
             Ok(match f(lhs, rhs)? {
@@ -327,9 +327,9 @@ impl<L: LogContext> Interpreter<L> {
 
     /// Perform a binary operation for boolean values.
     fn binop_bool<F, T>(&mut self, f: F) -> PartialVMResult<()>
-        where
-            Value: VMValueCast<T>,
-            F: FnOnce(T, T) -> PartialVMResult<bool>,
+    where
+        Value: VMValueCast<T>,
+        F: FnOnce(T, T) -> PartialVMResult<bool>,
     {
         self.binop(|lhs, rhs| Ok(Value::bool(f(lhs, rhs)?)))
     }
@@ -528,7 +528,7 @@ impl<L: LogContext> Interpreter<L> {
                     frame.function.pretty_string(),
                     frame.pc,
                 )
-                    .as_str(),
+                .as_str(),
             );
         }
         internal_state.push_str(
@@ -538,7 +538,7 @@ impl<L: LogContext> Interpreter<L> {
                 current_frame.function.pretty_string(),
                 current_frame.pc,
             )
-                .as_str(),
+            .as_str(),
         );
         let code = current_frame.function.code();
         let pc = current_frame.pc as usize;
@@ -597,8 +597,8 @@ impl Stack {
     /// Pop a `Value` of a given type off the stack. Abort if the value is not of the given
     /// type or if the stack is empty.
     fn pop_as<T>(&mut self) -> PartialVMResult<T>
-        where
-            Value: VMValueCast<T>,
+    where
+        Value: VMValueCast<T>,
     {
         self.pop()?.value_as()
     }
@@ -752,9 +752,9 @@ impl Frame {
                             Value::deserialize_constant(constant).ok_or_else(|| {
                                 PartialVMError::new(StatusCode::VERIFIER_INVARIANT_VIOLATION)
                                     .with_message(
-                                        "Verifier failed to verify the deserialization of constants"
-                                            .to_owned(),
-                                    )
+                                    "Verifier failed to verify the deserialization of constants"
+                                        .to_owned(),
+                                )
                             })?,
                         )?
                     }

@@ -200,8 +200,8 @@ impl HashValue {
     #[cfg(feature = "std")]
     #[cfg(test)]
     pub fn from_iter_sha3<'a, I>(buffers: I) -> Self
-        where
-            I: IntoIterator<Item = &'a [u8]>,
+    where
+        I: IntoIterator<Item = &'a [u8]>,
     {
         let mut sha3 = Sha3::v256();
         for buffer in buffers {

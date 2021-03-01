@@ -46,8 +46,8 @@ fn make_script(signature: Signature) -> Vec<u8> {
             code: vec![Bytecode::Ret],
         },
     }
-        .serialize(&mut blob)
-        .expect("script must serialize");
+    .serialize(&mut blob)
+    .expect("script must serialize");
     blob
 }
 
@@ -89,8 +89,8 @@ fn make_script_with_imports(signature: Signature) -> Vec<u8> {
             code: vec![Bytecode::Ret],
         },
     }
-        .serialize(&mut blob)
-        .expect("script must serialize");
+    .serialize(&mut blob)
+    .expect("script must serialize");
     blob
 }
 
@@ -145,8 +145,8 @@ fn make_script_consuming_args(signature: Signature) -> Vec<u8> {
             code,
         },
     }
-        .serialize(&mut blob)
-        .expect("script must serialize");
+    .serialize(&mut blob)
+    .expect("script must serialize");
     blob
 }
 
@@ -339,7 +339,7 @@ fn check_main_signature() {
             Value::address(AccountAddress::random()),
         ],
     )
-        .expect("vector<u8> is good");
+    .expect("vector<u8> is good");
     // signer ref
     let script = make_script(Signature(vec![
         SignatureToken::Reference(Box::new(SignatureToken::Signer)),
@@ -352,7 +352,7 @@ fn check_main_signature() {
         vec![],
         vec![AccountAddress::random()],
     )
-        .expect("&Signer first argument is good");
+    .expect("&Signer first argument is good");
     let script = make_script(Signature(vec![
         SignatureToken::Bool,
         SignatureToken::Vector(Box::new(SignatureToken::U8)),
@@ -377,12 +377,12 @@ fn check_main_signature() {
         addresses,
         &SignatureToken::Vector(Box::new(SignatureToken::Address)),
     )
-        .expect("vector<vector<address>> can be built");
+    .expect("vector<vector<address>> can be built");
     call_script(
         script,
         vec![Value::bool(true), Value::vector_u8(vec![0, 1]), values],
     )
-        .expect("vector<vector<address>> is good");
+    .expect("vector<vector<address>> is good");
 }
 
 #[test]
@@ -425,7 +425,7 @@ fn check_constant_args() {
         script.clone(),
         vec![Value::vector_address(vec![AccountAddress::random()])],
     )
-        .expect("vector<address> is good");
+    .expect("vector<address> is good");
     // multiple elems vector
     call_script(
         script.clone(),
@@ -437,7 +437,7 @@ fn check_constant_args() {
             AccountAddress::random(),
         ])],
     )
-        .expect("multiple vector<address> is good");
+    .expect("multiple vector<address> is good");
     // wrong vector vector<bool> passed for vector<address>
     assert_eq!(
         call_script(script.clone(), vec![Value::vector_bool(vec![true])])
@@ -464,7 +464,7 @@ fn check_constant_args() {
         vec![],
         &SignatureToken::Vector(Box::new(SignatureToken::U8)),
     )
-        .expect("create vector of vector");
+    .expect("create vector of vector");
     call_script(script.clone(), vec![arg]).expect("empty vector<vector<u8>> is good");
     // multiple elements vector
     let inner = vec![
@@ -476,7 +476,7 @@ fn check_constant_args() {
         inner,
         &SignatureToken::Vector(Box::new(SignatureToken::U8)),
     )
-        .expect("create vector of vector");
+    .expect("create vector of vector");
     call_script(script.clone(), vec![arg]).expect("vector<vector<u8>> is good");
     // wrong U8 passed for vector<U8>
     assert_eq!(
@@ -512,9 +512,9 @@ fn check_signer_args() {
             vec![],
             one_signer,
         )
-            .err()
-            .unwrap()
-            .major_status(),
+        .err()
+        .unwrap()
+        .major_status(),
         StatusCode::TYPE_MISMATCH
     );
 
@@ -531,9 +531,9 @@ fn check_signer_args() {
             vec![],
             three_signers
         )
-            .err()
-            .unwrap()
-            .major_status(),
+        .err()
+        .unwrap()
+        .major_status(),
         StatusCode::TYPE_MISMATCH
     );
 
@@ -550,5 +550,5 @@ fn check_signer_args() {
         vec![],
         vec![AccountAddress::random()],
     )
-        .expect("Ok to pass oo many signers");
+    .expect("Ok to pass oo many signers");
 }

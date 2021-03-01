@@ -95,9 +95,9 @@ fn apply_changes<K, V, F, E>(
     changes: impl IntoIterator<Item = (K, Option<V>)>,
     make_err: F,
 ) -> std::result::Result<(), E>
-    where
-        K: Ord,
-        F: FnOnce(K) -> E,
+where
+    K: Ord,
+    F: FnOnce(K) -> E,
 {
     for (k, v_opt) in changes.into_iter() {
         match (tree.entry(k), v_opt) {

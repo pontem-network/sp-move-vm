@@ -67,8 +67,8 @@ fn compute_const_name(attrs: Vec<Attribute>) -> Result<Ident> {
         .filter(|attr| attr.path.is_ident("num_variants"))
         .map(|attr| match attr.parse_meta() {
             Ok(Meta::NameValue(MetaNameValue {
-                                   lit: Lit::Str(lit), ..
-                               })) => Ok((attr.span(), lit.parse::<Ident>()?)),
+                lit: Lit::Str(lit), ..
+            })) => Ok((attr.span(), lit.parse::<Ident>()?)),
             _ => Err(Error::new(
                 attr.span(),
                 "must be of the form #[num_variants = \"FOO\"]",

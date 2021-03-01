@@ -40,9 +40,9 @@ use std::{
 /// }));
 /// ```
 pub fn with_stack_size<'a, F, T>(size: usize, f: F) -> Result<T, Box<dyn Any + 'static + Send>>
-    where
-        F: FnOnce() -> T + Send + 'a,
-        T: Send + 'a,
+where
+    F: FnOnce() -> T + Send + 'a,
+    T: Send + 'a,
 {
     thread::scope(|s| {
         let handle = s.builder().stack_size(size).spawn(|_| f()).map_err(|err| {
@@ -62,9 +62,9 @@ pub fn with_stack_size<'a, F, T>(size: usize, f: F) -> Result<T, Box<dyn Any + '
 /// algorithm](https://blog.acolyer.org/2018/01/30/a-sample-of-brilliance/) for sampling without
 /// replacement.
 pub fn pick_idxs<T, P>(max: usize, indexes: &T, indexes_len: usize) -> Vec<usize>
-    where
-        T: OpsIndex<usize, Output = P> + ?Sized,
-        P: AsRef<PropIndex>,
+where
+    T: OpsIndex<usize, Output = P> + ?Sized,
+    P: AsRef<PropIndex>,
 {
     // See https://blog.acolyer.org/2018/01/30/a-sample-of-brilliance/ (the F2 algorithm)
     // for a longer explanation. This is a variant that works with zero-indexing.

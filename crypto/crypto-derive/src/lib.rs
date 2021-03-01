@@ -223,7 +223,7 @@ pub fn derive_deref(input: TokenStream) -> TokenStream {
             }
         }
     )
-        .into()
+    .into()
 }
 
 #[proc_macro_derive(ValidCryptoMaterial)]

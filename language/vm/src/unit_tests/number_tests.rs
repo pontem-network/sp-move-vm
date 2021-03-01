@@ -54,7 +54,7 @@ fn uleb128_malformed_test() {
     assert!(read_uleb128_as_u64(&mut Cursor::new(&[
         0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x2
     ]))
-        .is_err());
+    .is_err());
 }
 
 #[test]
@@ -65,7 +65,7 @@ fn uleb128_canonicity_test() {
     assert!(read_uleb128_as_u64(&mut Cursor::new(&[
         0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x1
     ]))
-        .is_ok());
+    .is_ok());
 }
 
 proptest! {

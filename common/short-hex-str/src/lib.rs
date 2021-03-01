@@ -67,8 +67,8 @@ impl fmt::Display for ShortHexStr {
 
 impl Serialize for ShortHexStr {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
+    where
+        S: Serializer,
     {
         serializer.serialize_str(self.as_str())
     }

@@ -47,12 +47,12 @@ pub struct GrowingSubset<Ix, T> {
 ///
 /// The input does not need to be pre-sorted.
 impl<Ix, T> FromIterator<(Ix, T)> for GrowingSubset<Ix, T>
-    where
-        Ix: Ord,
+where
+    Ix: Ord,
 {
     fn from_iter<I>(iter: I) -> Self
-        where
-            I: IntoIterator<Item = (Ix, T)>,
+    where
+        I: IntoIterator<Item = (Ix, T)>,
     {
         let mut items: Vec<_> = iter.into_iter().collect();
         // Sorting is required to construct a subset correctly.
@@ -65,8 +65,8 @@ impl<Ix, T> FromIterator<(Ix, T)> for GrowingSubset<Ix, T>
 }
 
 impl<Ix, T> GrowingSubset<Ix, T>
-    where
-        Ix: Ord,
+where
+    Ix: Ord,
 {
     /// Returns the number of elements in the *current subset*.
     ///

@@ -48,8 +48,8 @@ use serde::{ser, Serialize};
 /// assert_eq!(bytes, expected);
 /// ```
 pub fn to_bytes<T>(value: &T) -> Result<Vec<u8>>
-    where
-        T: ?Sized + Serialize,
+where
+    T: ?Sized + Serialize,
 {
     let mut output = Vec::new();
     serialize_into(&mut output, value)?;
@@ -58,8 +58,8 @@ pub fn to_bytes<T>(value: &T) -> Result<Vec<u8>>
 
 /// Same as `to_bytes` but write directly into an `std::io::Write` object.
 pub fn serialize_into<T>(write: &mut Vec<u8>, value: &T) -> Result<()>
-    where
-        T: ?Sized + Serialize,
+where
+    T: ?Sized + Serialize,
 {
     let serializer = Serializer::new(write, crate::MAX_CONTAINER_DEPTH);
     value.serialize(serializer)
@@ -210,8 +210,8 @@ impl<'a> ser::Serializer for Serializer<'a> {
 
     // A present optional is represented as `01` followed by the serialized value
     fn serialize_some<T>(self, value: &T) -> Result<()>
-        where
-            T: ?Sized + Serialize,
+    where
+        T: ?Sized + Serialize,
     {
         self.output.extend_from_slice(&[1]);
         value.serialize(self)
@@ -236,8 +236,8 @@ impl<'a> ser::Serializer for Serializer<'a> {
     }
 
     fn serialize_newtype_struct<T>(mut self, name: &'static str, value: &T) -> Result<()>
-        where
-            T: ?Sized + Serialize,
+    where
+        T: ?Sized + Serialize,
     {
         self.enter_named_container(name)?;
         value.serialize(self)
@@ -250,8 +250,8 @@ impl<'a> ser::Serializer for Serializer<'a> {
         _variant: &'static str,
         value: &T,
     ) -> Result<()>
-        where
-            T: ?Sized + Serialize,
+    where
+        T: ?Sized + Serialize,
     {
         self.enter_named_container(name)?;
         self.output_variant_index(variant_index)?;
@@ -333,8 +333,8 @@ impl<'a> ser::SerializeSeq for Serializer<'a> {
     type Error = Error;
 
     fn serialize_element<T>(&mut self, value: &T) -> Result<()>
-        where
-            T: ?Sized + Serialize,
+    where
+        T: ?Sized + Serialize,
     {
         value.serialize(Serializer::new(self.output, self.max_remaining_depth))
     }
@@ -349,8 +349,8 @@ impl<'a> ser::SerializeTuple for Serializer<'a> {
     type Error = Error;
 
     fn serialize_element<T>(&mut self, value: &T) -> Result<()>
-        where
-            T: ?Sized + Serialize,
+    where
+        T: ?Sized + Serialize,
     {
         value.serialize(Serializer::new(self.output, self.max_remaining_depth))
     }
@@ -365,8 +365,8 @@ impl<'a> ser::SerializeTupleStruct for Serializer<'a> {
     type Error = Error;
 
     fn serialize_field<T>(&mut self, value: &T) -> Result<()>
-        where
-            T: ?Sized + Serialize,
+    where
+        T: ?Sized + Serialize,
     {
         value.serialize(Serializer::new(self.output, self.max_remaining_depth))
     }
@@ -381,8 +381,8 @@ impl<'a> ser::SerializeTupleVariant for Serializer<'a> {
     type Error = Error;
 
     fn serialize_field<T>(&mut self, value: &T) -> Result<()>
-        where
-            T: ?Sized + Serialize,
+    where
+        T: ?Sized + Serialize,
     {
         value.serialize(Serializer::new(self.output, self.max_remaining_depth))
     }
@@ -414,8 +414,8 @@ impl<'a> ser::SerializeMap for MapSerializer<'a> {
     type Error = Error;
 
     fn serialize_key<T>(&mut self, key: &T) -> Result<()>
-        where
-            T: ?Sized + Serialize,
+    where
+        T: ?Sized + Serialize,
     {
         if self.next_key.is_some() {
             return Err(Error::ExpectedMapValue);
@@ -431,8 +431,8 @@ impl<'a> ser::SerializeMap for MapSerializer<'a> {
     }
 
     fn serialize_value<T>(&mut self, value: &T) -> Result<()>
-        where
-            T: ?Sized + Serialize,
+    where
+        T: ?Sized + Serialize,
     {
         match self.next_key.take() {
             Some(key) => {
@@ -472,8 +472,8 @@ impl<'a> ser::SerializeStruct for Serializer<'a> {
     type Error = Error;
 
     fn serialize_field<T>(&mut self, _key: &'static str, value: &T) -> Result<()>
-        where
-            T: ?Sized + Serialize,
+    where
+        T: ?Sized + Serialize,
     {
         value.serialize(Serializer::new(self.output, self.max_remaining_depth))
     }
@@ -488,8 +488,8 @@ impl<'a> ser::SerializeStructVariant for Serializer<'a> {
     type Error = Error;
 
     fn serialize_field<T>(&mut self, _key: &'static str, value: &T) -> Result<()>
-        where
-            T: ?Sized + Serialize,
+    where
+        T: ?Sized + Serialize,
     {
         value.serialize(Serializer::new(self.output, self.max_remaining_depth))
     }

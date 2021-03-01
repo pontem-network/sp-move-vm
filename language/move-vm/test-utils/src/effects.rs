@@ -17,9 +17,9 @@ pub struct AccountChangeSet {
 }
 
 fn publish_checked<K, V, F>(map: &mut BTreeMap<K, Option<V>>, k: K, v: V, make_err: F) -> Result<()>
-    where
-        K: Ord,
-        F: FnOnce() -> Error,
+where
+    K: Ord,
+    F: FnOnce() -> Error,
 {
     match map.entry(k) {
         btree_map::Entry::Occupied(entry) => {
@@ -37,9 +37,9 @@ fn publish_checked<K, V, F>(map: &mut BTreeMap<K, Option<V>>, k: K, v: V, make_e
 }
 
 fn unpublish_checked<K, V, F>(map: &mut BTreeMap<K, Option<V>>, k: K, make_err: F) -> Result<()>
-    where
-        K: Ord,
-        F: FnOnce() -> Error,
+where
+    K: Ord,
+    F: FnOnce() -> Error,
 {
     match map.entry(k) {
         btree_map::Entry::Occupied(entry) => {

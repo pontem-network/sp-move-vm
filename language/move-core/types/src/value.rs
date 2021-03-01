@@ -172,8 +172,8 @@ impl<'d, 'a> serde::de::Visitor<'d> for VectorElementVisitor<'a> {
     }
 
     fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-        where
-            A: serde::de::SeqAccess<'d>,
+    where
+        A: serde::de::SeqAccess<'d>,
     {
         let mut vals = Vec::new();
         while let Some(elem) = seq.next_element_seed(self.0)? {
@@ -193,8 +193,8 @@ impl<'d, 'a> serde::de::Visitor<'d> for StructFieldVisitor<'a> {
     }
 
     fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-        where
-            A: serde::de::SeqAccess<'d>,
+    where
+        A: serde::de::SeqAccess<'d>,
     {
         let mut val = Vec::new();
         for (i, field_type) in self.0.iter().enumerate() {

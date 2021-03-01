@@ -48,8 +48,8 @@ struct BinaryCache<K, V> {
 }
 
 impl<K, V> BinaryCache<K, V>
-    where
-        K: Eq + Hash,
+where
+    K: Eq + Hash,
 {
     fn new() -> Self {
         Self {
@@ -306,8 +306,8 @@ impl ModuleCache {
         tok: &SignatureToken,
         resolver: &F,
     ) -> PartialVMResult<Type>
-        where
-            F: Fn(&IdentStr, &ModuleId) -> PartialVMResult<usize>,
+    where
+        F: Fn(&IdentStr, &ModuleId) -> PartialVMResult<usize>,
     {
         let res = match tok {
             SignatureToken::Bool => Type::Bool,
@@ -657,13 +657,13 @@ impl Loader {
                     module.identifier_at(mh.name).as_str(),
                     module.identifier_at(fh.name).as_str(),
                 )
-                    .ok_or_else(|| {
-                        verification_error(
-                            StatusCode::MISSING_DEPENDENCY,
-                            IndexKind::FunctionHandle,
-                            idx as TableIndex,
-                        )
-                    })?;
+                .ok_or_else(|| {
+                    verification_error(
+                        StatusCode::MISSING_DEPENDENCY,
+                        IndexKind::FunctionHandle,
+                        idx as TableIndex,
+                    )
+                })?;
             }
             // TODO: fix check and error code if we leave something around for native structs.
             // For now this generates the only error test cases care about...
@@ -1236,10 +1236,10 @@ impl Module {
                             return Err(PartialVMError::new(
                                 StatusCode::FUNCTION_RESOLUTION_FAILURE,
                             )
-                                .with_message(format!(
-                                    "Cannot find {:?}::{:?} in publishing module",
-                                    module_id, func_name
-                                )));
+                            .with_message(format!(
+                                "Cannot find {:?}::{:?} in publishing module",
+                                module_id, func_name
+                            )));
                         }
                         if function.name.as_ident_str() == func_name {
                             function_refs.push(idx);

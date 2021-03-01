@@ -83,16 +83,16 @@ impl FieldHandleState {
 #[derive(Debug)]
 #[allow(unused)]
 struct InstantiationState<T>
-    where
-        T: Eq + Clone + Hash,
+where
+    T: Eq + Clone + Hash,
 {
     instantiations: Vec<T>,
     instantiation_map: HashMap<T, TableIndex>,
 }
 
 impl<T> InstantiationState<T>
-    where
-        T: Eq + Clone + Hash,
+where
+    T: Eq + Clone + Hash,
 {
     fn new() -> Self {
         InstantiationState {
