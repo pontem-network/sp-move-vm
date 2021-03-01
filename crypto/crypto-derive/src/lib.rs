@@ -115,12 +115,12 @@ pub fn silent_display(source: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(source).expect("Incorrect macro input");
     let name = &ast.ident;
     let gen = quote! {
-         // In order to ensure that secrets are never leaked, Display is elided
-         impl ::std::fmt::Display for #name {
-              fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-                    write!(f, "<elided secret for {}>", stringify!(#name))
-              }
-         }
+        // In order to ensure that secrets are never leaked, Display is elided
+        impl ::core::fmt::Display for #name {
+            fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                write!(f, "<elided secret for {}>", stringify!(#name))
+            }
+        }
     };
     gen.into()
 }
@@ -130,12 +130,76 @@ pub fn silent_debug(source: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(source).expect("Incorrect macro input");
     let name = &ast.ident;
     let gen = quote! {
-         // In order to ensure that secrets are never leaked, Debug is elided
-         impl ::std::fmt::Debug for #name {
-              fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-                    write!(f, "<elided secret for {}>", stringify!(#name))
-              }
-         }
+        // In order to ensure that secrets are never leaked, Debug is elided
+        impl ::core::fmt::Debug for #name {
+            fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                write!(f, "<elided secret for {}>", stringify!(#name))
+            }
+        }
+    };
+    gen.into()
+}
+
+/// Deserialize from a human readable format where applicable
+#[proc_macro_derive(DeserializeKey)]
+pub fn deserialize_key(source: TokenStream) -> TokenStream {
+    let ast: DeriveInput = syn::parse(source).expect("Incorrect macro input");
+    let name = &ast.ident;
+    let name_string = name.to_string();
+    let gen = quote! {
+        impl<'de> ::serde::Deserialize<'de> for #name {
+            fn deserialize<D>(deserializer: D) -> core::result::Result<Self, D::Error>
+            where
+                D: ::serde::Deserializer<'de>,
+            {
+                if deserializer.is_human_readable() {
+                    let encoded_key = <String>::deserialize(deserializer)?;
+                    ValidCryptoMaterialStringExt::from_encoded_string(encoded_key.as_str())
+                        .map_err(<D::Error as ::serde::de::Error>::custom)
+                } else {
+                    // In order to preserve the Serde data model and help analysis tools,
+                    // make sure to wrap our value in a container with the same name
+                    // as the original type.
+                    #[derive(::serde::Deserialize)]
+                    #[serde(rename = #name_string)]
+                    struct Value<'a>(&'a [u8]);
+
+                    let value = Value::deserialize(deserializer)?;
+                    #name::try_from(value.0).map_err(|s| {
+                        <D::Error as ::serde::de::Error>::custom(format!("{} with {}", s, #name_string))
+                    })
+                }
+            }
+        }
+    };
+    gen.into()
+}
+
+/// Serialize into a human readable format where applicable
+#[proc_macro_derive(SerializeKey)]
+pub fn serialize_key(source: TokenStream) -> TokenStream {
+    let ast: DeriveInput = syn::parse(source).expect("Incorrect macro input");
+    let name = &ast.ident;
+    let name_string = name.to_string();
+    let gen = quote! {
+        impl ::serde::Serialize for #name {
+            fn serialize<S>(&self, serializer: S) -> core::result::Result<S::Ok, S::Error>
+            where
+                S: ::serde::Serializer,
+            {
+                if serializer.is_human_readable() {
+                    self.to_encoded_string()
+                        .map_err(<S::Error as ::serde::ser::Error>::custom)
+                        .and_then(|str| serializer.serialize_str(&str[..]))
+                } else {
+                    // See comment in deserialize_key.
+                    serializer.serialize_newtype_struct(
+                        #name_string,
+                        serde_bytes::Bytes::new(&ValidCryptoMaterial::to_bytes(self).as_slice()),
+                    )
+                }
+            }
+        }
     };
     gen.into()
 }
@@ -149,7 +213,7 @@ pub fn derive_deref(input: TokenStream) -> TokenStream {
     let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
 
     quote!(
-        impl #impl_generics ::std::ops::Deref for #name #ty_generics
+        impl #impl_generics ::core::ops::Deref for #name #ty_generics
         #where_clause
         {
             type Target = #field_ty;
@@ -159,7 +223,7 @@ pub fn derive_deref(input: TokenStream) -> TokenStream {
             }
         }
     )
-    .into()
+        .into()
 }
 
 #[proc_macro_derive(ValidCryptoMaterial)]
