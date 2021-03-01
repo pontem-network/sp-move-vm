@@ -1,10 +1,8 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::alloc::string::ToString;
 use crate::error::{Error, Result};
 use alloc::vec::Vec;
-use core::fmt::Display;
 use serde::{ser, Serialize};
 
 /// Serialize the given data structure as a `Vec<u8>` of BCS.
@@ -50,14 +48,21 @@ use serde::{ser, Serialize};
 /// assert_eq!(bytes, expected);
 /// ```
 pub fn to_bytes<T>(value: &T) -> Result<Vec<u8>>
-where
-    T: ?Sized + Serialize,
+    where
+        T: ?Sized + Serialize,
 {
     let mut output = Vec::new();
-
-    let serializer = Serializer::new(&mut output, crate::MAX_CONTAINER_DEPTH);
-    value.serialize(serializer)?;
+    serialize_into(&mut output, value)?;
     Ok(output)
+}
+
+/// Same as `to_bytes` but write directly into an `std::io::Write` object.
+pub fn serialize_into<T>(write: &mut Vec<u8>, value: &T) -> Result<()>
+    where
+        T: ?Sized + Serialize,
+{
+    let serializer = Serializer::new(write, crate::MAX_CONTAINER_DEPTH);
+    value.serialize(serializer)
 }
 
 pub fn is_human_readable() -> bool {
@@ -66,7 +71,7 @@ pub fn is_human_readable() -> bool {
     ser::Serializer::is_human_readable(&serializer)
 }
 
-/// Serialization implementation for LCS
+/// Serialization implementation for BCS
 struct Serializer<'a> {
     output: &'a mut Vec<u8>,
     max_remaining_depth: usize,
@@ -205,8 +210,8 @@ impl<'a> ser::Serializer for Serializer<'a> {
 
     // A present optional is represented as `01` followed by the serialized value
     fn serialize_some<T>(self, value: &T) -> Result<()>
-    where
-        T: ?Sized + Serialize,
+        where
+            T: ?Sized + Serialize,
     {
         self.output.extend_from_slice(&[1]);
         value.serialize(self)
@@ -231,8 +236,8 @@ impl<'a> ser::Serializer for Serializer<'a> {
     }
 
     fn serialize_newtype_struct<T>(mut self, name: &'static str, value: &T) -> Result<()>
-    where
-        T: ?Sized + Serialize,
+        where
+            T: ?Sized + Serialize,
     {
         self.enter_named_container(name)?;
         value.serialize(self)
@@ -245,8 +250,8 @@ impl<'a> ser::Serializer for Serializer<'a> {
         _variant: &'static str,
         value: &T,
     ) -> Result<()>
-    where
-        T: ?Sized + Serialize,
+        where
+            T: ?Sized + Serialize,
     {
         self.enter_named_container(name)?;
         self.output_variant_index(variant_index)?;
@@ -321,13 +326,6 @@ impl<'a> ser::Serializer for Serializer<'a> {
     fn is_human_readable(&self) -> bool {
         false
     }
-
-    fn collect_str<T: ?Sized>(self, value: &T) -> Result<Self::Ok, Self::Error>
-    where
-        T: Display,
-    {
-        self.serialize_str(&value.to_string())
-    }
 }
 
 impl<'a> ser::SerializeSeq for Serializer<'a> {
@@ -335,8 +333,8 @@ impl<'a> ser::SerializeSeq for Serializer<'a> {
     type Error = Error;
 
     fn serialize_element<T>(&mut self, value: &T) -> Result<()>
-    where
-        T: ?Sized + Serialize,
+        where
+            T: ?Sized + Serialize,
     {
         value.serialize(Serializer::new(self.output, self.max_remaining_depth))
     }
@@ -351,8 +349,8 @@ impl<'a> ser::SerializeTuple for Serializer<'a> {
     type Error = Error;
 
     fn serialize_element<T>(&mut self, value: &T) -> Result<()>
-    where
-        T: ?Sized + Serialize,
+        where
+            T: ?Sized + Serialize,
     {
         value.serialize(Serializer::new(self.output, self.max_remaining_depth))
     }
@@ -367,8 +365,8 @@ impl<'a> ser::SerializeTupleStruct for Serializer<'a> {
     type Error = Error;
 
     fn serialize_field<T>(&mut self, value: &T) -> Result<()>
-    where
-        T: ?Sized + Serialize,
+        where
+            T: ?Sized + Serialize,
     {
         value.serialize(Serializer::new(self.output, self.max_remaining_depth))
     }
@@ -383,8 +381,8 @@ impl<'a> ser::SerializeTupleVariant for Serializer<'a> {
     type Error = Error;
 
     fn serialize_field<T>(&mut self, value: &T) -> Result<()>
-    where
-        T: ?Sized + Serialize,
+        where
+            T: ?Sized + Serialize,
     {
         value.serialize(Serializer::new(self.output, self.max_remaining_depth))
     }
@@ -416,8 +414,8 @@ impl<'a> ser::SerializeMap for MapSerializer<'a> {
     type Error = Error;
 
     fn serialize_key<T>(&mut self, key: &T) -> Result<()>
-    where
-        T: ?Sized + Serialize,
+        where
+            T: ?Sized + Serialize,
     {
         if self.next_key.is_some() {
             return Err(Error::ExpectedMapValue);
@@ -433,8 +431,8 @@ impl<'a> ser::SerializeMap for MapSerializer<'a> {
     }
 
     fn serialize_value<T>(&mut self, value: &T) -> Result<()>
-    where
-        T: ?Sized + Serialize,
+        where
+            T: ?Sized + Serialize,
     {
         match self.next_key.take() {
             Some(key) => {
@@ -474,8 +472,8 @@ impl<'a> ser::SerializeStruct for Serializer<'a> {
     type Error = Error;
 
     fn serialize_field<T>(&mut self, _key: &'static str, value: &T) -> Result<()>
-    where
-        T: ?Sized + Serialize,
+        where
+            T: ?Sized + Serialize,
     {
         value.serialize(Serializer::new(self.output, self.max_remaining_depth))
     }
@@ -490,8 +488,8 @@ impl<'a> ser::SerializeStructVariant for Serializer<'a> {
     type Error = Error;
 
     fn serialize_field<T>(&mut self, _key: &'static str, value: &T) -> Result<()>
-    where
-        T: ?Sized + Serialize,
+        where
+            T: ?Sized + Serialize,
     {
         value.serialize(Serializer::new(self.output, self.max_remaining_depth))
     }
