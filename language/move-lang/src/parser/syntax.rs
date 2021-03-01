@@ -128,8 +128,8 @@ fn parse_comma_list<'input, F, R>(
     parse_list_item: F,
     item_description: &str,
 ) -> Result<Vec<R>, Error>
-where
-    F: Fn(&mut Lexer<'input>) -> Result<R, Error>,
+    where
+        F: Fn(&mut Lexer<'input>) -> Result<R, Error>,
 {
     let start_loc = tokens.start_loc();
     consume_token(tokens, start_token)?;
@@ -153,8 +153,8 @@ fn parse_comma_list_after_start<'input, F, R>(
     parse_list_item: F,
     item_description: &str,
 ) -> Result<Vec<R>, Error>
-where
-    F: Fn(&mut Lexer<'input>) -> Result<R, Error>,
+    where
+        F: Fn(&mut Lexer<'input>) -> Result<R, Error>,
 {
     adjust_token(tokens, end_token);
     if match_token(tokens, end_token)? {
@@ -195,9 +195,9 @@ fn parse_list<'input, C, F, R>(
     mut parse_list_continue: C,
     parse_list_item: F,
 ) -> Result<Vec<R>, Error>
-where
-    C: FnMut(&mut Lexer<'input>) -> Result<bool, Error>,
-    F: Fn(&mut Lexer<'input>) -> Result<R, Error>,
+    where
+        C: FnMut(&mut Lexer<'input>) -> Result<bool, Error>,
+        F: Fn(&mut Lexer<'input>) -> Result<R, Error>,
 {
     let mut v = vec![];
     loop {

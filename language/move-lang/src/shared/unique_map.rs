@@ -77,8 +77,8 @@ impl<K: TName, V> UniqueMap<K, V> {
     }
 
     pub fn map<V2, F>(self, mut f: F) -> UniqueMap<K, V2>
-    where
-        F: FnMut(K, V) -> V2,
+        where
+            F: FnMut(K, V) -> V2,
     {
         UniqueMap(
             self.0
@@ -92,8 +92,8 @@ impl<K: TName, V> UniqueMap<K, V> {
     }
 
     pub fn ref_map<V2, F>(&self, mut f: F) -> UniqueMap<K, V2>
-    where
-        F: FnMut(K, &V) -> V2,
+        where
+            F: FnMut(K, &V) -> V2,
     {
         UniqueMap(
             self.0
@@ -110,9 +110,9 @@ impl<K: TName, V> UniqueMap<K, V> {
     }
 
     pub fn union_with<F>(&self, other: &Self, mut f: F) -> Self
-    where
-        V: Clone,
-        F: FnMut(&K, &V, &V) -> V,
+        where
+            V: Clone,
+            F: FnMut(&K, &V, &V) -> V,
     {
         let mut joined = Self::new();
         for (k, v1) in self.iter() {

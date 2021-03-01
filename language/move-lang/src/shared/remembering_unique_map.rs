@@ -69,8 +69,8 @@ impl<K: TName, V> RememberingUniqueMap<K, V> {
     }
 
     pub fn map<V2, F>(self, f: F) -> RememberingUniqueMap<K, V2>
-    where
-        F: FnMut(K, V) -> V2,
+        where
+            F: FnMut(K, V) -> V2,
     {
         RememberingUniqueMap {
             map: self.map.map(f),
@@ -79,8 +79,8 @@ impl<K: TName, V> RememberingUniqueMap<K, V> {
     }
 
     pub fn ref_map<V2, F>(&self, f: F) -> RememberingUniqueMap<K, V2>
-    where
-        F: FnMut(K, &V) -> V2,
+        where
+            F: FnMut(K, &V) -> V2,
     {
         RememberingUniqueMap {
             map: self.map.ref_map(f),
@@ -89,9 +89,9 @@ impl<K: TName, V> RememberingUniqueMap<K, V> {
     }
 
     pub fn union_with<F>(&self, other: &Self, f: F) -> Self
-    where
-        V: Clone,
-        F: FnMut(&K, &V, &V) -> V,
+        where
+            V: Clone,
+            F: FnMut(&K, &V, &V) -> V,
     {
         RememberingUniqueMap {
             map: self.map.union_with(&other.map, f),
@@ -152,9 +152,9 @@ impl<K: TName, V: Eq> Eq for RememberingUniqueMap<K, V> {}
 //**************************************************************************************************
 
 impl<K: TName + fmt::Debug, V: fmt::Debug> fmt::Debug for RememberingUniqueMap<K, V>
-where
-    K::Key: fmt::Debug,
-    K::Loc: fmt::Debug,
+    where
+        K::Key: fmt::Debug,
+        K::Loc: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
