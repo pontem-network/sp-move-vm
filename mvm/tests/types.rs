@@ -62,10 +62,10 @@ fn test_parse_type_params() {
 
 #[test]
 fn test_parse_transaction() {
-    let tx = hex::decode("015fa11ceb0b0100000005010002030205050705070c10081c200000000100010002060c03000553746f72650973746f72655f7536340000000000000000000000000000000000000000000000000000000000000001000001040b000a01110002010164000000000000000107200000000000000000000000000000000000000000000000000000000000000001084466696e616e6365015400").unwrap();
-    let tx = Transaction::try_from(tx.as_ref()).unwrap();
-    assert_eq!(tx.signers_count(), 1);
-    let script = tx.into_script(vec![CORE_CODE_ADDRESS]).unwrap();
+    let tx = Transaction::try_from(&include_bytes!("assets/target/transactions/tx_test.mvt")[..])
+        .unwrap();
+    assert_eq!(tx.signers_count(), 0);
+    let script = tx.into_script(vec![]).unwrap();
     CompiledScript::deserialize(script.code()).unwrap();
     assert_eq!(script.args(), &[Value::u64(100)][..]);
     assert_eq!(
@@ -83,7 +83,6 @@ fn test_parse_transaction() {
 fn test_parse_mvt() {
     let tx = Transaction::try_from(&include_bytes!("assets/target/transactions/store_u64.mvt")[..])
         .unwrap();
-    assert_eq!(tx.signers_count(), 1);
     assert_eq!(tx.signers_count(), 1);
     let script = tx.into_script(vec![CORE_CODE_ADDRESS]).unwrap();
     CompiledScript::deserialize(script.code()).unwrap();

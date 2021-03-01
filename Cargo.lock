@@ -299,7 +299,19 @@ dependencies = [
  "invalid-mutations",
  "mirai-annotations",
  "move-core-types",
- "petgraph",
+ "petgraph 0.5.1 (git+https://github.com/pontem-network/petgraph.git)",
+ "vm",
+]
+
+[[package]]
+name = "bytecode-verifier-tests"
+version = "0.1.0"
+dependencies = [
+ "bytecode-verifier",
+ "invalid-mutations",
+ "move-core-types",
+ "petgraph 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "proptest",
  "vm",
 ]
 
@@ -761,6 +773,12 @@ dependencies = [
 
 [[package]]
 name = "fixedbitset"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "37ab347416e802de484e4d03c7316c48f1ecb56574dfd4a46a80f173ce1de04d"
+
+[[package]]
+name = "fixedbitset"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4e08c8bc7575d7e091fe0706963bd22e2a4be6a64da995f03b2a5a57d66ad015"
@@ -1044,6 +1062,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "indexmap"
+version = "1.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4fb1fa934250de4de8aef298d81c729a7d33d8c239daa3a7575e6b92bfc7313b"
+dependencies = [
+ "autocfg",
+ "hashbrown 0.9.1",
+]
+
+[[package]]
 name = "instant"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1259,7 +1287,7 @@ dependencies = [
  "alt_serde",
  "hashbrown 0.9.1",
  "hex",
- "petgraph",
+ "petgraph 0.5.1 (git+https://github.com/pontem-network/petgraph.git)",
 ]
 
 [[package]]
@@ -1558,9 +1586,19 @@ name = "petgraph"
 version = "0.5.1"
 source = "git+https://github.com/pontem-network/petgraph.git#17ae1eae1ee0a580e4f34ccefaf4d611d03eadcb"
 dependencies = [
- "fixedbitset",
+ "fixedbitset 0.3.1",
  "hashbrown 0.9.1",
- "indexmap",
+ "indexmap 1.6.0",
+]
+
+[[package]]
+name = "petgraph"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "467d164a6de56270bd7c4d070df81d07beace25012d5103ced4e9ff08d6afdb7"
+dependencies = [
+ "fixedbitset 0.2.0",
+ "indexmap 1.6.1",
 ]
 
 [[package]]

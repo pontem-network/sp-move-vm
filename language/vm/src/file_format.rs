@@ -552,9 +552,9 @@ pub enum SignatureToken {
     U64,
     /// Unsigned integers, 128 bits length.
     U128,
-    /// Address, a 16 bytes immutable type.
+    /// Address, a 32 bytes immutable type.
     Address,
-    /// Signer, a 16 bytes immutable type representing the capability to publish at an address
+    /// Signer, a 32 bytes immutable type representing the capability to publish at an address
     Signer,
     /// Vector
     Vector(Box<SignatureToken>),

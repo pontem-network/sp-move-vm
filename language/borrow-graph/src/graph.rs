@@ -397,8 +397,8 @@ impl<Loc: Copy, Lbl: Clone + Ord> BorrowGraph<Loc, Lbl> {
                 .keys()
                 .all(|c| parent_to_child_consistency(id, c))
                 && r.borrows_from
-                    .iter()
-                    .all(|p| child_to_parent_consistency(id, p))
+                .iter()
+                .all(|p| child_to_parent_consistency(id, p))
         })
     }
 
