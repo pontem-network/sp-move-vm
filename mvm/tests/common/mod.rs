@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
-use mvm::mvm::Mvm;
 use crate::common::mock::{EventHandlerMock, OracleMock, StorageMock};
+use mvm::mvm::Mvm;
 
 pub mod assets;
 pub mod mock;
