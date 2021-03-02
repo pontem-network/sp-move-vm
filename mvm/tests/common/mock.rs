@@ -71,7 +71,6 @@ pub struct OracleMock {
     price_map: Rc<RefCell<HashMap<String, u128>>>,
 }
 
-#[allow(dead_code)]
 impl OracleMock {
     pub fn set_price(&self, ticker: &str, price: u128) {
         self.price_map.borrow_mut().insert(ticker.to_owned(), price);
