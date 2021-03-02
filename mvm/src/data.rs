@@ -25,7 +25,14 @@ pub struct State<S> {
 }
 
 pub trait EventHandler {
-    fn on_event(&self, guid: Vec<u8>, seq_num: u64, ty_tag: TypeTag, message: Vec<u8>);
+    fn on_event(
+        &self,
+        guid: Vec<u8>,
+        seq_num: u64,
+        ty_tag: TypeTag,
+        message: Vec<u8>,
+        caller: Option<ModuleId>,
+    );
 }
 
 impl<S> State<S>

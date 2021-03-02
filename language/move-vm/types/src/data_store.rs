@@ -48,5 +48,6 @@ pub trait DataStore {
         seq_num: u64,
         ty: Type,
         val: Value,
+        caller: Option<ModuleId>,
     ) -> PartialVMResult<()>;
 }
