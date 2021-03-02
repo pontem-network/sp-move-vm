@@ -34,11 +34,11 @@ pub fn convert_txn_effects_to_move_changeset_and_events(
     let events = txn_effects
         .events
         .into_iter()
-        .map(|(guid, seq_num, ty_tag, layout, val)| {
+        .map(|(guid, seq_num, ty_tag, layout, val, caller)| {
             let blob = val
                 .simple_serialize(&layout)
                 .ok_or_else(|| format_err!("failed to serialize value"))?;
-            Ok((guid, seq_num, ty_tag, blob))
+            Ok((guid, seq_num, ty_tag, blob, caller))
         })
         .collect::<Result<Vec<_>>>()?;
 

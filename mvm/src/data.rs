@@ -1,10 +1,15 @@
-use crate::access_path::AccessPath;
 use alloc::borrow::ToOwned;
+use alloc::string::String;
 use alloc::vec::Vec;
+
 use move_core_types::account_address::AccountAddress;
-use move_core_types::language_storage::{ModuleId, ResourceKey, StructTag, TypeTag};
+use move_core_types::language_storage::{
+    ModuleId, ResourceKey, StructTag, TypeTag, CORE_CODE_ADDRESS,
+};
 use move_vm_runtime::data_cache::RemoteCache;
 use vm::errors::{PartialVMResult, VMResult};
+
+use crate::access_path::AccessPath;
 
 pub trait Storage {
     /// Returns the data for `key` in the storage or `None` if the key can not be found.
@@ -20,8 +25,9 @@ pub trait WriteEffects {
     fn insert(&self, path: AccessPath, blob: Vec<u8>);
 }
 
-pub struct State<S> {
+pub struct State<S, O: Oracle> {
     store: S,
+    oracle: OracleView<O>,
 }
 
 pub trait EventHandler {
@@ -35,12 +41,16 @@ pub trait EventHandler {
     );
 }
 
-impl<S> State<S>
+impl<S, O> State<S, O>
 where
     S: Storage,
+    O: Oracle,
 {
-    pub fn new(store: S) -> State<S> {
-        State { store }
+    pub fn new(store: S, oracle: O) -> State<S, O> {
+        State {
+            store,
+            oracle: OracleView::new(oracle),
+        }
     }
 
     pub fn get_by_path(&self, path: AccessPath) -> Option<Vec<u8>> {
@@ -51,9 +61,10 @@ where
     }
 }
 
-impl<S> RemoteCache for State<S>
+impl<S, O> RemoteCache for State<S, O>
 where
     S: Storage,
+    O: Oracle,
 {
     fn get_module(&self, module_id: &ModuleId) -> VMResult<Option<Vec<u8>>> {
         let path = AccessPath::from(module_id);
@@ -65,14 +76,21 @@ where
         address: &AccountAddress,
         tag: &StructTag,
     ) -> PartialVMResult<Option<Vec<u8>>> {
+        if address == &CORE_CODE_ADDRESS {
+            if let Some(ticker) = self.oracle.get_ticker(tag) {
+                return Ok(self.oracle.get_price(&ticker));
+            }
+        }
+
         let path = AccessPath::resource_access_path(&ResourceKey::new(*address, tag.to_owned()));
         Ok(self.get_by_path(path))
     }
 }
 
-impl<S> WriteEffects for State<S>
+impl<S, O> WriteEffects for State<S, O>
 where
     S: Storage,
+    O: Oracle,
 {
     fn delete(&self, path: AccessPath) {
         let mut key = Vec::with_capacity(AccountAddress::LENGTH + path.path.len());
@@ -86,5 +104,112 @@ where
         key.extend_from_slice(&path.address.to_u8());
         key.extend_from_slice(&path.path);
         self.store.insert(&key, &blob);
+    }
+}
+
+pub trait Oracle {
+    fn get_price(&self, ticker: &str) -> Option<u128>;
+}
+
+pub struct OracleView<O: Oracle> {
+    oracle: O,
+}
+
+impl<O> OracleView<O>
+where
+    O: Oracle,
+{
+    pub fn new(oracle: O) -> OracleView<O> {
+        OracleView { oracle }
+    }
+
+    pub fn get_ticker(&self, tag: &StructTag) -> Option<String> {
+        if tag.address == CORE_CODE_ADDRESS
+            && tag.module.as_str() == "Coins"
+            && tag.name.as_str() == "Price"
+        {
+            if tag.type_params.len() == 2 {
+                let first_part = match &tag.type_params[0] {
+                    TypeTag::Struct(tg) => tg.name.as_str().to_owned(),
+                    _ => {
+                        return None;
+                    }
+                };
+                let second_part = match &tag.type_params[1] {
+                    TypeTag::Struct(tg) => tg.name.as_str().to_owned(),
+                    _ => {
+                        return None;
+                    }
+                };
+                Some(format!(
+                    "{}_{}",
+                    first_part.to_uppercase(),
+                    second_part.to_uppercase()
+                ))
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+
+    pub fn get_price(&self, ticker: &str) -> Option<Vec<u8>> {
+        self.oracle
+            .get_price(ticker)
+            .map(|price| price.to_le_bytes().to_vec())
+    }
+}
+
+pub struct StateSession<'r, R: RemoteCache> {
+    remote: &'r R,
+    context: ExecutionContext,
+}
+
+impl<R> StateSession<'_, R>
+where
+    R: RemoteCache,
+{
+    pub fn new(remote: &R, context: ExecutionContext) -> StateSession<'_, R> {
+        StateSession { remote, context }
+    }
+}
+
+impl<R> RemoteCache for StateSession<'_, R>
+where
+    R: RemoteCache,
+{
+    fn get_module(&self, module_id: &ModuleId) -> VMResult<Option<Vec<u8>>> {
+        self.remote.get_module(module_id)
+    }
+
+    fn get_resource(
+        &self,
+        address: &AccountAddress,
+        tag: &StructTag,
+    ) -> PartialVMResult<Option<Vec<u8>>> {
+        if address == &CORE_CODE_ADDRESS && tag.address == CORE_CODE_ADDRESS {
+            if tag.module.as_str() == "Block" && tag.name.as_str() == "BlockMetadata" {
+                return Ok(Some(self.context.block_height.to_le_bytes().to_vec()));
+            } else if tag.module.as_str() == "Time" && tag.name.as_str() == "CurrentTimestamp" {
+                return Ok(Some(self.context.timestamp.to_le_bytes().to_vec()));
+            }
+        }
+        self.remote.get_resource(address, tag)
+    }
+}
+
+#[derive(Debug)]
+pub struct ExecutionContext {
+    pub timestamp: u64,
+    pub block_height: u64,
+}
+
+impl ExecutionContext {
+    pub fn new(timestamp: u64, block_height: u64) -> ExecutionContext {
+        ExecutionContext {
+            timestamp,
+            block_height,
+        }
     }
 }

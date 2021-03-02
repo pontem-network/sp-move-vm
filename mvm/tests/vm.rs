@@ -6,13 +6,13 @@ use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS};
 use move_core_types::vm_status::StatusCode;
 use move_vm_runtime::data_cache::RemoteCache;
-use mvm::data::State;
+use mvm::data::{State, ExecutionContext};
 use mvm::mvm::Mvm;
 use mvm::types::{Gas, ModuleTx, ScriptArg, ScriptTx};
 use mvm::Vm;
 use serde::Deserialize;
 
-use common::{EventHandlerMock, StorageMock};
+use common::{EventHandlerMock, StorageMock, OracleMock};
 
 fn gas() -> Gas {
     Gas::new(10_000, 1).unwrap()
@@ -65,8 +65,9 @@ struct StoreU64 {
 #[test]
 fn test_public_module() {
     let mock = StorageMock::new();
-    let vm = Mvm::new(mock.clone(), EventHandlerMock::default()).unwrap();
-    let state = State::new(mock);
+    let oracle = OracleMock::default();
+    let vm = Mvm::new(mock.clone(), EventHandlerMock::default(), oracle.clone()).unwrap();
+    let state = State::new(mock, oracle);
     assert_eq!(
         StatusCode::EXECUTED,
         vm.publish_module(gas(), store_module()).status_code
@@ -83,15 +84,17 @@ fn test_execute_script() {
     let test_value = 13;
     let mock = StorageMock::new();
     let event_handler = EventHandlerMock::default();
-    let vm = Mvm::new(mock.clone(), event_handler).unwrap();
-    let state = State::new(mock);
+
+    let oracle = OracleMock::default();
+    let vm = Mvm::new(mock.clone(), event_handler, oracle.clone()).unwrap();
+    let state = State::new(mock, oracle);
     assert_eq!(
         StatusCode::EXECUTED,
         vm.publish_module(gas(), store_module()).status_code
     );
     assert_eq!(
         StatusCode::EXECUTED,
-        vm.execute_script(gas(), store_script(test_value))
+        vm.execute_script(gas(), ExecutionContext::new(100, 100), store_script(test_value))
             .status_code
     );
 
@@ -114,7 +117,8 @@ fn test_store_event() {
     let test_value = 13;
     let mock = StorageMock::new();
     let event_handler = EventHandlerMock::default();
-    let vm = Mvm::new(mock, event_handler.clone()).unwrap();
+    let oracle = OracleMock::default();
+    let vm = Mvm::new(mock, event_handler.clone(), oracle).unwrap();
     assert_eq!(
         StatusCode::EXECUTED,
         vm.publish_module(gas(), vector_module()).status_code
@@ -125,11 +129,11 @@ fn test_store_event() {
     );
     assert_eq!(
         StatusCode::EXECUTED,
-        vm.execute_script(gas(), emit_event_script(test_value))
+        vm.execute_script(gas(), ExecutionContext::new(100, 100), emit_event_script(test_value))
             .status_code
     );
 
-    let (guid, seq, tag, msg) = event_handler.data.borrow_mut().remove(0);
+    let (guid, seq, tag, msg, caller) = event_handler.data.borrow_mut().remove(0);
     assert_eq!(guid, b"GUID".to_vec());
     assert_eq!(seq, 1);
     assert_eq!(test_value, bcs::from_bytes::<StoreU64>(&msg).unwrap().val);

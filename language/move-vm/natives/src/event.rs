@@ -103,7 +103,6 @@ fn account_address(value: &ValueImpl) -> PartialVMResult<AccountAddress> {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-#[cfg_attr(any(test, feature = "fuzzing"), derive(Arbitrary))]
 pub struct EventKey([u8; EventKey::LENGTH]);
 
 impl EventKey {

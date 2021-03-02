@@ -1,9 +1,5 @@
-use crate::access_path::AccessPath;
-use crate::data::{EventHandler, State, Storage, WriteEffects};
-use crate::types::{Gas, ModuleTx, ScriptTx, VmResult};
-use crate::vm_config::loader::load_vm_config;
-use crate::Vm;
 use anyhow::Error;
+
 use move_core_types::gas_schedule::CostTable;
 use move_core_types::gas_schedule::{AbstractMemorySize, GasAlgebra, GasUnits};
 use move_core_types::vm_status::StatusCode;
@@ -13,31 +9,40 @@ use move_vm_runtime::move_vm::MoveVM;
 use move_vm_types::gas_schedule::CostStrategy;
 use vm::errors::{Location, PartialVMError, VMError};
 use vm::CompiledModule;
+
+use crate::access_path::AccessPath;
+use crate::data::{EventHandler, Oracle, State, Storage, WriteEffects, ExecutionContext, StateSession};
+use crate::types::{Gas, ModuleTx, ScriptTx, VmResult};
+use crate::vm_config::loader::load_vm_config;
+use crate::Vm;
+
 /// MoveVM.
-pub struct Mvm<S, E>
+pub struct Mvm<S, E, O>
 where
     S: Storage,
     E: EventHandler,
+    O: Oracle,
 {
     vm: MoveVM,
     cost_table: CostTable,
-    state: State<S>,
+    state: State<S, O>,
     event_handler: E,
 }
 
-impl<S, E> Mvm<S, E>
+impl<S, E, O> Mvm<S, E, O>
 where
     S: Storage,
     E: EventHandler,
+    O: Oracle,
 {
     /// Creates a new move vm with given store and event handler.
-    pub fn new(store: S, event_handler: E) -> Result<Mvm<S, E>, Error> {
+    pub fn new(store: S, event_handler: E, oracle: O) -> Result<Mvm<S, E, O>, Error> {
         let config = load_vm_config(&store)?;
 
         Ok(Mvm {
             vm: MoveVM::new(),
             cost_table: config.gas_schedule,
-            state: State::new(store),
+            state: State::new(store, oracle),
             event_handler,
         })
     }
@@ -102,10 +107,11 @@ where
     }
 }
 
-impl<S, E> Vm for Mvm<S, E>
+impl<S, E, O> Vm for Mvm<S, E, O>
 where
     S: Storage,
     E: EventHandler,
+    O: Oracle,
 {
     fn publish_module(&self, gas: Gas, module: ModuleTx) -> VmResult {
         let (module, sender) = module.into_inner();
@@ -144,8 +150,9 @@ where
         self.handle_vm_result(cost_strategy, gas, result)
     }
 
-    fn execute_script(&self, gas: Gas, tx: ScriptTx) -> VmResult {
-        let mut session = self.vm.new_session(&self.state);
+    fn execute_script(&self, gas: Gas, context: ExecutionContext, tx: ScriptTx) -> VmResult {
+        let state_session = StateSession::new(&self.state, context);
+        let mut session = self.vm.new_session(&state_session);
 
         let (script, args, type_args, senders) = tx.into_inner();
         let mut cost_strategy =
