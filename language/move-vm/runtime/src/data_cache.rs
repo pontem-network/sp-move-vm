@@ -77,7 +77,13 @@ pub(crate) struct TransactionDataCache<'r, 'l, R> {
     remote: &'r R,
     loader: &'l Loader,
     account_map: BTreeMap<AccountAddress, AccountDataCache>,
-    event_data: Vec<(Vec<u8>, u64, Type, MoveTypeLayout, Value, Option<ModuleId>)>,
+    event_data: Vec<(
+        AccountAddress,
+        Type,
+        MoveTypeLayout,
+        Value,
+        Option<ModuleId>,
+    )>,
 }
 
 /// Collection of side effects produced by a Session.
@@ -90,8 +96,7 @@ pub struct TransactionEffects {
     )>,
     pub modules: Vec<(ModuleId, Vec<u8>)>,
     pub events: Vec<(
-        Vec<u8>,
-        u64,
+        AccountAddress,
         TypeTag,
         MoveTypeLayout,
         Value,
@@ -153,9 +158,9 @@ impl<'r, 'l, R: RemoteCache> TransactionDataCache<'r, 'l, R> {
         }
 
         let mut events = vec![];
-        for (guid, seq_num, ty, ty_layout, val, caller) in self.event_data {
+        for (address, ty, ty_layout, val, caller) in self.event_data {
             let ty_tag = self.loader.type_to_type_tag(&ty)?;
-            events.push((guid, seq_num, ty_tag, ty_layout, val, caller))
+            events.push((address, ty_tag, ty_layout, val, caller))
         }
 
         Ok(TransactionEffects {
@@ -305,15 +310,12 @@ impl<'r, 'l, C: RemoteCache> DataStore for TransactionDataCache<'r, 'l, C> {
     #[allow(clippy::unit_arg)]
     fn emit_event(
         &mut self,
-        guid: Vec<u8>,
-        seq_num: u64,
+        address: AccountAddress,
         ty: Type,
         val: Value,
         caller: Option<ModuleId>,
     ) -> PartialVMResult<()> {
         let ty_layout = self.loader.type_to_type_layout(&ty)?;
-        Ok(self
-            .event_data
-            .push((guid, seq_num, ty, ty_layout, val, caller)))
+        Ok(self.event_data.push((address, ty, ty_layout, val, caller)))
     }
 }

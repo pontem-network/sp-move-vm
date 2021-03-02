@@ -195,4 +195,4 @@ impl ChangeSet {
     }
 }
 
-pub type Event = (Vec<u8>, u64, TypeTag, Vec<u8>, Option<ModuleId>);
+pub type Event = (AccountAddress, TypeTag, Vec<u8>, Option<ModuleId>);

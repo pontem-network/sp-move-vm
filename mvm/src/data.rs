@@ -33,8 +33,7 @@ pub struct State<S, O: Oracle> {
 pub trait EventHandler {
     fn on_event(
         &self,
-        guid: Vec<u8>,
-        seq_num: u64,
+        address: AccountAddress,
         ty_tag: TypeTag,
         message: Vec<u8>,
         caller: Option<ModuleId>,
@@ -115,6 +114,8 @@ pub struct OracleView<O: Oracle> {
     oracle: O,
 }
 
+const XFI: &str = "XFI";
+
 impl<O> OracleView<O>
 where
     O: Oracle,
@@ -124,23 +125,25 @@ where
     }
 
     pub fn get_ticker(&self, tag: &StructTag) -> Option<String> {
+        fn extract_name(tag: &TypeTag) -> Option<String> {
+            match tag {
+                TypeTag::Struct(tg) => Some(if tg.module.as_str() == XFI {
+                    XFI.to_owned()
+                } else {
+                    tg.name.as_str().to_owned()
+                }),
+                _ => None,
+            }
+        }
+
         if tag.address == CORE_CODE_ADDRESS
             && tag.module.as_str() == "Coins"
             && tag.name.as_str() == "Price"
         {
             if tag.type_params.len() == 2 {
-                let first_part = match &tag.type_params[0] {
-                    TypeTag::Struct(tg) => tg.name.as_str().to_owned(),
-                    _ => {
-                        return None;
-                    }
-                };
-                let second_part = match &tag.type_params[1] {
-                    TypeTag::Struct(tg) => tg.name.as_str().to_owned(),
-                    _ => {
-                        return None;
-                    }
-                };
+                let first_part = extract_name(&tag.type_params[0])?;
+                let second_part = extract_name(&tag.type_params[1])?;
+
                 Some(format!(
                     "{}_{}",
                     first_part.to_uppercase(),

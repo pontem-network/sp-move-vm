@@ -36,13 +36,7 @@ pub fn native_emit_event(
         msg.size().get() as usize,
     );
 
-    let save_res = context.save_event(
-        EventKey::new_from_address(&address, 0).to_vec(),
-        0,
-        ty,
-        msg,
-        context.caller().cloned(),
-    )?;
+    let save_res = context.save_event(address, ty, msg, context.caller().cloned())?;
 
     if !save_res {
         return Ok(NativeResult::err(cost, 0));

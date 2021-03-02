@@ -76,13 +76,12 @@ where
             );
         }
 
-        for (guid, seq_num, ty_tag, ty_layout, val, caller) in tx_effects.events {
+        for (address, ty_tag, ty_layout, val, caller) in tx_effects.events {
             let msg = val.simple_serialize(&ty_layout).ok_or_else(|| {
                 PartialVMError::new(StatusCode::UNKNOWN_INVARIANT_VIOLATION_ERROR)
                     .finish(Location::Undefined)
             })?;
-            self.event_handler
-                .on_event(guid, seq_num, ty_tag, msg, caller);
+            self.event_handler.on_event(address, ty_tag, msg, caller);
         }
 
         Ok(())
