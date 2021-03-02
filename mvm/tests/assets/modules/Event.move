@@ -7,6 +7,6 @@ module Event {
         U64 {val: val}
     }
 
-    native public fun write_to_event_store<T: copyable>(guid: vector<u8>, count: u64, msg: T);
+    native public fun emit<T: copyable>(account: &signer, msg: T);
 }
 }

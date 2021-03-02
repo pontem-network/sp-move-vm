@@ -3,5 +3,4 @@ name = "assets"
 dialect = "polkadot"
 
 dependencies = [
-    { git = "https://github.com/pontem-network/move-stdlib.git" }
 ]

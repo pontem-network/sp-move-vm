@@ -11,7 +11,9 @@ use vm::errors::{Location, PartialVMError, VMError};
 use vm::CompiledModule;
 
 use crate::access_path::AccessPath;
-use crate::data::{EventHandler, Oracle, State, Storage, WriteEffects, ExecutionContext, StateSession};
+use crate::data::{
+    EventHandler, ExecutionContext, Oracle, State, StateSession, Storage, WriteEffects,
+};
 use crate::types::{Gas, ModuleTx, ScriptTx, VmResult};
 use crate::vm_config::loader::load_vm_config;
 use crate::Vm;

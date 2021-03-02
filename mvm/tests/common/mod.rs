@@ -47,7 +47,14 @@ pub struct EventHandlerMock {
 }
 
 impl EventHandler for EventHandlerMock {
-    fn on_event(&self, guid: Vec<u8>, seq_num: u64, ty_tag: TypeTag, message: Vec<u8>, caller: Option<ModuleId>) {
+    fn on_event(
+        &self,
+        guid: Vec<u8>,
+        seq_num: u64,
+        ty_tag: TypeTag,
+        message: Vec<u8>,
+        caller: Option<ModuleId>,
+    ) {
         let mut data = self.data.borrow_mut();
         data.push((guid, seq_num, ty_tag, message, caller));
     }
@@ -55,7 +62,7 @@ impl EventHandler for EventHandlerMock {
 
 #[derive(Clone, Default)]
 pub struct OracleMock {
-    price_map: Rc<RefCell<HashMap<String, u128>>>
+    price_map: Rc<RefCell<HashMap<String, u128>>>,
 }
 
 impl OracleMock {

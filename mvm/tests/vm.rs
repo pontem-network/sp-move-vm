@@ -6,13 +6,13 @@ use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS};
 use move_core_types::vm_status::StatusCode;
 use move_vm_runtime::data_cache::RemoteCache;
-use mvm::data::{State, ExecutionContext};
+use mvm::data::{ExecutionContext, State};
 use mvm::mvm::Mvm;
 use mvm::types::{Gas, ModuleTx, ScriptArg, ScriptTx};
 use mvm::Vm;
 use serde::Deserialize;
 
-use common::{EventHandlerMock, StorageMock, OracleMock};
+use common::{EventHandlerMock, OracleMock, StorageMock};
 
 fn gas() -> Gas {
     Gas::new(10_000, 1).unwrap()
@@ -53,7 +53,7 @@ fn emit_event_script(args: u64) -> ScriptTx {
         include_bytes!("assets/target/scripts/0_emit_event.mv").to_vec(),
         vec![ScriptArg::U64(args)],
         vec![],
-        vec![],
+        vec![CORE_CODE_ADDRESS],
     )
 }
 
@@ -94,8 +94,12 @@ fn test_execute_script() {
     );
     assert_eq!(
         StatusCode::EXECUTED,
-        vm.execute_script(gas(), ExecutionContext::new(100, 100), store_script(test_value))
-            .status_code
+        vm.execute_script(
+            gas(),
+            ExecutionContext::new(100, 100),
+            store_script(test_value)
+        )
+        .status_code
     );
 
     let tag = StructTag {
@@ -129,14 +133,17 @@ fn test_store_event() {
     );
     assert_eq!(
         StatusCode::EXECUTED,
-        vm.execute_script(gas(), ExecutionContext::new(100, 100), emit_event_script(test_value))
-            .status_code
+        vm.execute_script(
+            gas(),
+            ExecutionContext::new(100, 100),
+            emit_event_script(test_value)
+        )
+        .status_code
     );
 
-    let (guid, seq, tag, msg, caller) = event_handler.data.borrow_mut().remove(0);
-    assert_eq!(guid, b"GUID".to_vec());
-    assert_eq!(seq, 1);
+    let (_guid, _seq, tag, msg, caller) = event_handler.data.borrow_mut().remove(0);
     assert_eq!(test_value, bcs::from_bytes::<StoreU64>(&msg).unwrap().val);
+    assert_eq!(caller, None);
     assert_eq!(
         TypeTag::Struct(StructTag {
             address: CORE_CODE_ADDRESS,
