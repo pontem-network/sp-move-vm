@@ -17,6 +17,7 @@ diem-crypto = { path = "../../../crypto/crypto", default-features = false }
 move-core-types = { path = "../../move-core/types", default-features = false }
 move-vm-types = { path = "../types", default-features = false }
 vm = { path = "../../vm", default-features = false }
+uint = { version = "0.8.5", default-features = false }
 
 [features]
 default = ["std"]
@@ -28,4 +29,5 @@ std = [
     "move-core-types/std",
     "move-vm-types/std",
     "vm/std",
+    "uint/std",
 ]
