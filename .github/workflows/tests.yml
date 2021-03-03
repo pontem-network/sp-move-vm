@@ -90,3 +90,62 @@ jobs:
         run: |
           cd mvm
           cargo build --package mvm --no-default-features --features="std"
+
+  coverage:
+    name: "Coverage"
+    runs-on: ${{ matrix.os }}
+    if: "!contains(github.event.head_commit.message, 'ci skip') && !contains(github.event.head_commit.message, 'skip ci')"
+
+    defaults:
+      run:
+        shell: bash
+
+    strategy:
+      fail-fast: true
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          profile: minimal
+          override: true
+
+      - name: cargo clean
+        run: cargo clean
+
+      - name: cargo build tests +profile
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --all --all-features --no-fail-fast
+        env:
+          SKIP_WASM_BUILD: 1
+          CARGO_INCREMENTAL: 0
+          RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests"
+          RUSTDOCFLAGS: "-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests"
+
+      - id: coverage
+        name: coverage grcov
+        uses: actions-rs/grcov@v0.1
+        with:
+          config: .github/grcov.yml
+
+      - name: make artifact
+        uses: actions/upload-artifact@v1
+        with:
+          name: code-coverage-report
+          path: ${{ steps.coverage.outputs.report }}
+
+      - name: upload to Coveralls
+        uses: coverallsapp/github-action@v1.1.2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: ${{ steps.coverage.outputs.report }}
