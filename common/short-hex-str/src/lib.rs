@@ -5,6 +5,7 @@
 
 use core::{fmt, str};
 use mirai_annotations::debug_checked_precondition;
+use serde::{Serialize, Serializer};
 
 /// An efficient container for formatting a byte slice as a hex-formatted string,
 /// stored on the stack.
@@ -61,6 +62,15 @@ impl fmt::Debug for ShortHexStr {
 impl fmt::Display for ShortHexStr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.as_str())
+    }
+}
+
+impl Serialize for ShortHexStr {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(self.as_str())
     }
 }
 

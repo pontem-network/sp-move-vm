@@ -8,7 +8,6 @@ use move_core_types::{
     language_storage::{ModuleId, StructTag},
 };
 use move_vm_runtime::data_cache::RemoteCache;
-// use move_vm_txn_effect_converter::convert_txn_effects_to_move_changeset_and_events;
 use std::collections::{btree_map, BTreeMap};
 use vm::errors::{PartialVMResult, VMResult};
 

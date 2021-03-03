@@ -360,11 +360,19 @@ fn check_main_signature() {
             SignatureToken::Address,
         )))),
     ]));
-    let addresses = vec![
-        Value::vector_address(vec![AccountAddress::random(), AccountAddress::random()]),
-        Value::vector_address(vec![AccountAddress::random(), AccountAddress::random()]),
-        Value::vector_address(vec![AccountAddress::random(), AccountAddress::random()]),
-    ];
+    let mut addresses = vec![];
+    addresses.push(Value::vector_address(vec![
+        AccountAddress::random(),
+        AccountAddress::random(),
+    ]));
+    addresses.push(Value::vector_address(vec![
+        AccountAddress::random(),
+        AccountAddress::random(),
+    ]));
+    addresses.push(Value::vector_address(vec![
+        AccountAddress::random(),
+        AccountAddress::random(),
+    ]));
     let values = Value::constant_vector_generic(
         addresses,
         &SignatureToken::Vector(Box::new(SignatureToken::Address)),
@@ -521,7 +529,7 @@ fn check_signer_args() {
             two_signer_script.clone(),
             vec![],
             vec![],
-            three_signers,
+            three_signers
         )
         .err()
         .unwrap()

@@ -15,4 +15,5 @@ pub mod event;
 pub mod hash;
 pub mod signature;
 pub mod signer;
+pub mod u256;
 pub mod vector;

@@ -12,7 +12,7 @@ edition = "2018"
 [dependencies]
 anyhow = { version = "1.0.34", default-features = false }
 bytes = { version = "0.5.6", default-features = false }
-serde = { version = "1", default-features = false, package = "alt_serde", features = ["derive"] }
+serde = { version = "1.0.117", default-features = false, package = "alt_serde", features = ["derive"] }
 static_assertions = "1.1.0"
 mirai-annotations = { path = "../../mirai-annotations", default-features = false }
 diem-nibble = { path = "../../common/nibble", default-features = false, version = "0.1.0" }

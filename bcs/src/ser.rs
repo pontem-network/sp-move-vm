@@ -1,10 +1,8 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::alloc::string::ToString;
 use crate::error::{Error, Result};
 use alloc::vec::Vec;
-use core::fmt::Display;
 use serde::{ser, Serialize};
 
 /// Serialize the given data structure as a `Vec<u8>` of BCS.
@@ -54,10 +52,17 @@ where
     T: ?Sized + Serialize,
 {
     let mut output = Vec::new();
-
-    let serializer = Serializer::new(&mut output, crate::MAX_CONTAINER_DEPTH);
-    value.serialize(serializer)?;
+    serialize_into(&mut output, value)?;
     Ok(output)
+}
+
+/// Same as `to_bytes` but write directly into an `std::io::Write` object.
+pub fn serialize_into<T>(write: &mut Vec<u8>, value: &T) -> Result<()>
+where
+    T: ?Sized + Serialize,
+{
+    let serializer = Serializer::new(write, crate::MAX_CONTAINER_DEPTH);
+    value.serialize(serializer)
 }
 
 pub fn is_human_readable() -> bool {
@@ -66,7 +71,7 @@ pub fn is_human_readable() -> bool {
     ser::Serializer::is_human_readable(&serializer)
 }
 
-/// Serialization implementation for LCS
+/// Serialization implementation for BCS
 struct Serializer<'a> {
     output: &'a mut Vec<u8>,
     max_remaining_depth: usize,
@@ -320,13 +325,6 @@ impl<'a> ser::Serializer for Serializer<'a> {
     // BCS is not a human readable format
     fn is_human_readable(&self) -> bool {
         false
-    }
-
-    fn collect_str<T: ?Sized>(self, value: &T) -> Result<Self::Ok, Self::Error>
-    where
-        T: Display,
-    {
-        self.serialize_str(&value.to_string())
     }
 }
 

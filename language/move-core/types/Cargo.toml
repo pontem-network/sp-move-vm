@@ -10,7 +10,6 @@ publish = false
 edition = "2018"
 
 [dependencies]
-sp-std = { version = "2.0.0", default-features = false }
 anyhow = { version = "1.0.34", default-features = false }
 hex = { version = "0.4.2", default-features = false }
 mirai-annotations = { path = "../../../mirai-annotations", default-features = false  }
@@ -40,7 +39,6 @@ default = ["std"]
 fuzzing = ["proptest", "proptest-derive"]
 std = [
 	"anyhow/std",
-	"sp-std/std",
 	"bcs/std",
 	"diem-crypto/std",
 	"diem-crypto-derive/std",

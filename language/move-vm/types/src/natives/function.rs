@@ -25,6 +25,8 @@ use vm::errors::PartialVMResult;
 
 use alloc::string::String;
 use alloc::vec::Vec;
+use move_core_types::account_address::AccountAddress;
+use move_core_types::language_storage::ModuleId;
 pub use move_core_types::vm_status::StatusCode;
 pub use vm::errors::PartialVMError;
 
@@ -42,15 +44,17 @@ pub trait NativeContext {
     /// Saves contract event. Returns true if successful
     fn save_event(
         &mut self,
-        guid: Vec<u8>,
-        count: u64,
+        address: AccountAddress,
         ty: Type,
         val: Value,
+        caller: Option<ModuleId>,
     ) -> PartialVMResult<bool>;
     /// Get the a data layout via the type.
     fn type_to_type_layout(&self, ty: &Type) -> PartialVMResult<Option<MoveTypeLayout>>;
     /// Whether a type is a resource or not.
     fn is_resource(&self, ty: &Type) -> bool;
+    /// Caller module.
+    fn caller(&self) -> Option<&ModuleId>;
 }
 
 /// Result of a native function execution requires charges for execution cost.

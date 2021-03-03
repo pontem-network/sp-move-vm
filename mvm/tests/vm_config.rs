@@ -1,7 +1,7 @@
 extern crate alloc;
 mod common;
 
-use common::StorageMock;
+use crate::common::mock::StorageMock;
 use mvm::gas_schedule::cost_table;
 use mvm::vm_config::loader::{load_vm_config, store_vm_config};
 use mvm::vm_config::VmConfig;

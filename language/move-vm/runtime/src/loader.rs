@@ -92,7 +92,6 @@ impl ScriptCache {
         self.scripts.get(hash).map(|script| script.entry_point())
     }
 
-    #[allow(clippy::unnecessary_wraps)]
     fn insert(&mut self, hash: HashValue, script: Script) -> PartialVMResult<Arc<Function>> {
         match self.get(&hash) {
             Some(script) => Ok(script),
@@ -250,10 +249,6 @@ impl ModuleCache {
                     // So in the spirit of not crashing we just rewrite the entire `Arc`
                     // over and log the issue.
                     log_context.alert();
-                    // error!(
-                    //     *log_context,
-                    //     "Arc<StructType> cannot have any live reference while publishing"
-                    // );
                     let mut struct_type = (*self.structs[struct_idx]).clone();
                     struct_type.fields = fields;
                     self.structs[struct_idx] = Arc::new(struct_type);
@@ -499,10 +494,6 @@ impl Loader {
             Ok(script) => script,
             Err(err) => {
                 log_context.alert();
-                // error!(
-                //     *log_context,
-                //     "[VM] deserializer for script returned error: {:?}", err,
-                // );
                 let msg = format!("Deserialization error: {:?}", err);
                 return Err(PartialVMError::new(StatusCode::CODE_DESERIALIZATION_ERROR)
                     .with_message(msg)
@@ -524,10 +515,6 @@ impl Loader {
             }
             Err(err) => {
                 log_context.alert();
-                // error!(
-                //     *log_context,
-                //     "[VM] bytecode verifier returned errors for script: {:?}", err
-                // );
                 Err(err)
             }
         }
@@ -791,7 +778,6 @@ impl Loader {
             Err(err) if verify_no_missing_modules => return Err(err),
             Err(err) => {
                 log_context.alert();
-                //error!(*log_context, "[VM] Error fetching module with id {:?}", id);
                 return Err(expect_no_verification_errors(err, log_context));
             }
         };
@@ -958,7 +944,6 @@ impl<'a> Resolver<'a> {
     //
     // Constant resolution
     //
-
     pub(crate) fn constant_at(&self, idx: ConstantPoolIndex) -> &Constant {
         match &self.binary {
             BinaryType::Module(module) => module.module.constant_at(idx),
@@ -1718,7 +1703,6 @@ fn expect_no_verification_errors(err: VMError, log_context: &impl LogContext) ->
             };
 
             log_context.alert();
-            //error!(*log_context, "[VM] {}", message);
             PartialVMError::new(major_status)
                 .with_message(message)
                 .at_indices(indices)

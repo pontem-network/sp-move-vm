@@ -12,6 +12,7 @@ use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::{cmp::min, fmt::Write};
+use move_core_types::language_storage::ModuleId;
 use move_core_types::{
     account_address::AccountAddress,
     gas_schedule::{AbstractMemorySize, GasAlgebra, GasCarrier},
@@ -120,7 +121,6 @@ impl<L: LogContext> Interpreter<L> {
     /// at the top of the stack (return). If the call stack is empty execution is completed.
     // REVIEW: create account will be removed in favor of a native function (no opcode) and
     // we can simplify this code quite a bit.
-    #[allow(clippy::unnecessary_cast)]
     fn execute_main(
         &mut self,
         loader: &Loader,
@@ -173,7 +173,14 @@ impl<L: LogContext> Interpreter<L> {
                         )
                         .map_err(|e| set_err_info!(current_frame, e))?;
                     if func.is_native() {
-                        self.call_native(&resolver, data_store, cost_strategy, func, vec![])?;
+                        self.call_native(
+                            &resolver,
+                            data_store,
+                            cost_strategy,
+                            func,
+                            vec![],
+                            current_frame.function.module_id(),
+                        )?;
                         current_frame.pc += 1; // advance past the Call instruction in the caller
                         continue;
                     }
@@ -208,7 +215,14 @@ impl<L: LogContext> Interpreter<L> {
                         )
                         .map_err(|e| set_err_info!(current_frame, e))?;
                     if func.is_native() {
-                        self.call_native(&resolver, data_store, cost_strategy, func, ty_args)?;
+                        self.call_native(
+                            &resolver,
+                            data_store,
+                            cost_strategy,
+                            func,
+                            ty_args,
+                            current_frame.function.module_id(),
+                        )?;
                         current_frame.pc += 1; // advance past the Call instruction in the caller
                         continue;
                     }
@@ -253,6 +267,7 @@ impl<L: LogContext> Interpreter<L> {
         cost_strategy: &mut CostStrategy,
         function: Arc<Function>,
         ty_args: Vec<Type>,
+        caller: Option<&ModuleId>,
     ) -> VMResult<()> {
         // Note: refactor if native functions push a frame on the stack
         self.call_native_impl(
@@ -261,6 +276,7 @@ impl<L: LogContext> Interpreter<L> {
             cost_strategy,
             function.clone(),
             ty_args,
+            caller,
         )
         .map_err(|e| match function.module_id() {
             Some(id) => e
@@ -281,13 +297,15 @@ impl<L: LogContext> Interpreter<L> {
         cost_strategy: &mut CostStrategy,
         function: Arc<Function>,
         ty_args: Vec<Type>,
+        caller: Option<&ModuleId>,
     ) -> PartialVMResult<()> {
         let mut arguments = VecDeque::new();
         let expected_args = function.arg_count();
         for _ in 0..expected_args {
             arguments.push_front(self.operand_stack.pop()?);
         }
-        let mut native_context = FunctionContext::new(self, data_store, cost_strategy, resolver);
+        let mut native_context =
+            FunctionContext::new(self, data_store, cost_strategy, resolver, caller);
         let native_function = function.get_native()?;
         let result = native_function.dispatch(&mut native_context, ty_args, arguments)?;
         cost_strategy.deduct_gas(result.cost)?;
@@ -346,10 +364,6 @@ impl<L: LogContext> Interpreter<L> {
             Ok(gv) => Ok(gv),
             Err(e) => {
                 log_context.alert();
-                // error!(
-                //     *log_context,
-                //     "[VM] error loading resource at ({}, {:?}): {:?} from data store", addr, ty, e
-                // );
                 Err(e)
             }
         }
@@ -418,10 +432,6 @@ impl<L: LogContext> Interpreter<L> {
         // a verification error cannot happen at runtime so change it into an invariant violation.
         if err.status_type() == StatusType::Verification {
             self.log_context.alert();
-            // error!(
-            //     self.log_context,
-            //     "Verification error during runtime: {:?}", err
-            // );
             let new_err = PartialVMError::new(StatusCode::VERIFICATION_ERROR);
             let new_err = match err.message() {
                 None => new_err,
@@ -430,12 +440,7 @@ impl<L: LogContext> Interpreter<L> {
             err = new_err.finish(err.location().clone())
         }
         if err.status_type() == StatusType::InvariantViolation {
-            // let state = self.get_internal_state(current_frame);
             self.log_context.alert();
-            // error!(
-            //     self.log_context,
-            //     "Error: {:?}\nCORE DUMP: >>>>>>>>>>>>\n{}\n<<<<<<<<<<<<\n", err, state,
-            // );
         }
         err
     }

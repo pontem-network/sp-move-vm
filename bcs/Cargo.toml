@@ -26,7 +26,7 @@ name = "bcs_bench"
 harness = false
 
 [dependencies]
-serde = { version = "1", default-features = false, package = "alt_serde", features = ["derive"] }
+serde = { version = "1.0.117", default-features = false, package = "alt_serde", features = ["derive"] }
 
 [dev-dependencies]
 criterion = "0.3.3"

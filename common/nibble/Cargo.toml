@@ -11,7 +11,7 @@ edition = "2018"
 
 [dependencies]
 proptest = { version = "0.10.1", optional = true }
-serde = { version = "1", default-features = false, package = "alt_serde", features = ["derive", "alloc"] }
+serde = { version = "1.0.117", default-features = false, package = "alt_serde", features = ["derive", "alloc"] }
 
 [features]
 default = ["std"]

@@ -44,9 +44,9 @@ pub trait DataStore {
     /// Emit an event to the EventStore
     fn emit_event(
         &mut self,
-        guid: Vec<u8>,
-        seq_num: u64,
+        address: AccountAddress,
         ty: Type,
         val: Value,
+        caller: Option<ModuleId>,
     ) -> PartialVMResult<()>;
 }
