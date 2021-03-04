@@ -10,7 +10,6 @@ publish = false
 edition = "2018"
 
 [dependencies]
-sp-std = { version = "2.0.0", default-features = false }
 hashbrown = "0.9"
 anyhow = { version = "1.0.34", default-features = false }
 once_cell = { version = "1.5.2", default-features = false, features = ["unstable", "alloc"] }
@@ -35,7 +34,6 @@ default = ["std"]
 fuzzing = ["proptest", "proptest-derive", "diem-proptest-helpers", "move-core-types/fuzzing"]
 std = [
     "anyhow/std",
-    "sp-std/std",
     "move-core-types/std",
     "diem-crypto/std",
     "num-variants/std",
