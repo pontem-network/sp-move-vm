@@ -10,5 +10,8 @@ ignore:
   - ".cargo/*"
   - ".git/*"
   - ".github/*"
+  # ignore because can't build with profile feature
+  - "bcs/*"
+  - "crypto/*"
 # doc: https://github.com/mozilla/grcov#usage
 # example: https://github.com/actions-rs/grcov/blob/master/README.md#example
