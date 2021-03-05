@@ -30,21 +30,21 @@ pub fn event_module() -> ModuleTx {
 
 pub fn store_module() -> ModuleTx {
     ModuleTx::new(
-        include_bytes!("../assets/target/modules/3_Store.mv").to_vec(),
+        include_bytes!("../assets/target/modules/4_Store.mv").to_vec(),
         CORE_CODE_ADDRESS,
     )
 }
 
 pub fn time_module() -> ModuleTx {
     ModuleTx::new(
-        include_bytes!("../assets/target/modules/4_Time.mv").to_vec(),
+        include_bytes!("../assets/target/modules/5_Time.mv").to_vec(),
         CORE_CODE_ADDRESS,
     )
 }
 
-pub fn xfi_module() -> ModuleTx {
+pub fn pont_module() -> ModuleTx {
     ModuleTx::new(
-        include_bytes!("../assets/target/modules/5_XFI.mv").to_vec(),
+        include_bytes!("../assets/target/modules/3_PONT.mv").to_vec(),
         CORE_CODE_ADDRESS,
     )
 }
@@ -67,13 +67,13 @@ pub fn emit_event_script(addr: AccountAddress, args: u64) -> ScriptTx {
 
 pub fn get_price_script(
     addr_for_eth_btc: AccountAddress,
-    addr_for_btc_xfi: AccountAddress,
+    addr_for_btc_pont: AccountAddress,
 ) -> ScriptTx {
     ScriptTx::new(
         include_bytes!("../assets/target/scripts/1_get_price_test.mv").to_vec(),
         vec![],
         vec![],
-        vec![addr_for_eth_btc, addr_for_btc_xfi],
+        vec![addr_for_eth_btc, addr_for_btc_pont],
     )
 }
 
