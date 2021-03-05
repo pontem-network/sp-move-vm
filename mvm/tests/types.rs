@@ -72,7 +72,7 @@ fn test_parse_transaction() {
         script.type_parameters(),
         &[TypeTag::Struct(StructTag {
             address: CORE_CODE_ADDRESS,
-            module: Identifier::new("Dfinance").unwrap(),
+            module: Identifier::new("Pontem").unwrap(),
             name: Identifier::new("T").unwrap(),
             type_params: vec![],
         })][..]

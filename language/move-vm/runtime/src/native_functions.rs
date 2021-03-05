@@ -91,8 +91,8 @@ impl NativeFunction {
             (&CORE_CODE_ADDRESS, "Debug", "print") => DebugPrint,
             (&CORE_CODE_ADDRESS, "Debug", "print_stack_trace") => DebugPrintStackTrace,
             (&CORE_CODE_ADDRESS, "Signer", "borrow_address") => SignerBorrowAddress,
-            (&CORE_CODE_ADDRESS, "Dfinance", "create_signer") => DfinanceCreateSigner,
-            (&CORE_CODE_ADDRESS, "Dfinance", "destroy_signer") => DfinanceDestroySigner,
+            (&CORE_CODE_ADDRESS, "Pontem", "create_signer") => DfinanceCreateSigner,
+            (&CORE_CODE_ADDRESS, "Pontem", "destroy_signer") => DfinanceDestroySigner,
 
             (&CORE_CODE_ADDRESS, "U256", "from_u8") => U256FromU8,
             (&CORE_CODE_ADDRESS, "U256", "from_u64") => U256FromU64,

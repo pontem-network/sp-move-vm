@@ -114,7 +114,7 @@ pub struct OracleView<O: Oracle> {
     oracle: O,
 }
 
-const XFI: &str = "XFI";
+const PONT: &str = "PONT";
 
 impl<O> OracleView<O>
 where
@@ -127,8 +127,8 @@ where
     pub fn get_ticker(&self, tag: &StructTag) -> Option<String> {
         fn extract_name(tag: &TypeTag) -> Option<String> {
             match tag {
-                TypeTag::Struct(tg) => Some(if tg.module.as_str() == XFI {
-                    XFI.to_owned()
+                TypeTag::Struct(tg) => Some(if tg.module.as_str() == PONT {
+                    PONT.to_owned()
                 } else {
                     tg.name.as_str().to_owned()
                 }),

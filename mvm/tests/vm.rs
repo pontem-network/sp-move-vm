@@ -132,12 +132,12 @@ fn test_oracle() {
 
     vm.pub_mod(store_module());
     vm.pub_mod(coins_module());
-    vm.pub_mod(xfi_module());
+    vm.pub_mod(pont_module());
 
     let eth_btc = 13;
-    let btc_xfi = 234646734213;
+    let btc_pont = 234646734213;
     oracle.set_price("ETH_BTC", eth_btc);
-    oracle.set_price("BTC_XFI", btc_xfi);
+    oracle.set_price("BTC_PONT", btc_pont);
 
     vm.exec(get_price_script(addr("0x1"), addr("0x2")));
 
@@ -153,5 +153,5 @@ fn test_oracle() {
 
     let blob = state.get_resource(&addr("0x2"), &tag).unwrap().unwrap();
     let store: StoreU128 = bcs::from_bytes(&blob).unwrap();
-    assert_eq!(store.val, btc_xfi);
+    assert_eq!(store.val, btc_pont);
 }
