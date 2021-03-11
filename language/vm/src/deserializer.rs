@@ -8,10 +8,10 @@ use move_core_types::{
 };
 
 use crate::cursor::Cursor;
+use alloc::boxed::Box;
 use alloc::string::ToString;
 use alloc::vec::Vec;
 use hashbrown::HashSet;
-use sp_std::prelude::Box;
 
 impl CompiledScript {
     /// Deserializes a &[u8] slice into a `CompiledScript` instance.
