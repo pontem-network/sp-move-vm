@@ -13,8 +13,6 @@ use parity_scale_codec::{Decode, Encode};
 use serde::{Deserialize, Serialize};
 use sp_std::fmt;
 
-const GAS_AMOUNT_MAX_VALUE: u64 = u64::MAX / 1000;
-
 /// Stores gas metadata for vm execution.
 #[derive(Debug)]
 pub struct Gas {
@@ -27,12 +25,6 @@ pub struct Gas {
 impl Gas {
     /// Constructor.
     pub fn new(max_gas_amount: u64, gas_unit_price: u64) -> Result<Gas> {
-        ensure!(
-            max_gas_amount < GAS_AMOUNT_MAX_VALUE,
-            "max_gas_amount value must be in the range from 0 to {}",
-            GAS_AMOUNT_MAX_VALUE
-        );
-
         Ok(Gas {
             max_gas_amount,
             gas_unit_price,
