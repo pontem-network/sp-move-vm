@@ -2,7 +2,6 @@
 
 #[macro_use]
 extern crate alloc;
-extern crate sp_io;
 
 use crate::data::ExecutionContext;
 use crate::types::{Gas, ModuleTx, ScriptTx, VmResult};

@@ -11,7 +11,7 @@ edition = "2018"
 
 [dependencies]
 anyhow = { version = "1.0.34", default-features = false }
-hex = { version = "0.4.2", default-features = false }
+hex = { version = "0.4.2", default-features = false, features = ["alloc"] }
 mirai-annotations = { path = "../../../mirai-annotations", default-features = false  }
 ref-cast = "1.0.3"
 serde = { version = "1", default-features = false, package = "alt_serde", features = ["derive", "alloc"] }

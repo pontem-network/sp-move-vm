@@ -3,13 +3,9 @@ use alloc::string::String;
 use alloc::vec::Vec;
 
 use move_core_types::account_address::AccountAddress;
-use move_core_types::language_storage::{
-    ModuleId, ResourceKey, StructTag, TypeTag, CORE_CODE_ADDRESS,
-};
+use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS};
 use move_vm_runtime::data_cache::RemoteCache;
 use vm::errors::{PartialVMResult, VMResult};
-
-use crate::access_path::AccessPath;
 
 pub trait Storage {
     /// Returns the data for `key` in the storage or `None` if the key can not be found.
@@ -21,8 +17,8 @@ pub trait Storage {
 }
 
 pub trait WriteEffects {
-    fn delete(&self, path: AccessPath);
-    fn insert(&self, path: AccessPath, blob: Vec<u8>);
+    fn delete(&self, path: AccessKey);
+    fn insert(&self, path: AccessKey, blob: Vec<u8>);
 }
 
 pub struct State<S, O: Oracle> {
@@ -51,13 +47,6 @@ where
             oracle: OracleView::new(oracle),
         }
     }
-
-    pub fn get_by_path(&self, path: AccessPath) -> Option<Vec<u8>> {
-        let mut key = Vec::with_capacity(AccountAddress::LENGTH + path.path.len());
-        key.extend_from_slice(&path.address.to_u8());
-        key.extend_from_slice(&path.path);
-        self.store.get(&key)
-    }
 }
 
 impl<S, O> RemoteCache for State<S, O>
@@ -66,8 +55,7 @@ where
     O: Oracle,
 {
     fn get_module(&self, module_id: &ModuleId) -> VMResult<Option<Vec<u8>>> {
-        let path = AccessPath::from(module_id);
-        Ok(self.get_by_path(path))
+        Ok(self.store.get(AccessKey::from(module_id).as_ref()))
     }
 
     fn get_resource(
@@ -81,8 +69,7 @@ where
             }
         }
 
-        let path = AccessPath::resource_access_path(&ResourceKey::new(*address, tag.to_owned()));
-        Ok(self.get_by_path(path))
+        Ok(self.store.get(AccessKey::from((address, tag)).as_ref()))
     }
 }
 
@@ -91,18 +78,12 @@ where
     S: Storage,
     O: Oracle,
 {
-    fn delete(&self, path: AccessPath) {
-        let mut key = Vec::with_capacity(AccountAddress::LENGTH + path.path.len());
-        key.extend_from_slice(&path.address.to_u8());
-        key.extend_from_slice(&path.path);
-        self.store.remove(&key);
+    fn delete(&self, key: AccessKey) {
+        self.store.remove(key.as_ref());
     }
 
-    fn insert(&self, path: AccessPath, blob: Vec<u8>) {
-        let mut key = Vec::with_capacity(AccountAddress::LENGTH + path.path.len());
-        key.extend_from_slice(&path.address.to_u8());
-        key.extend_from_slice(&path.path);
-        self.store.insert(&key, &blob);
+    fn insert(&self, key: AccessKey, blob: Vec<u8>) {
+        self.store.insert(key.as_ref(), &blob);
     }
 }
 
@@ -214,5 +195,29 @@ impl ExecutionContext {
             timestamp,
             block_height,
         }
+    }
+}
+
+pub struct AccessKey(Vec<u8>);
+
+impl From<(&AccountAddress, &StructTag)> for AccessKey {
+    fn from((addr, tag): (&AccountAddress, &StructTag)) -> Self {
+        let tag = tag.access_vector();
+        let mut key = Vec::with_capacity(AccountAddress::LENGTH + tag.len());
+        key.extend_from_slice(addr.as_ref());
+        key.extend_from_slice(&tag);
+        AccessKey(key)
+    }
+}
+
+impl From<&ModuleId> for AccessKey {
+    fn from(id: &ModuleId) -> Self {
+        AccessKey(id.access_vector())
+    }
+}
+
+impl AsRef<[u8]> for AccessKey {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
     }
 }
