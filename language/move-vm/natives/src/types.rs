@@ -1,3 +1,4 @@
+use alloc::borrow::ToOwned;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::vm_status::StatusCode;
 use move_vm_types::natives::function::PartialVMError;
@@ -56,8 +57,8 @@ pub fn account_address(value: &ValueImpl) -> PartialVMResult<AccountAddress> {
 }
 
 pub mod balance {
+    use alloc::rc::Rc;
     use core::cell::RefCell;
-    use std::rc::Rc;
 
     use move_core_types::vm_status::StatusCode;
     use move_vm_types::natives::balance::Balance;

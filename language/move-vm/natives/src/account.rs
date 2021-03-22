@@ -1,6 +1,7 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+use alloc::borrow::ToOwned;
 use alloc::collections::VecDeque;
 use alloc::vec::Vec;
 

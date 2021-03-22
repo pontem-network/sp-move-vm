@@ -1,8 +1,8 @@
 use core::fmt;
 use core::fmt::{Display, Formatter};
 
+use alloc::string::String;
 use hashbrown::HashMap;
-
 use move_core_types::account_address::AccountAddress;
 
 #[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Hash)]
