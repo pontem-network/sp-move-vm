@@ -145,15 +145,18 @@ impl fmt::Debug for ScriptTx {
 pub struct VmResult {
     /// Execution status code.
     pub status_code: StatusCode,
+    /// Execution sub status code.
+    pub sub_status: Option<u64>,
     /// Gas used.
     pub gas_used: u64,
 }
 
 impl VmResult {
     /// Create new Vm result
-    pub(crate) fn new(status_code: StatusCode, gas_used: u64) -> VmResult {
+    pub(crate) fn new(status_code: StatusCode, sub_status: Option<u64>, gas_used: u64) -> VmResult {
         VmResult {
             status_code,
+            sub_status,
             gas_used,
         }
     }

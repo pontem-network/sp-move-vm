@@ -7,6 +7,7 @@ use move_core_types::language_storage::{
     ModuleId, ResourceKey, StructTag, TypeTag, CORE_CODE_ADDRESS,
 };
 use move_vm_runtime::data_cache::RemoteCache;
+use move_vm_types::natives::balance::{Balance, NativeBalance, WalletId};
 use vm::errors::{PartialVMResult, VMResult};
 
 use crate::access_path::AccessPath;
@@ -213,6 +214,50 @@ impl ExecutionContext {
         ExecutionContext {
             timestamp,
             block_height,
+        }
+    }
+}
+
+pub trait BalanceAccess {
+    fn get_balance(&self, address: &AccountAddress, ticker: &str) -> Option<Balance>;
+    fn deposit(&self, address: &AccountAddress, ticker: &str, amount: Balance);
+    fn withdraw(&self, address: &AccountAddress, ticker: &str, amount: Balance);
+}
+
+pub struct Bank<B: BalanceAccess> {
+    access: B,
+}
+
+impl<B: BalanceAccess> Bank<B> {
+    pub fn new(access: B) -> Bank<B> {
+        Bank { access }
+    }
+
+    pub fn deposit(&self, wallet_id: &WalletId, amount: Balance) {
+        if wallet_id.module == PONT {
+            self.access.deposit(&wallet_id.address, PONT, amount)
+        } else {
+            self.access
+                .deposit(&wallet_id.address, &wallet_id.name, amount)
+        }
+    }
+
+    pub fn withdrawal(&self, wallet_id: &WalletId, amount: Balance) {
+        if wallet_id.module == PONT {
+            self.access.withdraw(&wallet_id.address, PONT, amount)
+        } else {
+            self.access
+                .withdraw(&wallet_id.address, &wallet_id.name, amount)
+        }
+    }
+}
+
+impl<B: BalanceAccess> NativeBalance for &Bank<B> {
+    fn get_balance(&self, wallet_id: &WalletId) -> Option<Balance> {
+        if wallet_id.module == PONT {
+            self.access.get_balance(&wallet_id.address, PONT)
+        } else {
+            self.access.get_balance(&wallet_id.address, &wallet_id.name)
         }
     }
 }

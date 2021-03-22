@@ -1,7 +1,8 @@
+use serde::Deserialize;
+
 use move_core_types::account_address::AccountAddress;
 use move_core_types::language_storage::CORE_CODE_ADDRESS;
 use mvm::types::{Gas, ModuleTx, ScriptArg, ScriptTx};
-use serde::Deserialize;
 
 pub fn gas() -> Gas {
     Gas::new(10_000, 1).unwrap()
@@ -23,7 +24,7 @@ pub fn coins_module() -> ModuleTx {
 
 pub fn event_module() -> ModuleTx {
     ModuleTx::new(
-        include_bytes!("../assets/target/modules/2_Event.mv").to_vec(),
+        include_bytes!("../assets/target/modules/6_Event.mv").to_vec(),
         CORE_CODE_ADDRESS,
     )
 }
@@ -44,14 +45,35 @@ pub fn time_module() -> ModuleTx {
 
 pub fn pont_module() -> ModuleTx {
     ModuleTx::new(
-        include_bytes!("../assets/target/modules/3_PONT.mv").to_vec(),
+        include_bytes!("../assets/target/modules/2_PONT.mv").to_vec(),
         CORE_CODE_ADDRESS,
     )
 }
 
 pub fn event_proxy_module() -> ModuleTx {
     ModuleTx::new(
-        include_bytes!("../assets/target/modules/6_EventProxy.mv").to_vec(),
+        include_bytes!("../assets/target/modules/9_EventProxy.mv").to_vec(),
+        CORE_CODE_ADDRESS,
+    )
+}
+
+pub fn signer_module() -> ModuleTx {
+    ModuleTx::new(
+        include_bytes!("../assets/target/modules/3_Signer.mv").to_vec(),
+        CORE_CODE_ADDRESS,
+    )
+}
+
+pub fn pontem_module() -> ModuleTx {
+    ModuleTx::new(
+        include_bytes!("../assets/target/modules/7_Pontem.mv").to_vec(),
+        CORE_CODE_ADDRESS,
+    )
+}
+
+pub fn account_module() -> ModuleTx {
+    ModuleTx::new(
+        include_bytes!("../assets/target/modules/8_Account.mv").to_vec(),
         CORE_CODE_ADDRESS,
     )
 }
@@ -95,6 +117,25 @@ pub fn store_u64_script(addr: AccountAddress, args: u64) -> ScriptTx {
         vec![ScriptArg::U64(args)],
         vec![],
         vec![addr],
+    )
+}
+
+pub fn test_balance_script(
+    addr: AccountAddress,
+    addr_2: AccountAddress,
+    init_usdt: u128,
+    init_pont: u128,
+    init_btc: u128,
+) -> ScriptTx {
+    ScriptTx::new(
+        include_bytes!("../assets/target/scripts/4_test_balance.mv").to_vec(),
+        vec![
+            ScriptArg::U128(init_usdt),
+            ScriptArg::U128(init_pont),
+            ScriptArg::U128(init_btc),
+        ],
+        vec![],
+        vec![addr, addr_2],
     )
 }
 

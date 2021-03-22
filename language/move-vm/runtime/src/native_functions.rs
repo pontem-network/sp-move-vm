@@ -1,16 +1,17 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{interpreter::Interpreter, loader::Resolver, logging::LogContext};
 use alloc::collections::VecDeque;
 use alloc::string::String;
 use alloc::vec::Vec;
-use move_core_types::language_storage::ModuleId;
+
+use move_core_types::language_storage::{ModuleId, TypeTag};
 use move_core_types::{
     account_address::AccountAddress, gas_schedule::CostTable, language_storage::CORE_CODE_ADDRESS,
     value::MoveTypeLayout, vm_status::StatusType,
 };
 use move_vm_natives::{account, bcs, debug, event, hash, signature, signer, u256, vector};
+use move_vm_types::natives::balance::{Balance, BalanceOperation, WalletId};
 use move_vm_types::{
     data_store::DataStore,
     gas_schedule::CostStrategy,
@@ -19,6 +20,8 @@ use move_vm_types::{
     values::Value,
 };
 use vm::errors::PartialVMResult;
+
+use crate::{interpreter::Interpreter, loader::Resolver, logging::LogContext};
 
 // The set of native functions the VM supports.
 // The functions can line in any crate linked in but the VM declares them here.
@@ -60,6 +63,10 @@ pub(crate) enum NativeFunction {
     U256Div,
     U256Sub,
     U256Add,
+
+    WithdrawToNative,
+    DepositFromNative,
+    GetNativeBalance,
 }
 
 impl NativeFunction {
@@ -105,6 +112,10 @@ impl NativeFunction {
             (&CORE_CODE_ADDRESS, "U256", "div") => U256Div,
             (&CORE_CODE_ADDRESS, "U256", "sub") => U256Sub,
             (&CORE_CODE_ADDRESS, "U256", "add") => U256Add,
+
+            (&CORE_CODE_ADDRESS, "Account", "deposit_native") => DepositFromNative,
+            (&CORE_CODE_ADDRESS, "Account", "withdraw_native") => WithdrawToNative,
+            (&CORE_CODE_ADDRESS, "Account", "get_native_balance") => GetNativeBalance,
             _ => return None,
         })
     }
@@ -152,6 +163,9 @@ impl NativeFunction {
             Self::U256Div => u256::div(ctx, t, v),
             Self::U256Sub => u256::sub(ctx, t, v),
             Self::U256Add => u256::add(ctx, t, v),
+            Self::WithdrawToNative => account::native_withdraw(ctx, t, v),
+            Self::DepositFromNative => account::native_deposit(ctx, t, v),
+            Self::GetNativeBalance => account::get_balance(ctx, t, v),
         };
         debug_assert!(match &result {
             Err(e) => e.major_status().status_type() == StatusType::InvariantViolation,
@@ -219,11 +233,24 @@ impl<'a, L: LogContext> NativeContext for FunctionContext<'a, L> {
         }
     }
 
+    fn type_to_type_tag(&self, ty: &Type) -> PartialVMResult<TypeTag> {
+        self.resolver.loader().type_to_type_tag(ty)
+    }
+
     fn is_resource(&self, ty: &Type) -> bool {
         self.resolver.is_resource(ty)
     }
 
     fn caller(&self) -> Option<&ModuleId> {
         self.caller
+    }
+
+    fn get_balance(&self, wallet_id: &WalletId) -> Option<Balance> {
+        self.data_store.get_balance(wallet_id)
+    }
+
+    fn save_balance_operation(&mut self, wallet_id: WalletId, balance_op: BalanceOperation) {
+        self.data_store
+            .save_balance_operation(wallet_id, balance_op);
     }
 }

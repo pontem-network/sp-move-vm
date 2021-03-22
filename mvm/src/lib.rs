@@ -10,6 +10,8 @@ use crate::types::{Gas, ModuleTx, ScriptTx, VmResult};
 pub mod access_path;
 pub mod data;
 pub mod gas_schedule;
+/// Input output vm interfaces.
+pub mod io;
 pub mod mvm;
 pub mod types;
 pub mod vm_config;

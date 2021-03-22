@@ -7,38 +7,48 @@ use move_vm_runtime::data_cache::TransactionEffects;
 use move_vm_runtime::logging::NoContextLog;
 use move_vm_runtime::move_vm::MoveVM;
 use move_vm_types::gas_schedule::CostStrategy;
+use move_vm_types::natives::balance::BalanceOperation;
 use vm::errors::{Location, PartialVMError, VMError};
 use vm::CompiledModule;
 
 use crate::access_path::AccessPath;
 use crate::data::{
-    EventHandler, ExecutionContext, Oracle, State, StateSession, Storage, WriteEffects,
+    BalanceAccess, Bank, EventHandler, ExecutionContext, Oracle, State, StateSession, Storage,
+    WriteEffects,
 };
 use crate::types::{Gas, ModuleTx, ScriptTx, VmResult};
 use crate::vm_config::loader::load_vm_config;
 use crate::Vm;
 
 /// MoveVM.
-pub struct Mvm<S, E, O>
+pub struct Mvm<S, E, O, B>
 where
     S: Storage,
     E: EventHandler,
     O: Oracle,
+    B: BalanceAccess,
 {
     vm: MoveVM,
     cost_table: CostTable,
     state: State<S, O>,
     event_handler: E,
+    bank: Bank<B>,
 }
 
-impl<S, E, O> Mvm<S, E, O>
+impl<S, E, O, B> Mvm<S, E, O, B>
 where
     S: Storage,
     E: EventHandler,
     O: Oracle,
+    B: BalanceAccess,
 {
     /// Creates a new move vm with given store and event handler.
-    pub fn new(store: S, event_handler: E, oracle: O) -> Result<Mvm<S, E, O>, Error> {
+    pub fn new(
+        store: S,
+        event_handler: E,
+        oracle: O,
+        balance: B,
+    ) -> Result<Mvm<S, E, O, B>, Error> {
         let config = load_vm_config(&store)?;
 
         Ok(Mvm {
@@ -46,6 +56,7 @@ where
             cost_table: config.gas_schedule,
             state: State::new(store, oracle),
             event_handler,
+            bank: Bank::new(balance),
         })
     }
 
@@ -84,6 +95,13 @@ where
             self.event_handler.on_event(address, ty_tag, msg, caller);
         }
 
+        for (id, op) in tx_effects.wallet_ops.into_iter() {
+            match op {
+                BalanceOperation::Deposit(amount) => self.bank.deposit(&id, amount),
+                BalanceOperation::Withdraw(amount) => self.bank.withdrawal(&id, amount),
+            }
+        }
+
         Ok(())
     }
 
@@ -99,20 +117,21 @@ where
             .get();
 
         match result.and_then(|e| self.handle_tx_effects(e)) {
-            Ok(_) => VmResult::new(StatusCode::EXECUTED, gas_used),
+            Ok(_) => VmResult::new(StatusCode::EXECUTED, None, gas_used),
             Err(err) => {
                 //todo log error.
-                VmResult::new(err.major_status(), gas_used)
+                VmResult::new(err.major_status(), err.sub_status(), gas_used)
             }
         }
     }
 }
 
-impl<S, E, O> Vm for Mvm<S, E, O>
+impl<S, E, O, B> Vm for Mvm<S, E, O, B>
 where
     S: Storage,
     E: EventHandler,
     O: Oracle,
+    B: BalanceAccess,
 {
     fn publish_module(&self, gas: Gas, module: ModuleTx) -> VmResult {
         let (module, sender) = module.into_inner();
@@ -137,7 +156,7 @@ where
                         cost_strategy
                             .charge_intrinsic_gas(AbstractMemorySize::new(module.len() as u64))?;
 
-                        let mut session = self.vm.new_session(&self.state);
+                        let mut session = self.vm.new_session(&self.state, &self.bank);
                         session
                             .publish_module(
                                 module.to_vec(),
@@ -153,7 +172,7 @@ where
 
     fn execute_script(&self, gas: Gas, context: ExecutionContext, tx: ScriptTx) -> VmResult {
         let state_session = StateSession::new(&self.state, context);
-        let mut session = self.vm.new_session(&state_session);
+        let mut session = self.vm.new_session(&state_session, &self.bank);
 
         let (script, args, type_args, senders) = tx.into_inner();
         let mut cost_strategy =

@@ -3,16 +3,17 @@ extern crate alloc;
 
 use common::mock::Utils;
 use common::{assets::*, mock::*, vm};
+use move_core_types::account_address::AccountAddress;
 use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS};
 use move_vm_runtime::data_cache::RemoteCache;
-use mvm::data::{ExecutionContext, State};
+use mvm::data::{BalanceAccess, ExecutionContext, State};
 
 mod common;
 
 #[test]
 fn test_public_module() {
-    let (vm, store, _, oracle) = vm();
+    let (vm, store, _, oracle, _) = vm();
     let state = State::new(store, oracle);
 
     vm.pub_mod(store_module());
@@ -29,7 +30,7 @@ fn test_public_module() {
 fn test_execute_script() {
     let test_value = 13;
 
-    let (vm, store, _, oracle) = vm();
+    let (vm, store, _, oracle, _) = vm();
     let state = State::new(store, oracle);
 
     vm.pub_mod(store_module());
@@ -54,7 +55,7 @@ fn test_execute_script() {
 fn test_store_event() {
     let test_value = 13;
 
-    let (vm, _, event, _) = vm();
+    let (vm, _, event, _, _) = vm();
 
     vm.pub_mod(event_module());
     vm.pub_mod(event_proxy_module());
@@ -95,7 +96,7 @@ fn test_store_event() {
 
 #[test]
 fn test_load_system_resources() {
-    let (vm, store, _, oracle) = vm();
+    let (vm, store, _, oracle, _) = vm();
     let state = State::new(store, oracle);
 
     vm.pub_mod(store_module());
@@ -127,7 +128,7 @@ fn test_load_system_resources() {
 
 #[test]
 fn test_oracle() {
-    let (vm, store, _, oracle) = vm();
+    let (vm, store, _, oracle, _) = vm();
     let state = State::new(store, oracle.clone());
 
     vm.pub_mod(store_module());
@@ -154,4 +155,37 @@ fn test_oracle() {
     let blob = state.get_resource(&addr("0x2"), &tag).unwrap().unwrap();
     let store: StoreU128 = bcs::from_bytes(&blob).unwrap();
     assert_eq!(store.val, btc_pont);
+}
+
+#[test]
+fn test_balance() {
+    let (vm, _, _, _, bank) = vm();
+    vm.pub_mod(coins_module());
+    vm.pub_mod(pont_module());
+    vm.pub_mod(signer_module());
+    vm.pub_mod(event_module());
+    vm.pub_mod(pontem_module());
+    vm.pub_mod(account_module());
+
+    let addr_1 = AccountAddress::random();
+    let addr_2 = AccountAddress::random();
+    let init_usdt = 1024;
+    let init_pont = 64;
+    let init_btc = 13;
+
+    bank.set_balance(&addr_1, "USDT", init_usdt);
+    bank.set_balance(&addr_1, "PONT", init_pont);
+    bank.set_balance(&addr_1, "BTC", init_btc);
+
+    vm.exec(test_balance_script(
+        addr_1, addr_2, init_usdt, init_pont, init_btc,
+    ));
+
+    assert_eq!(bank.get_balance(&addr_1, "USDT"), Some(512));
+    assert_eq!(bank.get_balance(&addr_1, "PONT"), Some(61));
+    assert_eq!(bank.get_balance(&addr_1, "BTC"), Some(13));
+
+    assert_eq!(bank.get_balance(&addr_2, "USDT"), Some(512));
+    assert_eq!(bank.get_balance(&addr_2, "PONT"), Some(3));
+    assert_eq!(bank.get_balance(&addr_2, "BTC"), None);
 }

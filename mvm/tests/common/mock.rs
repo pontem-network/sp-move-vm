@@ -2,15 +2,16 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
+use move_core_types::account_address::AccountAddress;
 use move_core_types::language_storage::{ModuleId, TypeTag};
 use move_core_types::vm_status::StatusCode;
-use mvm::data::{EventHandler, ExecutionContext, Oracle, Storage};
+use move_vm_types::natives::balance::Balance;
+use mvm::data::{BalanceAccess, EventHandler, ExecutionContext, Oracle, Storage};
 use mvm::mvm::Mvm;
 use mvm::types::{ModuleTx, ScriptTx};
 use mvm::Vm;
 
 use crate::common::assets::gas;
-use move_core_types::account_address::AccountAddress;
 
 #[derive(Clone)]
 pub struct StorageMock {
@@ -87,6 +88,48 @@ impl Oracle for OracleMock {
     }
 }
 
+#[derive(Clone, Debug, Default)]
+pub struct BankMock {
+    balances: Rc<RefCell<HashMap<AccountAddress, HashMap<String, Balance>>>>,
+}
+
+impl BankMock {
+    pub fn set_balance(&self, address: &AccountAddress, ticker: &str, amount: Balance) {
+        let mut acc_map = self.balances.borrow_mut();
+        let acc = acc_map.entry(*address).or_insert_with(HashMap::new);
+        *acc.entry(ticker.to_owned()).or_insert(amount) = amount;
+    }
+}
+
+impl BalanceAccess for BankMock {
+    fn get_balance(&self, address: &AccountAddress, ticker: &str) -> Option<Balance> {
+        self.balances
+            .borrow()
+            .get(address)
+            .and_then(|acc| acc.get(ticker).cloned())
+    }
+
+    fn deposit(&self, address: &AccountAddress, ticker: &str, amount: Balance) {
+        let mut acc_map = self.balances.borrow_mut();
+        let acc = acc_map.entry(*address).or_insert_with(HashMap::new);
+        let val = acc.entry(ticker.to_owned()).or_insert(0);
+        if *val < amount {
+            panic!(
+                "Not enough currency in the account [{}::{}] You need {} units in stock {}",
+                address, ticker, amount, val
+            );
+        }
+        *val -= amount;
+    }
+
+    fn withdraw(&self, address: &AccountAddress, ticker: &str, amount: Balance) {
+        let mut acc_map = self.balances.borrow_mut();
+        let acc = acc_map.entry(*address).or_insert_with(HashMap::new);
+        let val = acc.entry(ticker.to_owned()).or_insert(0);
+        *val += amount;
+    }
+}
+
 pub trait Utils {
     fn pub_mod(&self, module: ModuleTx);
     fn exec(&self, script: ScriptTx) {
@@ -95,11 +138,12 @@ pub trait Utils {
     fn exec_with_context(&self, context: ExecutionContext, script: ScriptTx);
 }
 
-impl<S, E, O> Utils for Mvm<S, E, O>
+impl<S, E, O, B> Utils for Mvm<S, E, O, B>
 where
     S: Storage,
     E: EventHandler,
     O: Oracle,
+    B: BalanceAccess,
 {
     fn pub_mod(&self, module: ModuleTx) {
         assert_eq!(
@@ -109,10 +153,10 @@ where
     }
 
     fn exec_with_context(&self, context: ExecutionContext, script: ScriptTx) {
-        assert_eq!(
-            StatusCode::EXECUTED,
-            self.execute_script(gas(), context, script,).status_code
-        );
+        let res = self.execute_script(gas(), context, script);
+        if res.status_code != StatusCode::EXECUTED {
+            panic!("Transaction failed: {:?}", res);
+        }
     }
 }
 
