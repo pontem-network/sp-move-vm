@@ -11,6 +11,7 @@ use move_vm_types::natives::balance::BalanceOperation;
 use vm::errors::{Location, PartialVMError, VMError};
 use vm::CompiledModule;
 
+use crate::data::AccessKey;
 use crate::data::{
     BalanceAccess, Bank, EventHandler, ExecutionContext, Oracle, State, StateSession, Storage,
     WriteEffects,
