@@ -11,7 +11,6 @@ use move_vm_types::natives::balance::BalanceOperation;
 use vm::errors::{Location, PartialVMError, VMError};
 use vm::CompiledModule;
 
-use crate::access_path::AccessPath;
 use crate::data::{
     BalanceAccess, Bank, EventHandler, ExecutionContext, Oracle, State, StateSession, Storage,
     WriteEffects,
@@ -64,27 +63,24 @@ where
     fn handle_tx_effects(&self, tx_effects: TransactionEffects) -> Result<(), VMError> {
         for (addr, vals) in tx_effects.resources {
             for (struct_tag, val_opt) in vals {
-                let ap = AccessPath::new(addr, struct_tag.access_vector());
+                let ak = AccessKey::from((&addr, &struct_tag));
                 match val_opt {
                     None => {
-                        self.state.delete(ap);
+                        self.state.delete(ak);
                     }
                     Some((ty_layout, val)) => {
                         let blob = val.simple_serialize(&ty_layout).ok_or_else(|| {
                             PartialVMError::new(StatusCode::UNKNOWN_INVARIANT_VIOLATION_ERROR)
                                 .finish(Location::Undefined)
                         })?;
-                        self.state.insert(ap, blob);
+                        self.state.insert(ak, blob);
                     }
                 };
             }
         }
 
         for (module_id, blob) in tx_effects.modules {
-            self.state.insert(
-                AccessPath::new(*module_id.address(), module_id.access_vector()),
-                blob,
-            );
+            self.state.insert(AccessKey::from(&module_id), blob);
         }
 
         for (address, ty_tag, ty_layout, val, caller) in tx_effects.events {

@@ -1,6 +1,7 @@
 use alloc::vec::Vec;
 use anyhow::*;
 use core::convert::TryFrom;
+use core::fmt;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::{StructTag, TypeTag};
@@ -11,7 +12,6 @@ use move_lang::parser::syntax::parse_type;
 use move_vm_types::values::Value;
 use parity_scale_codec::{Decode, Encode};
 use serde::{Deserialize, Serialize};
-use sp_std::fmt;
 
 const GAS_AMOUNT_MAX_VALUE: u64 = u64::MAX / 1000;
 

@@ -1,5 +1,5 @@
 use anyhow::{Error, Result};
-use sp_std::cmp;
+use core::cmp;
 
 pub struct Cursor<T>
 where
