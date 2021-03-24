@@ -94,8 +94,8 @@ where
 
         for (id, op) in tx_effects.wallet_ops.into_iter() {
             match op {
-                BalanceOperation::Deposit(amount) => self.bank.deposit(&id, amount),
-                BalanceOperation::Withdraw(amount) => self.bank.withdrawal(&id, amount),
+                BalanceOperation::Deposit(amount) => self.bank.deposit(&id, amount)?,
+                BalanceOperation::Withdraw(amount) => self.bank.withdraw(&id, amount)?,
             }
         }
 

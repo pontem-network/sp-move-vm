@@ -3,5 +3,5 @@ name = "assets"
 dialect = "polkadot"
 
 dependencies = [
-    { git = "https://github.com/pontem-network/move-stdlib.git", branch = "native_balance" }
+    { git = "https://github.com/pontem-network/move-stdlib.git", branch = "milestone-3" }
 ]

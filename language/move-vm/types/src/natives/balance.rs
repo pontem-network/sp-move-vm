@@ -1,30 +1,29 @@
 use core::fmt;
 use core::fmt::{Display, Formatter};
 
-use alloc::string::String;
 use hashbrown::HashMap;
 use move_core_types::account_address::AccountAddress;
+use move_core_types::language_storage::StructTag;
 
 #[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct WalletId {
     pub address: AccountAddress,
-    pub module: String,
-    pub name: String,
+    pub tag: StructTag,
 }
 
 impl WalletId {
-    pub fn new(address: AccountAddress, module: String, name: String) -> WalletId {
-        WalletId {
-            address,
-            module,
-            name,
-        }
+    pub fn new(address: AccountAddress, tag: StructTag) -> WalletId {
+        WalletId { address, tag }
     }
 }
 
 impl Display for WalletId {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}::{}::{}", self.address, self.module, self.name)
+        write!(
+            f,
+            "{}::[{}::{}::{}]",
+            self.address, self.tag.address, self.tag.module, self.tag.name
+        )
     }
 }
 

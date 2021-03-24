@@ -128,11 +128,7 @@ fn wallet_id(
     tp: Type,
 ) -> PartialVMResult<WalletId> {
     match ctx.type_to_type_tag(&tp)? {
-        TypeTag::Struct(tag) => Ok(WalletId::new(
-            address,
-            tag.module.into_string(),
-            tag.name.into_string(),
-        )),
+        TypeTag::Struct(tag) => Ok(WalletId::new(address, tag)),
         _ => Err(PartialVMError::new(StatusCode::CALL_TYPE_MISMATCH_ERROR)
             .with_message("Invalid type parameter. Structure is expected.".to_owned())),
     }

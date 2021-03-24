@@ -4,9 +4,11 @@ use alloc::vec::Vec;
 
 use move_core_types::account_address::AccountAddress;
 use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS};
+use move_core_types::vm_status::StatusCode;
 use move_vm_runtime::data_cache::RemoteCache;
 use move_vm_types::natives::balance::{Balance, NativeBalance, WalletId};
-use vm::errors::{PartialVMResult, VMResult};
+use move_vm_types::natives::function::PartialVMError;
+use vm::errors::{Location, PartialVMResult, VMError, VMResult};
 
 pub trait Storage {
     /// Returns the data for `key` in the storage or `None` if the key can not be found.
@@ -97,6 +99,7 @@ pub struct OracleView<O: Oracle> {
 }
 
 const PONT: &str = "PONT";
+const COINS: &str = "Coins";
 
 impl<O> OracleView<O>
 where
@@ -214,32 +217,44 @@ impl<B: BalanceAccess> Bank<B> {
         Bank { access }
     }
 
-    pub fn deposit(&self, wallet_id: &WalletId, amount: Balance) {
-        if wallet_id.module == PONT {
-            self.access.deposit(&wallet_id.address, PONT, amount)
+    pub fn deposit(&self, wallet_id: &WalletId, amount: Balance) -> Result<(), VMError> {
+        if let Some(ticker) = ticker(wallet_id) {
+            self.access.deposit(&wallet_id.address, ticker, amount);
+            Ok(())
         } else {
-            self.access
-                .deposit(&wallet_id.address, &wallet_id.name, amount)
+            Err(PartialVMError::new(StatusCode::INTERNAL_TYPE_ERROR).finish(Location::Undefined))
         }
     }
 
-    pub fn withdrawal(&self, wallet_id: &WalletId, amount: Balance) {
-        if wallet_id.module == PONT {
-            self.access.withdraw(&wallet_id.address, PONT, amount)
+    pub fn withdraw(&self, wallet_id: &WalletId, amount: Balance) -> Result<(), VMError> {
+        if let Some(ticker) = ticker(wallet_id) {
+            self.access.withdraw(&wallet_id.address, ticker, amount);
+            Ok(())
         } else {
-            self.access
-                .withdraw(&wallet_id.address, &wallet_id.name, amount)
+            Err(PartialVMError::new(StatusCode::INTERNAL_TYPE_ERROR).finish(Location::Undefined))
         }
     }
 }
 
 impl<B: BalanceAccess> NativeBalance for &Bank<B> {
     fn get_balance(&self, wallet_id: &WalletId) -> Option<Balance> {
-        if wallet_id.module == PONT {
-            self.access.get_balance(&wallet_id.address, PONT)
+        if let Some(ticker) = ticker(wallet_id) {
+            self.access.get_balance(&wallet_id.address, ticker)
         } else {
-            self.access.get_balance(&wallet_id.address, &wallet_id.name)
+            None
         }
+    }
+}
+
+fn ticker(wallet_id: &WalletId) -> Option<&str> {
+    if wallet_id.tag.address == CORE_CODE_ADDRESS {
+        match wallet_id.tag.module.as_str() {
+            PONT => Some(PONT),
+            COINS => Some(wallet_id.tag.name.as_str()),
+            _ => None,
+        }
+    } else {
+        None
     }
 }
 
