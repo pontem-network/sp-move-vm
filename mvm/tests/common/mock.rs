@@ -54,6 +54,12 @@ pub struct EventHandlerMock {
     pub data: Rc<RefCell<Vec<(AccountAddress, TypeTag, Vec<u8>, Option<ModuleId>)>>>,
 }
 
+impl EventHandlerMock {
+    pub fn pop(&self) -> Option<(AccountAddress, TypeTag, Vec<u8>, Option<ModuleId>)> {
+        self.data.borrow_mut().pop()
+    }
+}
+
 impl EventHandler for EventHandlerMock {
     fn on_event(
         &self,

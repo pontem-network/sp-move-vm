@@ -1,8 +1,11 @@
 use anyhow::Error;
 
+use move_core_types::account_address::AccountAddress;
 use move_core_types::gas_schedule::CostTable;
 use move_core_types::gas_schedule::{AbstractMemorySize, GasAlgebra, GasUnits};
-use move_core_types::vm_status::StatusCode;
+use move_core_types::identifier::Identifier;
+use move_core_types::language_storage::{StructTag, TypeTag, CORE_CODE_ADDRESS, NONE_ADDRESS};
+use move_core_types::vm_status::{AbortLocation, StatusCode, VMStatus};
 use move_vm_runtime::data_cache::TransactionEffects;
 use move_vm_runtime::logging::NoContextLog;
 use move_vm_runtime::move_vm::MoveVM;
@@ -105,6 +108,7 @@ where
     /// Handle vm result and return transaction status code.
     fn handle_vm_result(
         &self,
+        sender: AccountAddress,
         cost_strategy: CostStrategy,
         gas_meta: Gas,
         result: Result<TransactionEffects, VMError>,
@@ -116,10 +120,42 @@ where
         match result.and_then(|e| self.handle_tx_effects(e)) {
             Ok(_) => VmResult::new(StatusCode::EXECUTED, None, gas_used),
             Err(err) => {
-                //todo log error.
-                VmResult::new(err.major_status(), err.sub_status(), gas_used)
+                let status = err.major_status();
+                let sub_status = err.sub_status();
+                if let Err(err) = self.emit_vm_status_event(sender, err.into_vm_status()) {
+                    println!("Failed to emit vm status event:{:?}", err);
+                }
+
+                VmResult::new(status, sub_status, gas_used)
             }
         }
+    }
+
+    fn emit_vm_status_event(&self, sender: AccountAddress, status: VMStatus) -> Result<(), Error> {
+        let tag = TypeTag::Struct(StructTag {
+            address: CORE_CODE_ADDRESS,
+            module: Identifier::new("VMStatus").unwrap(),
+            name: Identifier::new("VMStatus").unwrap(),
+            type_params: vec![],
+        });
+
+        let module = match &status {
+            VMStatus::Executed | VMStatus::Error(_) => None,
+            VMStatus::MoveAbort(loc, _)
+            | VMStatus::ExecutionFailure {
+                status_code: _,
+                location: loc,
+                function: _,
+                code_offset: _,
+            } => match loc {
+                AbortLocation::Module(module) => Some(module.to_owned()),
+                AbortLocation::Script => None,
+            },
+        };
+
+        self.event_handler
+            .on_event(sender, tag, bcs::to_bytes(&status)?, module);
+        Ok(())
     }
 }
 
@@ -164,7 +200,7 @@ where
                             .and_then(|_| session.finish())
                     })
             });
-        self.handle_vm_result(cost_strategy, gas, result)
+        self.handle_vm_result(sender, cost_strategy, gas, result)
     }
 
     fn execute_script(&self, gas: Gas, context: ExecutionContext, tx: ScriptTx) -> VmResult {
@@ -172,6 +208,8 @@ where
         let mut session = self.vm.new_session(&state_session, &self.bank);
 
         let (script, args, type_args, senders) = tx.into_inner();
+        let sender = senders.get(0).cloned().unwrap_or(NONE_ADDRESS);
+
         let mut cost_strategy =
             CostStrategy::transaction(&self.cost_table, GasUnits::new(gas.max_gas_amount()));
 
@@ -186,7 +224,7 @@ where
             )
             .and_then(|_| session.finish());
 
-        self.handle_vm_result(cost_strategy, gas, result)
+        self.handle_vm_result(sender, cost_strategy, gas, result)
     }
 
     fn clear(&self) {

@@ -8,6 +8,7 @@ use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS};
 use move_vm_runtime::data_cache::RemoteCache;
 use mvm::data::{BalanceAccess, ExecutionContext, State};
+use mvm::Vm;
 
 mod common;
 
@@ -188,4 +189,21 @@ fn test_balance() {
     assert_eq!(bank.get_balance(&addr_2, "USDT"), Some(512));
     assert_eq!(bank.get_balance(&addr_2, "PONT"), Some(3));
     assert_eq!(bank.get_balance(&addr_2, "BTC"), None);
+}
+
+#[test]
+fn test_error_event() {
+    let (vm, _, events, _, _) = vm();
+    vm.pub_mod(abort_module());
+    let sender = AccountAddress::random();
+    vm.execute_script(gas(), ExecutionContext::new(0, 0), error_script(sender));
+    let event = events.pop().unwrap();
+    assert_eq!(sender, event.0);
+    assert_eq!(
+        Some(ModuleId::new(
+            CORE_CODE_ADDRESS,
+            Identifier::new("Abort").unwrap()
+        )),
+        event.3
+    );
 }

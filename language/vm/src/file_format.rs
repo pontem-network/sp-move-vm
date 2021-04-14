@@ -60,7 +60,7 @@ macro_rules! define_index {
         kind: $kind: ident,
         doc: $comment: literal,
     } => {
-        #[derive(Clone, Copy, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
+        #[derive(Clone, Copy, Default, Eq, Hash, Ord, PartialEq, PartialOrd, serde::Serialize, serde::Deserialize)]
         #[cfg_attr(any(test, feature = "fuzzing"), derive(Arbitrary))]
         #[cfg_attr(any(test, feature = "fuzzing"), proptest(no_params))]
         #[doc=$comment]

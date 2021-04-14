@@ -12,19 +12,20 @@ use move_core_types::{
     language_storage::ModuleId,
     vm_status::{self, StatusCode, StatusType, VMStatus},
 };
+use serde::{Deserialize, Serialize};
 
 pub type VMResult<T> = ::core::result::Result<T, VMError>;
 pub type BinaryLoaderResult<T> = ::core::result::Result<T, PartialVMError>;
 pub type PartialVMResult<T> = ::core::result::Result<T, PartialVMError>;
 
-#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum Location {
     Undefined,
     Script,
     Module(ModuleId),
 }
 
-#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub struct VMError {
     major_status: StatusCode,
     sub_status: Option<u64>,
