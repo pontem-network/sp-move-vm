@@ -21,6 +21,7 @@ vm = { path = "../language/vm", default-features = false }
 diem-crypto = { path = "../crypto/crypto", default-features = false }
 move-lang = {path = "../language/move-lang", default-features = false }
 bcs = { path = "../bcs", default-features = false }
+log = "0.4.14"
 
 [features]
 default = ["std"]

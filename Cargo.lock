@@ -796,6 +796,7 @@ dependencies = [
  "diem-crypto",
  "hashbrown",
  "hex",
+ "log",
  "move-core-types",
  "move-lang",
  "move-vm-runtime",

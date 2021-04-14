@@ -1,5 +1,6 @@
 use anyhow::Error;
 
+use alloc::borrow::ToOwned;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::gas_schedule::CostTable;
 use move_core_types::gas_schedule::{AbstractMemorySize, GasAlgebra, GasUnits};
@@ -123,7 +124,8 @@ where
                 let status = err.major_status();
                 let sub_status = err.sub_status();
                 if let Err(err) = self.emit_vm_status_event(sender, err.into_vm_status()) {
-                    println!("Failed to emit vm status event:{:?}", err);
+                    VmResult::new(status, sub_status, gas_used);
+                    log::warn!("Failed to emit vm status event:{:?}", err);
                 }
 
                 VmResult::new(status, sub_status, gas_used)
@@ -152,9 +154,10 @@ where
                 AbortLocation::Script => None,
             },
         };
+        let msg = bcs::to_bytes(&status)
+            .map_err(|err| Error::msg(format!("Failed to generate event message: {:?}", err)))?;
 
-        self.event_handler
-            .on_event(sender, tag, bcs::to_bytes(&status)?, module);
+        self.event_handler.on_event(sender, tag, msg, module);
         Ok(())
     }
 }
