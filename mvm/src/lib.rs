@@ -15,9 +15,9 @@ pub mod vm_config;
 
 pub trait Vm {
     /// Publishes module to the chain.
-    fn publish_module(&self, gas: Gas, module: ModuleTx) -> VmResult;
+    fn publish_module(&self, gas: Gas, module: ModuleTx, dry_run: bool) -> VmResult;
     /// Execute script.
-    fn execute_script(&self, gas: Gas, context: ExecutionContext, tx: ScriptTx) -> VmResult;
+    fn execute_script(&self, gas: Gas, context: ExecutionContext, tx: ScriptTx, dry_run: bool) -> VmResult;
     /// Clear vm cache.
     fn clear(&self);
 }
