@@ -94,7 +94,7 @@ where
         let gas_used = GasUnits::new(gas_meta.max_gas_amount)
             .sub(cost_strategy.remaining_gas())
             .get();
-        
+
         if dry_run {
             match result {
                 Ok(_) => {
@@ -165,7 +165,13 @@ where
         self.handle_vm_result(cost_strategy, gas, result, dry_run)
     }
 
-    fn execute_script(&self, gas: Gas, context: ExecutionContext, tx: ScriptTx, dry_run: bool) -> VmResult {
+    fn execute_script(
+        &self,
+        gas: Gas,
+        context: ExecutionContext,
+        tx: ScriptTx,
+        dry_run: bool,
+    ) -> VmResult {
         let state_session = StateSession::new(&self.state, context);
         let mut session = self.vm.new_session(&state_session);
 
