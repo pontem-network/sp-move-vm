@@ -111,7 +111,8 @@ where
     fn exec_with_context(&self, context: ExecutionContext, script: ScriptTx) {
         assert_eq!(
             StatusCode::EXECUTED,
-            self.execute_script(gas(), context, script, false).status_code
+            self.execute_script(gas(), context, script, false)
+                .status_code
         );
     }
 }
