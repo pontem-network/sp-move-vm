@@ -157,11 +157,6 @@ where
                     })
             });
 
-        if dry_run {
-            // clear cache if it's dry_run?
-            self.clear();
-        }
-
         self.handle_vm_result(cost_strategy, gas, result, dry_run)
     }
 
@@ -189,11 +184,6 @@ where
                 &NoContextLog::new(),
             )
             .and_then(|_| session.finish());
-
-        if dry_run {
-            // clear cache if it's dry_run?
-            self.clear();
-        }
 
         self.handle_vm_result(cost_strategy, gas, result, dry_run)
     }
