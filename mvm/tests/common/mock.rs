@@ -104,14 +104,15 @@ where
     fn pub_mod(&self, module: ModuleTx) {
         assert_eq!(
             StatusCode::EXECUTED,
-            self.publish_module(gas(), module).status_code
+            self.publish_module(gas(), module, false).status_code
         );
     }
 
     fn exec_with_context(&self, context: ExecutionContext, script: ScriptTx) {
         assert_eq!(
             StatusCode::EXECUTED,
-            self.execute_script(gas(), context, script,).status_code
+            self.execute_script(gas(), context, script, false)
+                .status_code
         );
     }
 }

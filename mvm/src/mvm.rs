@@ -89,15 +89,27 @@ where
         cost_strategy: CostStrategy,
         gas_meta: Gas,
         result: Result<TransactionEffects, VMError>,
+        dry_run: bool,
     ) -> VmResult {
         let gas_used = GasUnits::new(gas_meta.max_gas_amount)
             .sub(cost_strategy.remaining_gas())
             .get();
 
+        if dry_run {
+            match result {
+                Ok(_) => {
+                    return VmResult::new(StatusCode::EXECUTED, gas_used);
+                }
+                Err(err) => {
+                    return VmResult::new(err.major_status(), gas_used);
+                }
+            }
+        }
+
         match result.and_then(|e| self.handle_tx_effects(e)) {
             Ok(_) => VmResult::new(StatusCode::EXECUTED, gas_used),
             Err(err) => {
-                //todo log error.
+                //TODO: log error.
                 VmResult::new(err.major_status(), gas_used)
             }
         }
@@ -110,7 +122,7 @@ where
     E: EventHandler,
     O: Oracle,
 {
-    fn publish_module(&self, gas: Gas, module: ModuleTx) -> VmResult {
+    fn publish_module(&self, gas: Gas, module: ModuleTx, dry_run: bool) -> VmResult {
         let (module, sender) = module.into_inner();
 
         let mut cost_strategy =
@@ -144,10 +156,17 @@ where
                             .and_then(|_| session.finish())
                     })
             });
-        self.handle_vm_result(cost_strategy, gas, result)
+
+        self.handle_vm_result(cost_strategy, gas, result, dry_run)
     }
 
-    fn execute_script(&self, gas: Gas, context: ExecutionContext, tx: ScriptTx) -> VmResult {
+    fn execute_script(
+        &self,
+        gas: Gas,
+        context: ExecutionContext,
+        tx: ScriptTx,
+        dry_run: bool,
+    ) -> VmResult {
         let state_session = StateSession::new(&self.state, context);
         let mut session = self.vm.new_session(&state_session);
 
@@ -166,7 +185,7 @@ where
             )
             .and_then(|_| session.finish());
 
-        self.handle_vm_result(cost_strategy, gas, result)
+        self.handle_vm_result(cost_strategy, gas, result, dry_run)
     }
 
     fn clear(&self) {
