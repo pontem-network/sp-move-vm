@@ -115,14 +115,10 @@ where
             .get();
 
         if dry_run {
-            match result {
-                Ok(_) => {
-                    return VmResult::new(StatusCode::EXECUTED, gas_used);
-                }
-                Err(err) => {
-                    return VmResult::new(err.major_status(), gas_used);
-                }
-            }
+            return match result {
+                Ok(_) => VmResult::new(StatusCode::EXECUTED, None, gas_used),
+                Err(err) => VmResult::new(err.major_status(), err.sub_status(), gas_used),
+            };
         }
 
         match result.and_then(|e| self.handle_tx_effects(e)) {
