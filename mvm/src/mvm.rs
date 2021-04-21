@@ -1,6 +1,7 @@
+use alloc::borrow::ToOwned;
+
 use anyhow::Error;
 
-use alloc::borrow::ToOwned;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::gas_schedule::CostTable;
 use move_core_types::gas_schedule::{AbstractMemorySize, GasAlgebra, GasUnits};
@@ -122,10 +123,10 @@ where
         if dry_run {
             match result {
                 Ok(_) => {
-                    return VmResult::new(StatusCode::EXECUTED, gas_used);
+                    return VmResult::new(StatusCode::EXECUTED, None, gas_used);
                 }
                 Err(err) => {
-                    return VmResult::new(err.major_status(), gas_used);
+                    return VmResult::new(err.major_status(), err.sub_status(), gas_used);
                 }
             }
         }
