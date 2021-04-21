@@ -4,7 +4,7 @@
 extern crate alloc;
 
 use crate::data::ExecutionContext;
-use crate::types::{Gas, ModuleTx, ScriptTx, VmResult};
+use crate::types::{Gas, ModuleTx, PublishPackageTx, ScriptTx, VmResult};
 
 pub mod access_path;
 pub mod data;
@@ -16,6 +16,13 @@ pub mod vm_config;
 pub trait Vm {
     /// Publishes module to the chain.
     fn publish_module(&self, gas: Gas, module: ModuleTx, dry_run: bool) -> VmResult;
+    /// Publishes package of modules to the chain.
+    fn publish_module_package(
+        &self,
+        gas: Gas,
+        package: PublishPackageTx,
+        dry_run: bool,
+    ) -> VmResult;
     /// Execute script.
     fn execute_script(
         &self,

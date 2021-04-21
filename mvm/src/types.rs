@@ -311,3 +311,37 @@ impl TryFrom<&[u8]> for Transaction {
         bcs::from_bytes(&blob).map_err(Error::msg)
     }
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ModulePackage {
+    modules: Vec<Vec<u8>>,
+}
+
+impl ModulePackage {
+    pub fn into_tx(self, address: AccountAddress) -> PublishPackageTx {
+        PublishPackageTx {
+            modules: self.modules,
+            address,
+        }
+    }
+}
+
+impl TryFrom<&[u8]> for ModulePackage {
+    type Error = Error;
+
+    fn try_from(blob: &[u8]) -> Result<Self, Self::Error> {
+        bcs::from_bytes(&blob).map_err(Error::msg)
+    }
+}
+
+#[derive(Debug)]
+pub struct PublishPackageTx {
+    modules: Vec<Vec<u8>>,
+    address: AccountAddress,
+}
+
+impl PublishPackageTx {
+    pub fn into_inner(self) -> (Vec<Vec<u8>>, AccountAddress) {
+        (self.modules, self.address)
+    }
+}
