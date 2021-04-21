@@ -196,7 +196,12 @@ fn test_error_event() {
     let (vm, _, events, _, _) = vm();
     vm.pub_mod(abort_module());
     let sender = AccountAddress::random();
-    vm.execute_script(gas(), ExecutionContext::new(0, 0), error_script(sender));
+    vm.execute_script(
+        gas(),
+        ExecutionContext::new(0, 0),
+        error_script(sender),
+        false,
+    );
     let event = events.pop().unwrap();
     assert_eq!(sender, event.0);
     assert_eq!(
