@@ -2,6 +2,7 @@ use alloc::borrow::ToOwned;
 
 use anyhow::Error;
 
+use alloc::vec::Vec;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::gas_schedule::CostTable;
 use move_core_types::gas_schedule::{AbstractMemorySize, GasAlgebra, GasUnits};
