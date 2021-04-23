@@ -1,7 +1,7 @@
 use serde::Deserialize;
 
 use move_core_types::account_address::AccountAddress;
-use move_core_types::language_storage::CORE_CODE_ADDRESS;
+use move_core_types::language_storage::{TypeTag, CORE_CODE_ADDRESS};
 use mvm::types::{Gas, ModuleTx, ScriptArg, ScriptTx};
 
 pub fn gas() -> Gas {
@@ -104,7 +104,7 @@ pub fn store_sys_resources_script(
     addr_for_timestamp: AccountAddress,
 ) -> ScriptTx {
     ScriptTx::new(
-        include_bytes!("../assets/target/scripts/2_store_system_resources.mv").to_vec(),
+        include_bytes!("../assets/target/scripts/3_store_system_resources.mv").to_vec(),
         vec![],
         vec![],
         vec![addr_for_block, addr_for_timestamp],
@@ -113,7 +113,7 @@ pub fn store_sys_resources_script(
 
 pub fn store_u64_script(addr: AccountAddress, args: u64) -> ScriptTx {
     ScriptTx::new(
-        include_bytes!("../assets/target/scripts/3_store_u64.mv").to_vec(),
+        include_bytes!("../assets/target/scripts/4_store_u64.mv").to_vec(),
         vec![ScriptArg::U64(args)],
         vec![],
         vec![addr],
@@ -128,7 +128,7 @@ pub fn test_balance_script(
     init_btc: u128,
 ) -> ScriptTx {
     ScriptTx::new(
-        include_bytes!("../assets/target/scripts/4_test_balance.mv").to_vec(),
+        include_bytes!("../assets/target/scripts/5_test_balance.mv").to_vec(),
         vec![
             ScriptArg::U128(init_usdt),
             ScriptArg::U128(init_pont),
@@ -136,6 +136,27 @@ pub fn test_balance_script(
         ],
         vec![],
         vec![addr, addr_2],
+    )
+}
+
+pub fn test_transfer_script(alice: AccountAddress, bob: AccountAddress, amount: u128) -> ScriptTx {
+    ScriptTx::new(
+        include_bytes!("../assets/target/scripts/6_test_balance_transfer.mv").to_vec(),
+        vec![ScriptArg::Address(bob), ScriptArg::U128(amount)],
+        vec![],
+        vec![alice],
+    )
+}
+
+pub fn reg_coin_script(ty: TypeTag, denom: &str, decimals: u8) -> ScriptTx {
+    ScriptTx::new(
+        include_bytes!("../assets/target/scripts/2_register_coin.mv").to_vec(),
+        vec![
+            ScriptArg::VectorU8(denom.as_bytes().to_vec()),
+            ScriptArg::U8(decimals),
+        ],
+        vec![ty],
+        vec![CORE_CODE_ADDRESS],
     )
 }
 
