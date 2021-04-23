@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{data_cache::RemoteCache, runtime::VMRuntime, session::Session};
+use move_vm_types::natives::balance::NativeBalance;
 
 pub struct MoveVM {
     runtime: VMRuntime,
@@ -28,8 +29,12 @@ impl MoveVM {
     ///     cases where this may not be necessary, with the most notable one being the common module
     ///     publishing flow: you can keep using the same Move VM if you publish some modules in a Session
     ///     and apply the effects to the storage when the Session ends.
-    pub fn new_session<'r, R: RemoteCache>(&self, remote: &'r R) -> Session<'r, '_, R> {
-        self.runtime.new_session(remote)
+    pub fn new_session<'r, R: RemoteCache, B: NativeBalance>(
+        &self,
+        remote: &'r R,
+        balance: B,
+    ) -> Session<'r, '_, R, B> {
+        self.runtime.new_session(remote, balance)
     }
 
     /// Clears vm state.

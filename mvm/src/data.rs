@@ -4,8 +4,11 @@ use alloc::vec::Vec;
 
 use move_core_types::account_address::AccountAddress;
 use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS};
+use move_core_types::vm_status::StatusCode;
 use move_vm_runtime::data_cache::RemoteCache;
-use vm::errors::{PartialVMResult, VMResult};
+use move_vm_types::natives::balance::{Balance, NativeBalance, WalletId};
+use move_vm_types::natives::function::PartialVMError;
+use vm::errors::{Location, PartialVMResult, VMError, VMResult};
 
 pub trait Storage {
     /// Returns the data for `key` in the storage or `None` if the key can not be found.
@@ -96,6 +99,7 @@ pub struct OracleView<O: Oracle> {
 }
 
 const PONT: &str = "PONT";
+const COINS: &str = "Coins";
 
 impl<O> OracleView<O>
 where
@@ -195,6 +199,62 @@ impl ExecutionContext {
             timestamp,
             block_height,
         }
+    }
+}
+
+pub trait BalanceAccess {
+    fn get_balance(&self, address: &AccountAddress, ticker: &str) -> Option<Balance>;
+    fn deposit(&self, address: &AccountAddress, ticker: &str, amount: Balance);
+    fn withdraw(&self, address: &AccountAddress, ticker: &str, amount: Balance);
+}
+
+pub struct Bank<B: BalanceAccess> {
+    access: B,
+}
+
+impl<B: BalanceAccess> Bank<B> {
+    pub fn new(access: B) -> Bank<B> {
+        Bank { access }
+    }
+
+    pub fn deposit(&self, wallet_id: &WalletId, amount: Balance) -> Result<(), VMError> {
+        if let Some(ticker) = ticker(wallet_id) {
+            self.access.deposit(&wallet_id.address, ticker, amount);
+            Ok(())
+        } else {
+            Err(PartialVMError::new(StatusCode::INTERNAL_TYPE_ERROR).finish(Location::Undefined))
+        }
+    }
+
+    pub fn withdraw(&self, wallet_id: &WalletId, amount: Balance) -> Result<(), VMError> {
+        if let Some(ticker) = ticker(wallet_id) {
+            self.access.withdraw(&wallet_id.address, ticker, amount);
+            Ok(())
+        } else {
+            Err(PartialVMError::new(StatusCode::INTERNAL_TYPE_ERROR).finish(Location::Undefined))
+        }
+    }
+}
+
+impl<B: BalanceAccess> NativeBalance for &Bank<B> {
+    fn get_balance(&self, wallet_id: &WalletId) -> Option<Balance> {
+        if let Some(ticker) = ticker(wallet_id) {
+            self.access.get_balance(&wallet_id.address, ticker)
+        } else {
+            None
+        }
+    }
+}
+
+fn ticker(wallet_id: &WalletId) -> Option<&str> {
+    if wallet_id.tag.address == CORE_CODE_ADDRESS {
+        match wallet_id.tag.module.as_str() {
+            PONT => Some(PONT),
+            COINS => Some(wallet_id.tag.name.as_str()),
+            _ => None,
+        }
+    } else {
+        None
     }
 }
 

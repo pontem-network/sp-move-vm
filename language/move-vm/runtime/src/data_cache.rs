@@ -1,22 +1,26 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::loader::Loader;
-
 use alloc::collections::btree_map::BTreeMap;
 use alloc::vec::Vec;
+
+use hashbrown::HashMap;
+
 use move_core_types::{
     account_address::AccountAddress,
     language_storage::{ModuleId, StructTag, TypeTag},
     value::MoveTypeLayout,
     vm_status::StatusCode,
 };
+use move_vm_types::natives::balance::{BalanceOperation, MasterOfCoin, NativeBalance, WalletId};
 use move_vm_types::{
     data_store::DataStore,
     loaded_data::runtime_types::Type,
     values::{GlobalValue, GlobalValueEffect, Value},
 };
 use vm::errors::*;
+
+use crate::loader::Loader;
 
 /// Trait for the Move VM to abstract storage operations.
 ///
@@ -73,7 +77,7 @@ impl AccountDataCache {
 /// The Move VM takes a `DataStore` in input and this is the default and correct implementation
 /// for a data store related to a transaction. Clients should create an instance of this type
 /// and pass it to the Move VM.
-pub(crate) struct TransactionDataCache<'r, 'l, R> {
+pub(crate) struct TransactionDataCache<'r, 'l, R, B: NativeBalance> {
     remote: &'r R,
     loader: &'l Loader,
     account_map: BTreeMap<AccountAddress, AccountDataCache>,
@@ -84,6 +88,7 @@ pub(crate) struct TransactionDataCache<'r, 'l, R> {
         Value,
         Option<ModuleId>,
     )>,
+    master_of_coin: MasterOfCoin<B>,
 }
 
 /// Collection of side effects produced by a Session.
@@ -102,17 +107,19 @@ pub struct TransactionEffects {
         Value,
         Option<ModuleId>,
     )>,
+    pub wallet_ops: HashMap<WalletId, BalanceOperation>,
 }
 
-impl<'r, 'l, R: RemoteCache> TransactionDataCache<'r, 'l, R> {
+impl<'r, 'l, R: RemoteCache, B: NativeBalance> TransactionDataCache<'r, 'l, R, B> {
     /// Create a `TransactionDataCache` with a `RemoteCache` that provides access to data
     /// not updated in the transaction.
-    pub(crate) fn new(remote: &'r R, loader: &'l Loader) -> Self {
+    pub(crate) fn new(remote: &'r R, loader: &'l Loader, balance: B) -> Self {
         TransactionDataCache {
             remote,
             loader,
             account_map: BTreeMap::new(),
             event_data: vec![],
+            master_of_coin: MasterOfCoin::new(balance),
         }
     }
 
@@ -167,6 +174,7 @@ impl<'r, 'l, R: RemoteCache> TransactionDataCache<'r, 'l, R> {
             resources,
             modules,
             events,
+            wallet_ops: self.master_of_coin.into(),
         })
     }
 
@@ -195,7 +203,7 @@ impl<'r, 'l, R: RemoteCache> TransactionDataCache<'r, 'l, R> {
 }
 
 // `DataStore` implementation for the `TransactionDataCache`
-impl<'r, 'l, C: RemoteCache> DataStore for TransactionDataCache<'r, 'l, C> {
+impl<'r, 'l, C: RemoteCache, B: NativeBalance> DataStore for TransactionDataCache<'r, 'l, C, B> {
     // Retrieve data from the local cache or loads it from the remote cache into the local cache.
     // All operations on the global data are based on this API and they all load the data
     // into the cache.
@@ -214,7 +222,7 @@ impl<'r, 'l, C: RemoteCache> DataStore for TransactionDataCache<'r, 'l, C> {
                 _ =>
                 // non-struct top-level value; can't happen
                 {
-                    return Err(PartialVMError::new(StatusCode::INTERNAL_TYPE_ERROR))
+                    return Err(PartialVMError::new(StatusCode::INTERNAL_TYPE_ERROR));
                 }
             };
             let ty_layout = self.loader.type_to_type_layout(ty)?;
@@ -317,5 +325,14 @@ impl<'r, 'l, C: RemoteCache> DataStore for TransactionDataCache<'r, 'l, C> {
     ) -> PartialVMResult<()> {
         let ty_layout = self.loader.type_to_type_layout(&ty)?;
         Ok(self.event_data.push((address, ty, ty_layout, val, caller)))
+    }
+
+    fn get_balance(&self, wallet_id: &WalletId) -> Option<u128> {
+        self.master_of_coin.get_balance(wallet_id)
+    }
+
+    fn save_balance_operation(&mut self, wallet_id: WalletId, balance_op: BalanceOperation) {
+        self.master_of_coin
+            .save_balance_operation(wallet_id, balance_op)
     }
 }

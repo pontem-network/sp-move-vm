@@ -12,15 +12,16 @@ use move_core_types::{
     identifier::IdentStr,
     language_storage::{ModuleId, TypeTag},
 };
+use move_vm_types::natives::balance::NativeBalance;
 use move_vm_types::{gas_schedule::CostStrategy, values::Value};
 use vm::errors::*;
 
-pub struct Session<'r, 'l, R> {
+pub struct Session<'r, 'l, R, B: NativeBalance> {
     pub(crate) runtime: &'l VMRuntime,
-    pub(crate) data_cache: TransactionDataCache<'r, 'l, R>,
+    pub(crate) data_cache: TransactionDataCache<'r, 'l, R, B>,
 }
 
-impl<'r, 'l, R: RemoteCache> Session<'r, 'l, R> {
+impl<'r, 'l, R: RemoteCache, B: NativeBalance> Session<'r, 'l, R, B> {
     /// Execute a Move function with the given arguments. This is mainly designed for an external environment
     /// to invoke system logic written in Move.
     ///

@@ -9,6 +9,7 @@ use move_core_types::{
     language_storage::{ModuleId, StructTag, TypeTag},
     vm_status::StatusCode,
 };
+use move_vm_types::natives::balance::{Balance, NativeBalance, WalletId};
 use move_vm_types::{
     gas_schedule::{zero_cost_schedule, CostStrategy},
     values::Value,
@@ -166,6 +167,14 @@ impl RemoteCache for RemoteStore {
     }
 }
 
+struct Bank {}
+
+impl NativeBalance for Bank {
+    fn get_balance(&self, _: &WalletId) -> Option<Balance> {
+        None
+    }
+}
+
 fn call_script_with_args_ty_args_signers(
     script: Vec<u8>,
     args: Vec<Value>,
@@ -174,8 +183,9 @@ fn call_script_with_args_ty_args_signers(
 ) -> VMResult<()> {
     let move_vm = MoveVM::new();
     let remote_view = RemoteStore {};
+    let bank = Bank {};
     let log_context = NoContextLog::new();
-    let mut session = move_vm.new_session(&remote_view);
+    let mut session = move_vm.new_session(&remote_view, bank);
     let cost_table = zero_cost_schedule();
     let mut cost_strategy = CostStrategy::system(&cost_table, GasUnits::new(0));
     session.execute_script(

@@ -23,10 +23,11 @@ use move_core_types::{
 };
 use vm::errors::PartialVMResult;
 
+use crate::natives::balance::{Balance, BalanceOperation, WalletId};
 use alloc::string::String;
 use alloc::vec::Vec;
 use move_core_types::account_address::AccountAddress;
-use move_core_types::language_storage::ModuleId;
+use move_core_types::language_storage::{ModuleId, TypeTag};
 pub use move_core_types::vm_status::StatusCode;
 pub use vm::errors::PartialVMError;
 
@@ -51,10 +52,16 @@ pub trait NativeContext {
     ) -> PartialVMResult<bool>;
     /// Get the a data layout via the type.
     fn type_to_type_layout(&self, ty: &Type) -> PartialVMResult<Option<MoveTypeLayout>>;
+    /// Get the a data tag via the type.
+    fn type_to_type_tag(&self, ty: &Type) -> PartialVMResult<TypeTag>;
     /// Whether a type is a resource or not.
     fn is_resource(&self, ty: &Type) -> bool;
     /// Caller module.
     fn caller(&self) -> Option<&ModuleId>;
+    /// Get user Balance.
+    fn get_balance(&self, wallet_id: &WalletId) -> Option<Balance>;
+    /// Save balance operation.
+    fn save_balance_operation(&mut self, wallet_id: WalletId, balance_op: BalanceOperation);
 }
 
 /// Result of a native function execution requires charges for execution cost.
