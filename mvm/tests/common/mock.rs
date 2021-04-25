@@ -13,7 +13,7 @@ use mvm::Vm;
 
 use crate::common::assets::gas;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct StorageMock {
     pub data: Rc<RefCell<HashMap<Vec<u8>, Vec<u8>>>>,
 }
@@ -152,10 +152,10 @@ where
     B: BalanceAccess,
 {
     fn pub_mod(&self, module: ModuleTx) {
-        assert_eq!(
-            StatusCode::EXECUTED,
-            self.publish_module(gas(), module, false).status_code
-        );
+        let res = self.publish_module(gas(), module, false);
+        if res.status_code != StatusCode::EXECUTED {
+            panic!("Transaction failed: {:?}", res);
+        }
     }
 
     fn exec_with_context(&self, context: ExecutionContext, script: ScriptTx) {
