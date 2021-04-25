@@ -3,7 +3,7 @@ use std::convert::TryFrom;
 use serde::Deserialize;
 
 use move_core_types::account_address::AccountAddress;
-use move_core_types::language_storage::CORE_CODE_ADDRESS;
+use move_core_types::language_storage::{TypeTag, CORE_CODE_ADDRESS};
 use mvm::types::{Gas, ModulePackage, ModuleTx, ScriptArg, ScriptTx};
 
 pub fn gas() -> Gas {
@@ -126,6 +126,27 @@ pub fn store_u64_script(addr: AccountAddress, args: u64) -> ScriptTx {
         vec![ScriptArg::U64(args)],
         vec![],
         vec![addr],
+    )
+}
+
+pub fn test_transfer_script(alice: AccountAddress, bob: AccountAddress, amount: u128) -> ScriptTx {
+    ScriptTx::new(
+        include_bytes!("../assets/target/scripts/test_balance_transfer.mv").to_vec(),
+        vec![ScriptArg::Address(bob), ScriptArg::U128(amount)],
+        vec![],
+        vec![alice],
+    )
+}
+
+pub fn reg_coin_script(ty: TypeTag, denom: &str, decimals: u8) -> ScriptTx {
+    ScriptTx::new(
+        include_bytes!("../assets/target/scripts/register_coin.mv").to_vec(),
+        vec![
+            ScriptArg::VectorU8(denom.as_bytes().to_vec()),
+            ScriptArg::U8(decimals),
+        ],
+        vec![ty],
+        vec![CORE_CODE_ADDRESS],
     )
 }
 
