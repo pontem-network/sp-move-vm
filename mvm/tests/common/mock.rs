@@ -13,7 +13,7 @@ use mvm::Vm;
 
 use crate::common::assets::gas;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct StorageMock {
     pub data: Rc<RefCell<HashMap<Vec<u8>, Vec<u8>>>>,
 }
@@ -52,6 +52,12 @@ impl Storage for StorageMock {
 #[derive(Clone, Default)]
 pub struct EventHandlerMock {
     pub data: Rc<RefCell<Vec<(AccountAddress, TypeTag, Vec<u8>, Option<ModuleId>)>>>,
+}
+
+impl EventHandlerMock {
+    pub fn pop(&self) -> Option<(AccountAddress, TypeTag, Vec<u8>, Option<ModuleId>)> {
+        self.data.borrow_mut().pop()
+    }
 }
 
 impl EventHandler for EventHandlerMock {
@@ -146,10 +152,10 @@ where
     B: BalanceAccess,
 {
     fn pub_mod(&self, module: ModuleTx) {
-        assert_eq!(
-            StatusCode::EXECUTED,
-            self.publish_module(gas(), module, false).status_code
-        );
+        let res = self.publish_module(gas(), module, false);
+        if res.status_code != StatusCode::EXECUTED {
+            panic!("Transaction failed: {:?}", res);
+        }
     }
 
     fn exec_with_context(&self, context: ExecutionContext, script: ScriptTx) {

@@ -1,14 +1,21 @@
+use alloc::borrow::ToOwned;
+
 use anyhow::Error;
 
+use alloc::vec::Vec;
+use move_core_types::account_address::AccountAddress;
 use move_core_types::gas_schedule::CostTable;
 use move_core_types::gas_schedule::{AbstractMemorySize, GasAlgebra, GasUnits};
-use move_core_types::vm_status::StatusCode;
-use move_vm_runtime::data_cache::TransactionEffects;
+use move_core_types::identifier::Identifier;
+use move_core_types::language_storage::{StructTag, TypeTag, CORE_CODE_ADDRESS, NONE_ADDRESS};
+use move_core_types::vm_status::{AbortLocation, StatusCode, VMStatus};
+use move_vm_runtime::data_cache::{RemoteCache, TransactionEffects};
 use move_vm_runtime::logging::NoContextLog;
 use move_vm_runtime::move_vm::MoveVM;
+use move_vm_runtime::session::Session;
 use move_vm_types::gas_schedule::CostStrategy;
-use move_vm_types::natives::balance::BalanceOperation;
-use vm::errors::{Location, PartialVMError, VMError};
+use move_vm_types::natives::balance::{BalanceOperation, NativeBalance};
+use vm::errors::{Location, PartialVMError, VMError, VMResult};
 use vm::CompiledModule;
 
 use crate::data::AccessKey;
@@ -16,7 +23,7 @@ use crate::data::{
     BalanceAccess, Bank, EventHandler, ExecutionContext, Oracle, State, StateSession, Storage,
     WriteEffects,
 };
-use crate::types::{Gas, ModuleTx, ScriptTx, VmResult};
+use crate::types::{Gas, ModuleTx, PublishPackageTx, ScriptTx, VmResult};
 use crate::vm_config::loader::load_vm_config;
 use crate::Vm;
 
@@ -105,6 +112,7 @@ where
     /// Handle vm result and return transaction status code.
     fn handle_vm_result(
         &self,
+        sender: AccountAddress,
         cost_strategy: CostStrategy,
         gas_meta: Gas,
         result: Result<TransactionEffects, VMError>,
@@ -124,27 +132,58 @@ where
         match result.and_then(|e| self.handle_tx_effects(e)) {
             Ok(_) => VmResult::new(StatusCode::EXECUTED, None, gas_used),
             Err(err) => {
-                //TODO: log error.
-                VmResult::new(err.major_status(), err.sub_status(), gas_used)
+                let status = err.major_status();
+                let sub_status = err.sub_status();
+                if let Err(err) = self.emit_vm_status_event(sender, err.into_vm_status()) {
+                    VmResult::new(status, sub_status, gas_used);
+                    log::warn!("Failed to emit vm status event:{:?}", err);
+                }
+
+                VmResult::new(status, sub_status, gas_used)
             }
         }
     }
-}
 
-impl<S, E, O, B> Vm for Mvm<S, E, O, B>
-where
-    S: Storage,
-    E: EventHandler,
-    O: Oracle,
-    B: BalanceAccess,
-{
-    fn publish_module(&self, gas: Gas, module: ModuleTx, dry_run: bool) -> VmResult {
-        let (module, sender) = module.into_inner();
+    fn emit_vm_status_event(&self, sender: AccountAddress, status: VMStatus) -> Result<(), Error> {
+        let tag = TypeTag::Struct(StructTag {
+            address: CORE_CODE_ADDRESS,
+            module: Identifier::new("VMStatus").unwrap(),
+            name: Identifier::new("VMStatus").unwrap(),
+            type_params: vec![],
+        });
 
-        let mut cost_strategy =
-            CostStrategy::transaction(&self.cost_table, GasUnits::new(gas.max_gas_amount()));
+        let module = match &status {
+            VMStatus::Executed | VMStatus::Error(_) => None,
+            VMStatus::MoveAbort(loc, _)
+            | VMStatus::ExecutionFailure {
+                status_code: _,
+                location: loc,
+                function: _,
+                code_offset: _,
+            } => match loc {
+                AbortLocation::Module(module) => Some(module.to_owned()),
+                AbortLocation::Script => None,
+            },
+        };
+        let msg = bcs::to_bytes(&status)
+            .map_err(|err| Error::msg(format!("Failed to generate event message: {:?}", err)))?;
 
-        let result = cost_strategy
+        self.event_handler.on_event(sender, tag, msg, module);
+        Ok(())
+    }
+
+    fn _publish_module<R, NB>(
+        &self,
+        session: &mut Session<'_, '_, R, NB>,
+        module: Vec<u8>,
+        sender: AccountAddress,
+        cost_strategy: &mut CostStrategy,
+    ) -> VMResult<()>
+    where
+        R: RemoteCache,
+        NB: NativeBalance,
+    {
+        cost_strategy
             .charge_intrinsic_gas(AbstractMemorySize::new(module.len() as u64))
             .and_then(|_| {
                 CompiledModule::deserialize(&module)
@@ -161,19 +200,60 @@ where
                         cost_strategy
                             .charge_intrinsic_gas(AbstractMemorySize::new(module.len() as u64))?;
 
-                        let mut session = self.vm.new_session(&self.state, &self.bank);
-                        session
-                            .publish_module(
-                                module.to_vec(),
-                                sender,
-                                &mut cost_strategy,
-                                &NoContextLog::new(),
-                            )
-                            .and_then(|_| session.finish())
+                        session.publish_module(
+                            module.to_vec(),
+                            sender,
+                            cost_strategy,
+                            &NoContextLog::new(),
+                        )
                     })
-            });
+            })
+    }
+}
 
-        self.handle_vm_result(cost_strategy, gas, result, dry_run)
+impl<S, E, O, B> Vm for Mvm<S, E, O, B>
+where
+    S: Storage,
+    E: EventHandler,
+    O: Oracle,
+    B: BalanceAccess,
+{
+    fn publish_module(&self, gas: Gas, module: ModuleTx, dry_run: bool) -> VmResult {
+        let (module, sender) = module.into_inner();
+        let mut cost_strategy =
+            CostStrategy::transaction(&self.cost_table, GasUnits::new(gas.max_gas_amount()));
+        let mut session = self.vm.new_session(&self.state, &self.bank);
+
+        let result = self
+            ._publish_module(&mut session, module, sender, &mut cost_strategy)
+            .and_then(|_| session.finish());
+
+        self.handle_vm_result(sender, cost_strategy, gas, result, dry_run)
+    }
+
+    fn publish_module_package(
+        &self,
+        gas: Gas,
+        package: PublishPackageTx,
+        dry_run: bool,
+    ) -> VmResult {
+        let (modules, sender) = package.into_inner();
+        let mut cost_strategy =
+            CostStrategy::transaction(&self.cost_table, GasUnits::new(gas.max_gas_amount()));
+
+        // We need to create a new vm to publish module packages.
+        // Because during batch publishing, the cache mutates.
+        // This is not the correct behavior for the dry_run case or for rolling back a transaction.
+        let vm = MoveVM::new();
+        let mut session = vm.new_session(&self.state, &self.bank);
+
+        for module in modules {
+            if let Err(err) = self._publish_module(&mut session, module, sender, &mut cost_strategy)
+            {
+                return self.handle_vm_result(sender, cost_strategy, gas, Err(err), dry_run);
+            }
+        }
+        self.handle_vm_result(sender, cost_strategy, gas, session.finish(), dry_run)
     }
 
     fn execute_script(
@@ -187,6 +267,8 @@ where
         let mut session = self.vm.new_session(&state_session, &self.bank);
 
         let (script, args, type_args, senders) = tx.into_inner();
+        let sender = senders.get(0).cloned().unwrap_or(NONE_ADDRESS);
+
         let mut cost_strategy =
             CostStrategy::transaction(&self.cost_table, GasUnits::new(gas.max_gas_amount()));
 
@@ -201,7 +283,7 @@ where
             )
             .and_then(|_| session.finish());
 
-        self.handle_vm_result(cost_strategy, gas, result, dry_run)
+        self.handle_vm_result(sender, cost_strategy, gas, result, dry_run)
     }
 
     fn clear(&self) {

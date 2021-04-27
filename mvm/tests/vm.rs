@@ -6,8 +6,10 @@ use common::{assets::*, mock::*, vm};
 use move_core_types::account_address::AccountAddress;
 use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS};
+use move_core_types::vm_status::StatusCode;
 use move_vm_runtime::data_cache::RemoteCache;
 use mvm::data::{BalanceAccess, ExecutionContext, State};
+use mvm::Vm;
 
 mod common;
 
@@ -155,6 +157,71 @@ fn test_oracle() {
     let blob = state.get_resource(&addr("0x2"), &tag).unwrap().unwrap();
     let store: StoreU128 = bcs::from_bytes(&blob).unwrap();
     assert_eq!(store.val, btc_pont);
+}
+
+#[test]
+fn test_error_event() {
+    let (vm, _, events, _, _) = vm();
+    vm.pub_mod(abort_module());
+    let sender = AccountAddress::random();
+    vm.execute_script(
+        gas(),
+        ExecutionContext::new(0, 0),
+        error_script(sender),
+        false,
+    );
+    let event = events.pop().unwrap();
+    assert_eq!(sender, event.0);
+    assert_eq!(
+        Some(ModuleId::new(
+            CORE_CODE_ADDRESS,
+            Identifier::new("Abort").unwrap()
+        )),
+        event.3
+    );
+}
+
+#[test]
+fn test_publish_pac() {
+    let (vm, state, _, oracle, _) = vm();
+    let state = State::new(state, oracle);
+
+    let pac = stdlib_package().into_tx(CORE_CODE_ADDRESS);
+
+    let res = vm.publish_module_package(gas(), pac, false);
+    if res.status_code != StatusCode::EXECUTED {
+        panic!("Transaction failed: {:?}", res);
+    }
+
+    fn contains_module(state: &State<StorageMock, OracleMock>, name: &str) {
+        if state
+            .get_module(&ModuleId::new(
+                CORE_CODE_ADDRESS,
+                Identifier::new(name).unwrap(),
+            ))
+            .unwrap()
+            .is_none()
+        {
+            panic!("Module {} not found", name);
+        }
+    }
+
+    contains_module(&state, "Block");
+    contains_module(&state, "Coins");
+    contains_module(&state, "PONT");
+    contains_module(&state, "Signer");
+    contains_module(&state, "Time");
+    contains_module(&state, "Event");
+    contains_module(&state, "Pontem");
+    contains_module(&state, "Account");
+}
+
+#[test]
+fn test_invalid_pac() {
+    let (vm, _, _, _, _) = vm();
+    let pac = invalid_package().into_tx(CORE_CODE_ADDRESS);
+    let res = vm.publish_module_package(gas(), pac, false);
+    assert_eq!(res.status_code, StatusCode::LINKER_ERROR);
 }
 
 #[test]
