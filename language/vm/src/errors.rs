@@ -64,8 +64,7 @@ impl VMError {
                 );
                 VMStatus::Error(StatusCode::ABORTED)
             }
-
-            // TODO Errors for OUT_OF_GAS do not always have index set
+            (StatusCode::OUT_OF_GAS, _, _) => VMStatus::Error(StatusCode::OUT_OF_GAS),
             (major_status, sub_status, location)
                 if major_status.status_type() == StatusType::Execution =>
             {

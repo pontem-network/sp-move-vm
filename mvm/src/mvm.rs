@@ -1,8 +1,8 @@
 use alloc::borrow::ToOwned;
+use alloc::vec::Vec;
 
 use anyhow::Error;
 
-use alloc::vec::Vec;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::gas_schedule::CostTable;
 use move_core_types::gas_schedule::{AbstractMemorySize, GasAlgebra, GasUnits};
@@ -16,7 +16,6 @@ use move_vm_runtime::session::Session;
 use move_vm_types::gas_schedule::CostStrategy;
 use move_vm_types::natives::balance::{BalanceOperation, NativeBalance};
 use vm::errors::{Location, PartialVMError, VMError, VMResult};
-use vm::CompiledModule;
 
 use crate::data::AccessKey;
 use crate::data::{
@@ -183,31 +182,37 @@ where
         R: RemoteCache,
         NB: NativeBalance,
     {
+        cost_strategy.charge_intrinsic_gas(AbstractMemorySize::new(module.len() as u64))?;
+
+        let result = session.publish_module(module, sender, cost_strategy, &NoContextLog::new());
+        Self::charge_global_write_gas_usage(cost_strategy, session, &sender)?;
+        result
+    }
+
+    fn charge_global_write_gas_usage<R, NB>(
+        cost_strategy: &mut CostStrategy,
+        session: &mut Session<'_, '_, R, NB>,
+        sender: &AccountAddress,
+    ) -> VMResult<()>
+    where
+        R: RemoteCache,
+        NB: NativeBalance,
+    {
+        let total_cost = session.num_mutated_accounts(sender)
+            * cost_strategy
+                .cost_table()
+                .gas_constants
+                .global_memory_per_byte_write_cost
+                .mul(
+                    cost_strategy
+                        .cost_table()
+                        .gas_constants
+                        .default_account_size,
+                )
+                .get();
         cost_strategy
-            .charge_intrinsic_gas(AbstractMemorySize::new(module.len() as u64))
-            .and_then(|_| {
-                CompiledModule::deserialize(&module)
-                    .map_err(|e| e.finish(Location::Undefined))
-                    .and_then(|compiled_module| {
-                        let module_id = compiled_module.self_id();
-                        if sender != *module_id.address() {
-                            return Err(PartialVMError::new(
-                                StatusCode::MODULE_ADDRESS_DOES_NOT_MATCH_SENDER,
-                            )
-                            .finish(Location::Module(module_id)));
-                        }
-
-                        cost_strategy
-                            .charge_intrinsic_gas(AbstractMemorySize::new(module.len() as u64))?;
-
-                        session.publish_module(
-                            module.to_vec(),
-                            sender,
-                            cost_strategy,
-                            &NoContextLog::new(),
-                        )
-                    })
-            })
+            .deduct_gas(GasUnits::new(total_cost))
+            .map_err(|p_err| p_err.finish(Location::Undefined))
     }
 }
 
@@ -281,9 +286,17 @@ where
                 &mut cost_strategy,
                 &NoContextLog::new(),
             )
-            .and_then(|_| session.finish());
+            .and_then(|_| {
+                Self::charge_global_write_gas_usage(&mut cost_strategy, &mut session, &sender)
+            });
 
-        self.handle_vm_result(sender, cost_strategy, gas, result, dry_run)
+        self.handle_vm_result(
+            sender,
+            cost_strategy,
+            gas,
+            result.and_then(|_| session.finish()),
+            dry_run,
+        )
     }
 
     fn clear(&self) {

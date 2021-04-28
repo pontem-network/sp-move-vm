@@ -9,6 +9,7 @@ use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_
 use move_core_types::vm_status::StatusCode;
 use move_vm_runtime::data_cache::RemoteCache;
 use mvm::data::{BalanceAccess, ExecutionContext, State};
+use mvm::types::Gas;
 use mvm::Vm;
 
 mod common;
@@ -26,6 +27,14 @@ fn test_public_module() {
         &state.get_module(&store_module_id).unwrap().unwrap(),
         store_module().code()
     );
+}
+
+#[test]
+fn test_public_module_without_gas() {
+    let (vm, _, _, _, _) = vm();
+    let gas = Gas::new(1, 1).unwrap();
+    let res = vm.publish_module(gas, store_module(), false);
+    assert_eq!(res.status_code, StatusCode::OUT_OF_GAS);
 }
 
 #[test]
