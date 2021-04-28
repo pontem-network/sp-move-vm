@@ -1,6 +1,7 @@
 use alloc::vec::Vec;
 use anyhow::*;
 use core::convert::TryFrom;
+use core::fmt;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::{StructTag, TypeTag};
@@ -11,7 +12,6 @@ use move_lang::parser::syntax::parse_type;
 use move_vm_types::values::Value;
 use parity_scale_codec::{Decode, Encode};
 use serde::{Deserialize, Serialize};
-use sp_std::fmt;
 
 const GAS_AMOUNT_MAX_VALUE: u64 = u64::MAX / 1000;
 
@@ -145,15 +145,18 @@ impl fmt::Debug for ScriptTx {
 pub struct VmResult {
     /// Execution status code.
     pub status_code: StatusCode,
+    /// Execution sub status code.
+    pub sub_status: Option<u64>,
     /// Gas used.
     pub gas_used: u64,
 }
 
 impl VmResult {
     /// Create new Vm result
-    pub(crate) fn new(status_code: StatusCode, gas_used: u64) -> VmResult {
+    pub(crate) fn new(status_code: StatusCode, sub_status: Option<u64>, gas_used: u64) -> VmResult {
         VmResult {
             status_code,
+            sub_status,
             gas_used,
         }
     }
@@ -306,5 +309,39 @@ impl TryFrom<&[u8]> for Transaction {
 
     fn try_from(blob: &[u8]) -> Result<Self, Self::Error> {
         bcs::from_bytes(&blob).map_err(Error::msg)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ModulePackage {
+    modules: Vec<Vec<u8>>,
+}
+
+impl ModulePackage {
+    pub fn into_tx(self, address: AccountAddress) -> PublishPackageTx {
+        PublishPackageTx {
+            modules: self.modules,
+            address,
+        }
+    }
+}
+
+impl TryFrom<&[u8]> for ModulePackage {
+    type Error = Error;
+
+    fn try_from(blob: &[u8]) -> Result<Self, Self::Error> {
+        bcs::from_bytes(&blob).map_err(Error::msg)
+    }
+}
+
+#[derive(Debug)]
+pub struct PublishPackageTx {
+    modules: Vec<Vec<u8>>,
+    address: AccountAddress,
+}
+
+impl PublishPackageTx {
+    pub fn into_inner(self) -> (Vec<Vec<u8>>, AccountAddress) {
+        (self.modules, self.address)
     }
 }

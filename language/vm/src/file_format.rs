@@ -34,7 +34,9 @@ use crate::{
     IndexKind, SignatureTokenKind,
 };
 use alloc::borrow::ToOwned;
+use alloc::boxed::Box;
 use alloc::string::ToString;
+use alloc::vec::Vec;
 use mirai_annotations::*;
 use move_core_types::{
     account_address::AccountAddress,
@@ -48,8 +50,6 @@ use proptest::{collection::vec, prelude::*, strategy::BoxedStrategy};
 #[cfg(any(test, feature = "fuzzing"))]
 use proptest_derive::Arbitrary;
 use ref_cast::RefCast;
-use sp_std::boxed::Box;
-use sp_std::prelude::Vec;
 
 /// Generic index into one of the tables in the binary format.
 pub type TableIndex = u16;
@@ -60,7 +60,7 @@ macro_rules! define_index {
         kind: $kind: ident,
         doc: $comment: literal,
     } => {
-        #[derive(Clone, Copy, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
+        #[derive(Clone, Copy, Default, Eq, Hash, Ord, PartialEq, PartialOrd, serde::Serialize, serde::Deserialize)]
         #[cfg_attr(any(test, feature = "fuzzing"), derive(Arbitrary))]
         #[cfg_attr(any(test, feature = "fuzzing"), proptest(no_params))]
         #[doc=$comment]

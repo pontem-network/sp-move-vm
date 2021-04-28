@@ -10,7 +10,6 @@ publish = false
 edition = "2018"
 
 [dependencies]
-sp-std = { version = "2.0.1", default-features = false }
 hashbrown = "0.9"
 anyhow = { version = "1.0.34", default-features = false }
 once_cell = { version = "1.5.2", default-features = false, features = ["unstable", "alloc"] }
@@ -22,6 +21,7 @@ num-variants = { path = "../../common/num-variants", default-features = false }
 proptest = { version = "0.10.1", optional = true }
 proptest-derive = { version = "0.2.0", optional = true }
 diem-proptest-helpers = { path = "../../common/proptest-helpers", version = "0.1.0", optional = true }
+serde = { version = "1.0.117", default-features = false, package = "alt_serde", features = ["derive", "alloc"] }
 
 [dev-dependencies]
 proptest = "0.10.1"
@@ -35,7 +35,6 @@ default = ["std"]
 fuzzing = ["proptest", "proptest-derive", "diem-proptest-helpers", "move-core-types/fuzzing"]
 std = [
     "anyhow/std",
-    "sp-std/std",
     "move-core-types/std",
     "diem-crypto/std",
     "num-variants/std",

@@ -16,7 +16,7 @@ serde = { version = "1.0.117", default-features = false, package = "alt_serde", 
 static_assertions = "1.1.0"
 mirai-annotations = { path = "../../mirai-annotations", default-features = false }
 diem-nibble = { path = "../../common/nibble", default-features = false, version = "0.1.0" }
-hex = { version = "0.4.2", default-features = false }
+hex = { version = "0.4.2", default-features = false, features = ["alloc"] }
 cell = { path = "../../common/cell", version = "0.1.0", default-features = false }
 short-hex-str = { path = "../../common/short-hex-str", default-features = false, version = "0.1.0" }
 tiny-keccak = { version = "2.0.2", features = ["sha3"] }

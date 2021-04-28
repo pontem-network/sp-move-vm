@@ -30,6 +30,7 @@ use vm::{
 /// Provide all the proper guarantees about gas charging in the Move VM.
 ///
 /// Every client must use an instance of this type to interact with the Move VM.
+#[derive(Debug)]
 pub struct CostStrategy<'a> {
     cost_table: &'a CostTable,
     gas_left: GasUnits<GasCarrier>,
@@ -324,4 +325,7 @@ pub enum NativeCostIndex {
     U256_DIV = 25,
     U256_SUB = 26,
     U256_ADD = 27,
+    DEPOSIT = 28,
+    WITHDRAW = 29,
+    GET_BALANCE = 30,
 }

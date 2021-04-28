@@ -1,6 +1,7 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::natives::balance::{Balance, BalanceOperation, WalletId};
 use crate::{
     loaded_data::runtime_types::Type,
     values::{GlobalValue, Value},
@@ -49,4 +50,14 @@ pub trait DataStore {
         val: Value,
         caller: Option<ModuleId>,
     ) -> PartialVMResult<()>;
+
+    // ---
+    // Balance operations
+    // ---
+
+    /// Returns the balance by balance id.
+    fn get_balance(&self, wallet_id: &WalletId) -> Option<Balance>;
+
+    /// Save balance operation.
+    fn save_balance_operation(&mut self, wallet_id: WalletId, balance_op: BalanceOperation);
 }

@@ -1,27 +1,30 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    data_cache::{RemoteCache, TransactionDataCache},
-    interpreter::Interpreter,
-    loader::Loader,
-    logging::LogContext,
-    session::Session,
-};
 use alloc::string::ToString;
 use alloc::vec::Vec;
+
 use move_core_types::{
     account_address::AccountAddress,
     identifier::IdentStr,
     language_storage::{ModuleId, TypeTag},
     vm_status::StatusCode,
 };
+use move_vm_types::natives::balance::NativeBalance;
 use move_vm_types::{data_store::DataStore, gas_schedule::CostStrategy, values::Value};
 use vm::{
     access::ModuleAccess,
     errors::{verification_error, Location, PartialVMError, PartialVMResult, VMResult},
     file_format::SignatureToken,
     CompiledModule, IndexKind,
+};
+
+use crate::{
+    data_cache::{RemoteCache, TransactionDataCache},
+    interpreter::Interpreter,
+    loader::Loader,
+    logging::LogContext,
+    session::Session,
 };
 
 /// An instantiation of the MoveVM.
@@ -36,10 +39,14 @@ impl VMRuntime {
         }
     }
 
-    pub fn new_session<'r, R: RemoteCache>(&self, remote: &'r R) -> Session<'r, '_, R> {
+    pub fn new_session<'r, R: RemoteCache, B: NativeBalance>(
+        &self,
+        remote: &'r R,
+        balance: B,
+    ) -> Session<'r, '_, R, B> {
         Session {
             runtime: self,
-            data_cache: TransactionDataCache::new(remote, &self.loader),
+            data_cache: TransactionDataCache::new(remote, &self.loader, balance),
         }
     }
 
