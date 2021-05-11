@@ -167,10 +167,6 @@ impl NativeFunction {
             Self::DepositFromNative => account::native_deposit(ctx, t, v),
             Self::GetNativeBalance => account::get_balance(ctx, t, v),
         };
-        debug_assert!(match &result {
-            Err(e) => e.major_status().status_type() == StatusType::InvariantViolation,
-            Ok(_) => true,
-        });
         result
     }
 }
