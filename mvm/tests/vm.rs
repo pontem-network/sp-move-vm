@@ -218,11 +218,9 @@ fn test_publish_pac() {
     contains_module(&state, "Block");
     contains_module(&state, "Coins");
     contains_module(&state, "PONT");
-    contains_module(&state, "Signer");
     contains_module(&state, "Time");
     contains_module(&state, "Event");
     contains_module(&state, "Pontem");
-    contains_module(&state, "Account");
 }
 
 #[test]
@@ -238,10 +236,8 @@ fn test_balance() {
     let (vm, _, _, _, bank) = vm();
     vm.pub_mod(coins_module());
     vm.pub_mod(pont_module());
-    vm.pub_mod(signer_module());
     vm.pub_mod(event_module());
     vm.pub_mod(pontem_module());
-    vm.pub_mod(account_module());
 
     let addr_1 = AccountAddress::random();
     let addr_2 = AccountAddress::random();
@@ -273,10 +269,8 @@ fn test_transfer() {
 
     vm.pub_mod(coins_module());
     vm.pub_mod(pont_module());
-    vm.pub_mod(signer_module());
     vm.pub_mod(event_module());
     vm.pub_mod(pontem_module());
-    vm.pub_mod(account_module());
 
     vm.exec(reg_coin_script(
         TypeTag::Struct {
@@ -311,8 +305,8 @@ fn test_transfer() {
             &bob,
             &StructTag {
                 address: CORE_CODE_ADDRESS,
-                module: Identifier::new("Account").unwrap(),
-                name: Identifier::new("Balance").unwrap(),
+                module: Identifier::new("Pontem").unwrap(),
+                name: Identifier::new("T").unwrap(),
                 type_params: vec![TypeTag::Struct(StructTag {
                     address: CORE_CODE_ADDRESS,
                     module: Identifier::new("PONT").unwrap(),

@@ -5,7 +5,7 @@ use hashbrown::HashMap;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::language_storage::StructTag;
 
-#[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Hash)]
+#[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Hash, Clone)]
 pub struct WalletId {
     pub address: AccountAddress,
     pub tag: StructTag,
@@ -33,7 +33,14 @@ pub trait NativeBalance {
     fn get_balance(&self, address: &WalletId) -> Option<Balance>;
 }
 
-#[derive(Debug)]
+pub struct ZeroBalance;
+impl NativeBalance for ZeroBalance {
+    fn get_balance(&self, _: &WalletId) -> Option<u128> {
+        None
+    }
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum BalanceOperation {
     Deposit(Balance),
     Withdraw(Balance),
@@ -77,10 +84,7 @@ pub struct MasterOfCoin<B: NativeBalance> {
     bank: HashMap<WalletId, BalanceOperation>,
 }
 
-impl<B> MasterOfCoin<B>
-where
-    B: NativeBalance,
-{
+impl<B: NativeBalance> MasterOfCoin<B> {
     pub fn new(native_balances: B) -> MasterOfCoin<B> {
         MasterOfCoin {
             native_balances,

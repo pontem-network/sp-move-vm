@@ -1,22 +1,22 @@
 script {
-    use 0x1::Account;
     use 0x1::PONT;
     use 0x1::Pontem;
 
-    fun test_balance_transfer(alice: &signer, bob: address, amount: u128) {
-        assert(Account::get_native_balance<PONT::T>(alice) >= amount, 1);
+    fun test_balance_transfer(alice: signer, bob: signer, amount: u128) {
+        Pontem::register_coin<PONT::T>(x"", 2);
+
+        assert(Pontem::get_native_balance<PONT::T>(&alice) >= amount, 1);
         assert(amount > 3, 2);
 
-        let ponts = Account::deposit_native<PONT::T>(alice, amount - 3);
-        Account::deposit(alice, bob, ponts);
+        let ponts_0 = Pontem::deposit_native<PONT::T>(&alice, amount - 3);
+        let ponts_1 = Pontem::deposit_native<PONT::T>(&alice, 1);
+        let ponts_2 = Pontem::deposit_native<PONT::T>(&alice, 1);
+        let ponts_3 = Pontem::deposit_native<PONT::T>(&alice, 1);
 
-        let ponts_1 = Account::deposit_native<PONT::T>(alice, 1);
-        let ponts_2 = Account::deposit_native<PONT::T>(alice, 1);
-        let ponts_3 = Account::deposit_native<PONT::T>(alice, 1);
+        let ponts = Pontem::join(ponts_0, ponts_1);
+        let ponts = Pontem::join(ponts, ponts_2);
+        let ponts = Pontem::join(ponts, ponts_3);
 
-        let ponts_1 = Pontem::join(ponts_1, ponts_2);
-        let ponts = Pontem::join(ponts_1, ponts_3);
-
-        Account::deposit(alice, bob, ponts);
+        Pontem::store(&bob, ponts);
     }
 }

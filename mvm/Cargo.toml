@@ -22,6 +22,7 @@ diem-crypto = { path = "../crypto/crypto", default-features = false }
 move-lang = {path = "../language/move-lang", default-features = false }
 bcs = { path = "../bcs", default-features = false }
 log = { version = "0.4.14", default-features = false }
+sp-core = {version = "3.0.0", default-features = false }
 
 [features]
 default = ["std"]
@@ -33,5 +34,6 @@ std = [
 	"move-vm-runtime/std",
 	"parity-scale-codec/std",
 	"move-lang/std",
-    "log/std"
+    "log/std",
+    "sp-core/std"
 ]

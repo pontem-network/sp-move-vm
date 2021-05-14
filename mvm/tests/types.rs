@@ -1,6 +1,7 @@
 use core::convert::TryFrom;
 use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::{StructTag, TypeTag, CORE_CODE_ADDRESS};
+use move_core_types::value::MoveValue;
 use move_vm_types::values::Value;
 use mvm::types::{parse_type_params, ModulePackage, Transaction};
 use vm::access::ModuleAccess;
@@ -69,7 +70,10 @@ fn test_parse_transaction() {
     assert_eq!(tx.signers_count(), 0);
     let script = tx.into_script(vec![]).unwrap();
     CompiledScript::deserialize(script.code()).unwrap();
-    assert_eq!(script.args(), &[Value::u64(100)][..]);
+    assert_eq!(
+        script.args(),
+        &[MoveValue::U64(100).simple_serialize().unwrap()][..]
+    );
     assert_eq!(
         script.type_parameters(),
         &[TypeTag::Struct(StructTag {
@@ -88,7 +92,10 @@ fn test_parse_mvt() {
     assert_eq!(tx.signers_count(), 1);
     let script = tx.into_script(vec![CORE_CODE_ADDRESS]).unwrap();
     CompiledScript::deserialize(script.code()).unwrap();
-    assert_eq!(script.args(), &[Value::u64(13)][..]);
+    assert_eq!(
+        script.args(),
+        &[MoveValue::U64(13).simple_serialize().unwrap()][..]
+    );
     assert_eq!(script.type_parameters(), &[][..])
 }
 
@@ -121,12 +128,10 @@ fn test_parse_pac() {
         vec![
             "Block".to_owned(),
             "Coins".to_owned(),
-            "PONT".to_owned(),
-            "Signer".to_owned(),
-            "Time".to_owned(),
             "Event".to_owned(),
+            "PONT".to_owned(),
             "Pontem".to_owned(),
-            "Account".to_owned(),
+            "Time".to_owned(),
         ]
     );
 }

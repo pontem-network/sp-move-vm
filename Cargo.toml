@@ -21,4 +21,5 @@ members = [
     "mirai-annotations",
     "common/nibble",
     "common/proptest-helpers",
+    "common/fallible",
 ]

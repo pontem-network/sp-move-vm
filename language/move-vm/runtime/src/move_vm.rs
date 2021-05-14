@@ -5,7 +5,7 @@ use crate::{data_cache::RemoteCache, runtime::VMRuntime, session::Session};
 use move_vm_types::natives::balance::NativeBalance;
 
 pub struct MoveVM {
-    runtime: VMRuntime,
+    pub runtime: VMRuntime,
 }
 
 impl MoveVM {

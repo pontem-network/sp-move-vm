@@ -59,23 +59,9 @@ pub fn event_proxy_module() -> ModuleTx {
     )
 }
 
-pub fn signer_module() -> ModuleTx {
-    ModuleTx::new(
-        include_bytes!("../assets/target/modules/Signer.mv").to_vec(),
-        CORE_CODE_ADDRESS,
-    )
-}
-
 pub fn pontem_module() -> ModuleTx {
     ModuleTx::new(
         include_bytes!("../assets/target/modules/Pontem.mv").to_vec(),
-        CORE_CODE_ADDRESS,
-    )
-}
-
-pub fn account_module() -> ModuleTx {
-    ModuleTx::new(
-        include_bytes!("../assets/target/modules/Account.mv").to_vec(),
         CORE_CODE_ADDRESS,
     )
 }
@@ -94,6 +80,7 @@ pub fn emit_event_script(addr: AccountAddress, args: u64) -> ScriptTx {
         vec![],
         vec![addr],
     )
+    .unwrap()
 }
 
 pub fn get_price_script(
@@ -106,6 +93,7 @@ pub fn get_price_script(
         vec![],
         vec![addr_for_eth_btc, addr_for_btc_pont],
     )
+    .unwrap()
 }
 
 pub fn store_sys_resources_script(
@@ -118,6 +106,7 @@ pub fn store_sys_resources_script(
         vec![],
         vec![addr_for_block, addr_for_timestamp],
     )
+    .unwrap()
 }
 
 pub fn store_u64_script(addr: AccountAddress, args: u64) -> ScriptTx {
@@ -127,15 +116,17 @@ pub fn store_u64_script(addr: AccountAddress, args: u64) -> ScriptTx {
         vec![],
         vec![addr],
     )
+    .unwrap()
 }
 
 pub fn test_transfer_script(alice: AccountAddress, bob: AccountAddress, amount: u128) -> ScriptTx {
     ScriptTx::new(
         include_bytes!("../assets/target/scripts/test_balance_transfer.mv").to_vec(),
-        vec![ScriptArg::Address(bob), ScriptArg::U128(amount)],
+        vec![ScriptArg::U128(amount)],
         vec![],
-        vec![alice],
+        vec![alice, bob],
     )
+    .unwrap()
 }
 
 pub fn reg_coin_script(ty: TypeTag, denom: &str, decimals: u8) -> ScriptTx {
@@ -148,6 +139,7 @@ pub fn reg_coin_script(ty: TypeTag, denom: &str, decimals: u8) -> ScriptTx {
         vec![ty],
         vec![CORE_CODE_ADDRESS],
     )
+    .unwrap()
 }
 
 pub fn error_script(addr: AccountAddress) -> ScriptTx {
@@ -157,6 +149,7 @@ pub fn error_script(addr: AccountAddress) -> ScriptTx {
         vec![],
         vec![addr],
     )
+    .unwrap()
 }
 
 pub fn test_balance_script(
@@ -176,6 +169,7 @@ pub fn test_balance_script(
         vec![],
         vec![addr, addr_2],
     )
+    .unwrap()
 }
 
 pub fn stdlib_package() -> ModulePackage {

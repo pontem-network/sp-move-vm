@@ -5,17 +5,18 @@ use anyhow::Error;
 
 use move_core_types::account_address::AccountAddress;
 use move_core_types::gas_schedule::CostTable;
+use move_core_types::gas_schedule::InternalGasUnits;
 use move_core_types::gas_schedule::{AbstractMemorySize, GasAlgebra, GasUnits};
 use move_core_types::identifier::Identifier;
-use move_core_types::language_storage::{StructTag, TypeTag, CORE_CODE_ADDRESS, NONE_ADDRESS};
+use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS};
 use move_core_types::vm_status::{AbortLocation, StatusCode, VMStatus};
-use move_vm_runtime::data_cache::{RemoteCache, TransactionEffects};
+use move_vm_runtime::data_cache::RemoteCache;
 use move_vm_runtime::logging::NoContextLog;
 use move_vm_runtime::move_vm::MoveVM;
 use move_vm_runtime::session::Session;
 use move_vm_types::gas_schedule::CostStrategy;
-use move_vm_types::natives::balance::{BalanceOperation, NativeBalance};
-use vm::errors::{Location, PartialVMError, VMError, VMResult};
+use move_vm_types::natives::balance::{BalanceOperation, NativeBalance, WalletId};
+use vm::errors::{Location, VMError, VMResult};
 
 use crate::data::AccessKey;
 use crate::data::{
@@ -25,6 +26,8 @@ use crate::data::{
 use crate::types::{Gas, ModuleTx, PublishPackageTx, ScriptTx, VmResult};
 use crate::vm_config::loader::load_vm_config;
 use crate::Vm;
+use hashbrown::HashMap;
+use move_core_types::effects::{ChangeSet, Event};
 
 /// MoveVM.
 pub struct Mvm<S, E, O, B>
@@ -67,38 +70,42 @@ where
     }
 
     /// Stores write set into storage and handle events.
-    fn handle_tx_effects(&self, tx_effects: TransactionEffects) -> Result<(), VMError> {
-        for (addr, vals) in tx_effects.resources {
-            for (struct_tag, val_opt) in vals {
-                let ak = AccessKey::from((&addr, &struct_tag));
-                match val_opt {
+    fn handle_tx_effects(
+        &self,
+        tx_effects: (ChangeSet, Vec<Event>, HashMap<WalletId, BalanceOperation>),
+    ) -> Result<(), VMError> {
+        let (change_set, events, wallet_ops) = tx_effects;
+
+        for (addr, acc) in change_set.accounts {
+            for (ident, val) in acc.modules {
+                let key = AccessKey::from(&ModuleId::new(addr, ident));
+                match val {
                     None => {
-                        self.state.delete(ak);
+                        self.state.delete(key);
                     }
-                    Some((ty_layout, val)) => {
-                        let blob = val.simple_serialize(&ty_layout).ok_or_else(|| {
-                            PartialVMError::new(StatusCode::UNKNOWN_INVARIANT_VIOLATION_ERROR)
-                                .finish(Location::Undefined)
-                        })?;
-                        self.state.insert(ak, blob);
+                    Some(blob) => {
+                        self.state.insert(key, blob);
                     }
-                };
+                }
+            }
+            for (tag, val) in acc.resources {
+                let key = AccessKey::from((&addr, &tag));
+                match val {
+                    None => {
+                        self.state.delete(key);
+                    }
+                    Some(blob) => {
+                        self.state.insert(key, blob);
+                    }
+                }
             }
         }
 
-        for (module_id, blob) in tx_effects.modules {
-            self.state.insert(AccessKey::from(&module_id), blob);
-        }
-
-        for (address, ty_tag, ty_layout, val, caller) in tx_effects.events {
-            let msg = val.simple_serialize(&ty_layout).ok_or_else(|| {
-                PartialVMError::new(StatusCode::UNKNOWN_INVARIANT_VIOLATION_ERROR)
-                    .finish(Location::Undefined)
-            })?;
+        for (address, ty_tag, msg, caller) in events {
             self.event_handler.on_event(address, ty_tag, msg, caller);
         }
 
-        for (id, op) in tx_effects.wallet_ops.into_iter() {
+        for (id, op) in wallet_ops.into_iter() {
             match op {
                 BalanceOperation::Deposit(amount) => self.bank.deposit(&id, amount)?,
                 BalanceOperation::Withdraw(amount) => self.bank.withdraw(&id, amount)?,
@@ -114,7 +121,7 @@ where
         sender: AccountAddress,
         cost_strategy: CostStrategy,
         gas_meta: Gas,
-        result: Result<TransactionEffects, VMError>,
+        result: Result<(ChangeSet, Vec<Event>, HashMap<WalletId, BalanceOperation>), VMError>,
         dry_run: bool,
     ) -> VmResult {
         let gas_used = GasUnits::new(gas_meta.max_gas_amount)
@@ -171,7 +178,7 @@ where
         Ok(())
     }
 
-    fn _publish_module<R, NB>(
+    fn _publish_module<R, NB: NativeBalance>(
         &self,
         session: &mut Session<'_, '_, R, NB>,
         module: Vec<u8>,
@@ -180,7 +187,6 @@ where
     ) -> VMResult<()>
     where
         R: RemoteCache,
-        NB: NativeBalance,
     {
         cost_strategy.charge_intrinsic_gas(AbstractMemorySize::new(module.len() as u64))?;
 
@@ -189,14 +195,13 @@ where
         result
     }
 
-    fn charge_global_write_gas_usage<R, NB>(
+    fn charge_global_write_gas_usage<R, NB: NativeBalance>(
         cost_strategy: &mut CostStrategy,
         session: &mut Session<'_, '_, R, NB>,
         sender: &AccountAddress,
     ) -> VMResult<()>
     where
         R: RemoteCache,
-        NB: NativeBalance,
     {
         let total_cost = session.num_mutated_accounts(sender)
             * cost_strategy
@@ -211,7 +216,7 @@ where
                 )
                 .get();
         cost_strategy
-            .deduct_gas(GasUnits::new(total_cost))
+            .deduct_gas(InternalGasUnits::new(total_cost))
             .map_err(|p_err| p_err.finish(Location::Undefined))
     }
 }
@@ -272,7 +277,7 @@ where
         let mut session = self.vm.new_session(&state_session, &self.bank);
 
         let (script, args, type_args, senders) = tx.into_inner();
-        let sender = senders.get(0).cloned().unwrap_or(NONE_ADDRESS);
+        let sender = senders.get(0).cloned().unwrap_or(AccountAddress::ZERO);
 
         let mut cost_strategy =
             CostStrategy::transaction(&self.cost_table, GasUnits::new(gas.max_gas_amount()));

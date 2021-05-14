@@ -1,8 +1,8 @@
 module Store {
-    resource struct U64 {val: u64}
-    resource struct U128 {val: u128}
-    resource struct Address {val: address}
-    resource struct VectorU8 {val: vector<u8>}
+    struct U64 has copy, key, store, drop {val: u64}
+    struct U128 has copy, key, store, drop {val: u128}
+    struct Address has copy, key, store, drop {val: address}
+    struct VectorU8 has copy, key, store, drop {val: vector<u8>}
 
     public fun store_u64(account: &signer, val: u64) {
         let foo = U64 {val: val};

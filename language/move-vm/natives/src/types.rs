@@ -8,11 +8,7 @@ use vm::errors::PartialVMResult;
 pub fn account_address(value: &ValueImpl) -> PartialVMResult<AccountAddress> {
     fn find_address(container: &Container) -> PartialVMResult<AccountAddress> {
         match container {
-            Container::Locals(values)
-            | Container::VecR(values)
-            | Container::VecC(values)
-            | Container::StructR(values)
-            | Container::StructC(values) => {
+            Container::Locals(values) | Container::Vec(values) | Container::Struct(values) => {
                 let values = values.borrow();
                 if values.len() != 1 {
                     Err(PartialVMError::new(StatusCode::INTERNAL_TYPE_ERROR)
@@ -57,25 +53,25 @@ pub fn account_address(value: &ValueImpl) -> PartialVMResult<AccountAddress> {
 }
 
 pub mod balance {
-    use alloc::rc::Rc;
     use core::cell::RefCell;
 
+    use alloc::rc::Rc;
     use move_core_types::vm_status::StatusCode;
     use move_vm_types::natives::balance::Balance;
     use move_vm_types::natives::function::PartialVMError;
-    use move_vm_types::values::Container::StructR;
+    use move_vm_types::values::Container::Struct;
     use move_vm_types::values::{Value, ValueImpl};
     use vm::errors::PartialVMResult;
 
     pub fn create_balance(amount: Balance) -> Value {
-        Value(ValueImpl::Container(StructR(Rc::new(RefCell::new(vec![
+        Value(ValueImpl::Container(Struct(Rc::new(RefCell::new(vec![
             ValueImpl::U128(amount),
         ])))))
     }
 
     pub fn destroy_balance(val: ValueImpl) -> PartialVMResult<Balance> {
         match val {
-            ValueImpl::Container(StructR(val)) => {
+            ValueImpl::Container(Struct(val)) => {
                 let fields = val.borrow();
                 if fields.len() == 1 {
                     match fields[0] {

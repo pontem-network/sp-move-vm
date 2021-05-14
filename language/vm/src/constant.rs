@@ -3,7 +3,6 @@
 
 use crate::file_format::{Constant, SignatureToken};
 
-use alloc::boxed::Box;
 use move_core_types::value::{MoveTypeLayout, MoveValue};
 
 fn sig_to_ty(sig: &SignatureToken) -> Option<MoveTypeLayout> {

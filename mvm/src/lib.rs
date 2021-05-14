@@ -2,7 +2,7 @@
 
 #[macro_use]
 extern crate alloc;
-
+extern crate sp_core;
 use crate::data::ExecutionContext;
 use crate::types::{Gas, ModuleTx, PublishPackageTx, ScriptTx, VmResult};
 
