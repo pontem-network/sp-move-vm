@@ -13,7 +13,7 @@ use move_core_types::{
     vm_status::{StatusCode, StatusType},
 };
 use move_vm_types::gas_schedule::{zero_cost_schedule, CostStrategy};
-use move_vm_types::natives::balance::{Balance, NativeBalance, WalletId, ZeroBalance};
+use move_vm_types::natives::balance::{Balance, NativeBalance, WalletId};
 use vm::{
     errors::{PartialVMResult, VMResult},
     file_format::{

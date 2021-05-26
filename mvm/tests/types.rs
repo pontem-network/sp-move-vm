@@ -2,7 +2,6 @@ use core::convert::TryFrom;
 use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::{StructTag, TypeTag, CORE_CODE_ADDRESS};
 use move_core_types::value::MoveValue;
-use move_vm_types::values::Value;
 use mvm::types::{parse_type_params, ModulePackage, Transaction};
 use vm::access::ModuleAccess;
 use vm::file_format::CompiledScript;
