@@ -1,7 +1,11 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::loader::Loader;
+use alloc::borrow::ToOwned;
 use alloc::collections::btree_map::BTreeMap;
+use alloc::vec::Vec;
+use hashbrown::HashMap;
 use move_core_types::{
     account_address::AccountAddress,
     effects::{AccountChangeSet, ChangeSet, Event},
@@ -17,9 +21,6 @@ use move_vm_types::{
     values::{GlobalValue, GlobalValueEffect, Value},
 };
 use vm::errors::*;
-
-use crate::loader::Loader;
-use hashbrown::HashMap;
 
 /// Trait for the Move VM to abstract storage operations.
 ///

@@ -5,7 +5,6 @@ use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use anyhow::Result;
 use core::{convert::TryFrom, fmt, str::FromStr};
-use diem_crypto::HashValue;
 use hex::FromHex;
 use parity_scale_codec::{Decode, Encode};
 #[cfg(any(test, feature = "fuzzing"))]

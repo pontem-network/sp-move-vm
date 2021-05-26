@@ -6,7 +6,7 @@ use alloc::collections::BTreeMap;
 use alloc::vec::Vec;
 use core::{fmt::Debug, iter::IntoIterator};
 
-//**************************************************************************************************
+//*******************************************f*******************************************************
 // UniqueMap
 //**************************************************************************************************
 
@@ -194,7 +194,7 @@ impl<K: TName, V: PartialEq> PartialEq for UniqueMap<K, V> {
 impl<K: TName, V: Eq> Eq for UniqueMap<K, V> {}
 
 impl<K: TName, V: PartialOrd> PartialOrd for UniqueMap<K, V> {
-    fn partial_cmp(&self, other: &UniqueMap<K, V>) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(&self, other: &UniqueMap<K, V>) -> Option<core::cmp::Ordering> {
         self.0
             .iter()
             .map(|(k_, loc_v)| {
@@ -208,7 +208,7 @@ impl<K: TName, V: PartialOrd> PartialOrd for UniqueMap<K, V> {
     }
 }
 impl<K: TName, V: Ord> Ord for UniqueMap<K, V> {
-    fn cmp(&self, other: &UniqueMap<K, V>) -> std::cmp::Ordering {
+    fn cmp(&self, other: &UniqueMap<K, V>) -> core::cmp::Ordering {
         self.0
             .iter()
             .map(|(k_, loc_v)| {

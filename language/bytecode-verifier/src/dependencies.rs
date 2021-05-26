@@ -5,6 +5,7 @@
 use crate::binary_views::BinaryIndexedView;
 use alloc::borrow::ToOwned;
 use alloc::collections::{BTreeMap, BTreeSet};
+use alloc::string::ToString;
 use hashbrown::HashMap;
 use move_core_types::vm_status::StatusCode;
 use move_core_types::{identifier::Identifier, language_storage::ModuleId};

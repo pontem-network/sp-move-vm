@@ -13,7 +13,7 @@ use anyhow::{anyhow, Error, Result};
 use core::convert::TryFrom;
 use core::{cmp::Ordering, fmt};
 use mirai_annotations::*;
-use serde::{Serialize, Serializer};
+use serde::Serialize;
 
 /// The length of the Ed25519PrivateKey
 pub const ED25519_PRIVATE_KEY_LENGTH: usize = ed25519_dalek::SECRET_KEY_LENGTH;

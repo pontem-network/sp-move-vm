@@ -8,6 +8,7 @@
 //! `CompiledModule`.
 
 use crate::{file_format::*, file_format_common::*};
+use alloc::vec::Vec;
 use anyhow::{bail, Result};
 use move_core_types::{account_address::AccountAddress, identifier::Identifier};
 

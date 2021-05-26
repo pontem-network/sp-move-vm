@@ -631,7 +631,7 @@ impl Ord for ModuleIdent {
 }
 
 impl Hash for ModuleIdent {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
         self.value.hash(state)
     }
 }

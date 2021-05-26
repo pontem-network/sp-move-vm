@@ -5,6 +5,8 @@ use crate::codespan::Span;
 use crate::location::Loc;
 use crate::{errors::*, parser::syntax::make_loc, FileCommentMap, MatchedFileCommentMap};
 use alloc::collections::BTreeMap;
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
 use core::fmt;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]

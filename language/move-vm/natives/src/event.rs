@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::types::account_address;
+use alloc::collections::VecDeque;
+use alloc::vec::Vec;
 use move_core_types::gas_schedule::GasAlgebra;
 use move_vm_types::values::SignerRef;
 use move_vm_types::{
@@ -11,7 +13,6 @@ use move_vm_types::{
     values::Value,
 };
 use smallvec::smallvec;
-use std::collections::VecDeque;
 use vm::errors::PartialVMResult;
 
 pub fn native_emit_event(

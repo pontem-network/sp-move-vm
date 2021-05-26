@@ -50,6 +50,7 @@ pub struct VMControlFlowGraph {
     blocks: Map<BlockId, BasicBlock>,
 }
 
+#[cfg(feature = "std")]
 impl BasicBlock {
     pub fn display(&self) {
         println!("+=======================+");
@@ -97,6 +98,7 @@ impl VMControlFlowGraph {
         cfg
     }
 
+    #[cfg(feature = "std")]
     pub fn display(&self) {
         for block in self.blocks.values() {
             block.display();

@@ -34,6 +34,10 @@ use crate::{
     internals::ModuleIndex,
     IndexKind, SignatureTokenKind,
 };
+use alloc::borrow::ToOwned;
+use alloc::boxed::Box;
+use alloc::string::ToString;
+use alloc::vec::Vec;
 use core::ops::BitOr;
 use mirai_annotations::*;
 use move_core_types::{
@@ -42,6 +46,7 @@ use move_core_types::{
     language_storage::ModuleId,
     vm_status::StatusCode,
 };
+
 use num_variants::NumVariants;
 #[cfg(any(test, feature = "fuzzing"))]
 use proptest::{collection::vec, prelude::*, strategy::BoxedStrategy};
@@ -404,7 +409,7 @@ impl Default for Visibility {
     }
 }
 
-impl std::convert::TryFrom<u8> for Visibility {
+impl core::convert::TryFrom<u8> for Visibility {
     type Error = ();
 
     fn try_from(v: u8) -> Result<Self, Self::Error> {
@@ -1460,8 +1465,8 @@ pub enum Bytecode {
 
 pub const NUMBER_OF_NATIVE_FUNCTIONS: usize = 18;
 
-impl ::std::fmt::Debug for Bytecode {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+impl ::core::fmt::Debug for Bytecode {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         match self {
             Bytecode::Pop => write!(f, "Pop"),
             Bytecode::Ret => write!(f, "Ret"),

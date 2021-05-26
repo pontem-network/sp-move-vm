@@ -6,8 +6,12 @@ use crate::{
     logging::LogContext,
     native_functions::FunctionContext,
 };
+use alloc::borrow::ToOwned;
 use alloc::collections::VecDeque;
+use alloc::string::String;
+use alloc::string::ToString;
 use alloc::sync::Arc;
+use alloc::vec::Vec;
 use core::{cmp::min, fmt::Write, mem};
 use move_core_types::language_storage::ModuleId;
 use move_core_types::{
@@ -639,7 +643,7 @@ impl CallStack {
     }
 
     /// Push a `Frame` on the call stack.
-    fn push(&mut self, frame: Frame) -> ::std::result::Result<(), Frame> {
+    fn push(&mut self, frame: Frame) -> ::core::result::Result<(), Frame> {
         if self.0.len() < CALL_STACK_SIZE_LIMIT {
             self.0.push(frame);
             Ok(())

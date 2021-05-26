@@ -6,6 +6,7 @@ use crate::{
     logging::LogContext,
     runtime::VMRuntime,
 };
+use alloc::vec::Vec;
 use hashbrown::HashMap;
 use move_core_types::{
     account_address::AccountAddress,

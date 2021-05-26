@@ -225,6 +225,10 @@ impl IdentStr {
     pub fn as_bytes(&self) -> &[u8] {
         self.0.as_bytes()
     }
+
+    fn to_owned(&self) -> Identifier {
+        Identifier(self.0.into())
+    }
 }
 
 impl Borrow<IdentStr> for Identifier {

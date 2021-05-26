@@ -4,6 +4,10 @@
 #[cfg(any(test, feature = "fuzzing"))]
 use crate::cursor::Cursor;
 use crate::{errors::*, file_format::*, file_format_common::*};
+use alloc::boxed::Box;
+use alloc::string::String;
+use alloc::string::ToString;
+use alloc::vec::Vec;
 use core::convert::TryInto;
 use hashbrown::HashSet;
 use move_core_types::{

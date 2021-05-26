@@ -11,6 +11,8 @@
 //! http://dwarfstd.org/Dwarf3Std.php or https://en.wikipedia.org/wiki/LEB128.
 //! It's used to compress mostly indexes into the main binary tables.
 use crate::file_format::Bytecode;
+use alloc::string::ToString;
+use alloc::vec::Vec;
 use anyhow::{bail, Result};
 use core::mem::size_of;
 

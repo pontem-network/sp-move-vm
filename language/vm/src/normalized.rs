@@ -8,7 +8,10 @@ use crate::{
         StructDefinition, StructFieldInformation, TypeParameterIndex, Visibility,
     },
 };
+use alloc::borrow::ToOwned;
+use alloc::boxed::Box;
 use alloc::collections::BTreeMap;
+use alloc::vec::Vec;
 use move_core_types::{
     account_address::AccountAddress,
     identifier::Identifier,

@@ -5,15 +5,17 @@ use crate::{
     file_format::{CodeOffset, FunctionDefinitionIndex, TableIndex},
     IndexKind,
 };
+use alloc::string::String;
+use alloc::vec::Vec;
 use core::fmt;
 use move_core_types::{
     language_storage::ModuleId,
     vm_status::{self, StatusCode, StatusType, VMStatus},
 };
 
-pub type VMResult<T> = ::std::result::Result<T, VMError>;
-pub type BinaryLoaderResult<T> = ::std::result::Result<T, PartialVMError>;
-pub type PartialVMResult<T> = ::std::result::Result<T, PartialVMError>;
+pub type VMResult<T> = ::core::result::Result<T, VMError>;
+pub type BinaryLoaderResult<T> = ::core::result::Result<T, PartialVMError>;
+pub type PartialVMResult<T> = ::core::result::Result<T, PartialVMError>;
 
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub enum Location {

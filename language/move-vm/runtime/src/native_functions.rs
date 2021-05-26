@@ -3,6 +3,8 @@
 
 use crate::{interpreter::Interpreter, loader::Resolver, logging::LogContext};
 use alloc::collections::VecDeque;
+use alloc::string::String;
+use alloc::vec::Vec;
 use move_core_types::language_storage::ModuleId;
 use move_core_types::language_storage::TypeTag;
 use move_core_types::{

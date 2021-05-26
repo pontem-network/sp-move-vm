@@ -3,8 +3,14 @@
 
 use crate::logging::{expect_no_verification_errors, LogContext};
 use crate::native_functions::NativeFunction;
+use alloc::borrow::ToOwned;
+use alloc::boxed::Box;
+use alloc::string::String;
+use alloc::string::ToString;
 use alloc::sync::Arc;
+use alloc::vec::Vec;
 use bytecode_verifier::{self, cyclic_dependencies, dependencies, script_signature};
+use core::cell::RefCell;
 use core::{fmt::Debug, hash::Hash};
 use diem_crypto::HashValue;
 use hashbrown::HashMap;
@@ -18,7 +24,6 @@ use move_vm_types::{
     data_store::DataStore,
     loaded_data::runtime_types::{StructType, Type},
 };
-use std::cell::RefCell;
 use vm::{
     access::{ModuleAccess, ScriptAccess},
     errors::{verification_error, Location, PartialVMError, PartialVMResult, VMResult},

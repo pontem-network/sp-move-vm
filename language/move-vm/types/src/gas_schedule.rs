@@ -99,7 +99,7 @@ impl<'a> CostStrategy<'a> {
         size: AbstractMemorySize<GasCarrier>,
     ) -> PartialVMResult<()> {
         // Make sure that the size is always non-zero
-        let size = size.map(|x| std::cmp::max(1, x));
+        let size = size.map(|x| core::cmp::max(1, x));
         debug_assert!(size.get() > 0);
         self.deduct_gas(
             self.cost_table

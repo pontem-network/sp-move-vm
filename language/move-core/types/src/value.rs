@@ -4,7 +4,7 @@
 use crate::account_address::AccountAddress;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
-use anyhow::Result as AResult;
+use anyhow::{Error, Result as AResult};
 use core::fmt::{self, Debug};
 use serde::{
     de::Error as DeError,
@@ -44,7 +44,7 @@ pub enum MoveTypeLayout {
 
 impl MoveValue {
     pub fn simple_deserialize(blob: &[u8], ty: &MoveTypeLayout) -> AResult<Self> {
-        Ok(bcs::from_bytes_seed(ty, blob)?)
+        Ok(bcs::from_bytes_seed(ty, blob).map_err(Error::msg)?)
     }
 
     pub fn simple_serialize(&self) -> Option<Vec<u8>> {
@@ -74,7 +74,7 @@ impl MoveStruct {
     }
 
     pub fn simple_deserialize(blob: &[u8], ty: &MoveStructLayout) -> AResult<Self> {
-        Ok(bcs::from_bytes_seed(ty, blob)?)
+        Ok(bcs::from_bytes_seed(ty, blob).map_err(Error::msg)?)
     }
 
     pub fn fields(&self) -> &[MoveValue] {

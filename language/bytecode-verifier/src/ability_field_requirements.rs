@@ -4,6 +4,7 @@
 //! This module implements a checker for verifying that all of the struct's fields satisfy the
 //! abilities required by the struct's abilities
 use crate::binary_views;
+use alloc::vec::Vec;
 use binary_views::BinaryIndexedView;
 use move_core_types::vm_status::StatusCode;
 use vm::{

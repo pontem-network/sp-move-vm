@@ -1,4 +1,6 @@
+use alloc::borrow::ToOwned;
 use alloc::collections::VecDeque;
+use alloc::vec::Vec;
 use core::ops::Div;
 use move_core_types::vm_status::StatusCode;
 use move_vm_types::{
