@@ -4,7 +4,7 @@
 use crate::account_address::AccountAddress;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
-use anyhow::{Result as AResult};
+use anyhow::Result as AResult;
 use core::fmt::{self, Debug};
 use serde::{
     de::Error as DeError,

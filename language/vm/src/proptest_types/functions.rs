@@ -10,9 +10,7 @@ use crate::{
         StructDefInstantiation, StructDefInstantiationIndex, StructDefinition,
         StructDefinitionIndex, StructHandle, TableIndex, Visibility,
     },
-    proptest_types::{
-        signature::{AbilitySetGen, SignatureGen, SignatureTokenGen},
-    },
+    proptest_types::signature::{AbilitySetGen, SignatureGen, SignatureTokenGen},
 };
 use alloc::collections::BTreeSet;
 use core::hash::Hash;
