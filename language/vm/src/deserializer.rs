@@ -1,8 +1,6 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-#[cfg(any(test, feature = "fuzzing"))]
-use crate::cursor::Cursor;
 use crate::{errors::*, file_format::*, file_format_common::*};
 use alloc::boxed::Box;
 use alloc::string::String;

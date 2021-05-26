@@ -7,8 +7,6 @@ use anyhow::Result;
 use core::{convert::TryFrom, fmt, str::FromStr};
 use hex::FromHex;
 use parity_scale_codec::{Decode, Encode};
-#[cfg(any(test, feature = "fuzzing"))]
-use proptest_derive::Arbitrary;
 #[cfg(feature = "std")]
 use rand::{rngs::OsRng, Rng};
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize, Serializer};
