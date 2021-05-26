@@ -837,6 +837,9 @@ pub fn load_signature_tokens(
 }
 
 #[cfg(test)]
+use crate::cursor::Cursor;
+
+#[cfg(test)]
 pub fn load_signature_token_test_entry(
     cursor: Cursor<&[u8]>,
 ) -> BinaryLoaderResult<SignatureToken> {
