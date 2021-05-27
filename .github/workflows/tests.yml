@@ -67,7 +67,7 @@ jobs:
           - macos-latest
           - ubuntu-latest
         rust:
-          - "nightly-2020-10-05"
+          - "nightly-2021-04-24"
 
     steps:
       - name: Checkout
