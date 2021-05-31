@@ -21,7 +21,7 @@ bcs = { path = "../../../bcs", default-features = false }
 diem-crypto = { path = "../../../crypto/crypto", default-features = false }
 diem-crypto-derive = { path = "../../../crypto/crypto-derive", default-features = false }
 short-hex-str = { path = "../../../common/short-hex-str", default-features = false }
-parity-scale-codec = { version = "2", features = ["derive"], default-features = false }
+parity-scale-codec = { version = "2", default-features = false }
 parity-scale-codec-derive = { version = "2", default-features = false }
 rand = { version = "0.7.3", default-features = false, optional = true }
 rand_core = { version = "0.5.1", default-features = false, optional = true }
