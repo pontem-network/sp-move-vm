@@ -1,6 +1,6 @@
 use crate::gas_schedule::cost_table;
 use move_core_types::gas_schedule::CostTable;
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec_derive::{Decode, Encode};
 use serde::{Deserialize, Serialize};
 
 /// Defines all the on chain configuration data needed by VM.
