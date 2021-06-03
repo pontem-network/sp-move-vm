@@ -93,9 +93,8 @@ fn test_load_system_resources() {
     let (vm, store, _, _) = vm();
     let state = State::new(store);
 
+    vm.pub_stdlib();
     vm.pub_mod(store_module());
-    vm.pub_mod(time_module());
-    vm.pub_mod(block_module());
 
     let block = 1000;
     let timestamp = 10;

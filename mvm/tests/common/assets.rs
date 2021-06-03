@@ -10,30 +10,9 @@ pub fn gas() -> Gas {
     Gas::new(10_000, 1).unwrap()
 }
 
-pub fn block_module() -> ModuleTx {
-    ModuleTx::new(
-        include_bytes!("../assets/target/modules/DiemBlock.mv").to_vec(),
-        CORE_CODE_ADDRESS,
-    )
-}
-
-pub fn event_module() -> ModuleTx {
-    ModuleTx::new(
-        include_bytes!("../assets/target/modules/Event.mv").to_vec(),
-        CORE_CODE_ADDRESS,
-    )
-}
-
 pub fn store_module() -> ModuleTx {
     ModuleTx::new(
         include_bytes!("../assets/target/modules/Store.mv").to_vec(),
-        CORE_CODE_ADDRESS,
-    )
-}
-
-pub fn time_module() -> ModuleTx {
-    ModuleTx::new(
-        include_bytes!("../assets/target/modules/DiemTimestamp.mv").to_vec(),
         CORE_CODE_ADDRESS,
     )
 }
