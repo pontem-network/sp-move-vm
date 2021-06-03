@@ -3,14 +3,14 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use move_core_types::account_address::AccountAddress;
-use move_core_types::language_storage::{ModuleId, TypeTag};
+use move_core_types::language_storage::{ModuleId, TypeTag, CORE_CODE_ADDRESS};
 use move_core_types::vm_status::StatusCode;
 use mvm::data::{ExecutionContext};
 use mvm::mvm::Mvm;
-use mvm::types::{ModuleTx, ScriptTx};
+use mvm::types::{ModuleTx, ScriptTx, ModulePackage};
 use mvm::Vm;
 
-use crate::common::assets::gas;
+use crate::common::assets::{gas, stdlib_package};
 use mvm::io::traits::{EventHandler, Balance, BalanceAccess, Storage};
 use move_core_types::effects::Event;
 
@@ -117,6 +117,7 @@ impl BalanceAccess for BankMock {
 }
 
 pub trait Utils {
+    fn pub_stdlib(&self);
     fn pub_mod(&self, module: ModuleTx);
     fn exec(&self, script: ScriptTx) {
         self.exec_with_context(ExecutionContext::new(100, 100), script)
@@ -130,6 +131,14 @@ where
     E: EventHandler,
     B: BalanceAccess,
 {
+    fn pub_stdlib(&self) {
+        let pac = stdlib_package().into_tx(CORE_CODE_ADDRESS);
+        let res = self.publish_module_package(gas(), pac, false);
+        if res.status_code != StatusCode::EXECUTED {
+            panic!("Transaction failed: {:?}", res);
+        }
+    }
+
     fn pub_mod(&self, module: ModuleTx) {
         let res = self.publish_module(gas(), module, false);
         if res.status_code != StatusCode::EXECUTED {

@@ -12,14 +12,7 @@ pub fn gas() -> Gas {
 
 pub fn block_module() -> ModuleTx {
     ModuleTx::new(
-        include_bytes!("../assets/target/modules/Block.mv").to_vec(),
-        CORE_CODE_ADDRESS,
-    )
-}
-
-pub fn coins_module() -> ModuleTx {
-    ModuleTx::new(
-        include_bytes!("../assets/target/modules/Coins.mv").to_vec(),
+        include_bytes!("../assets/target/modules/DiemBlock.mv").to_vec(),
         CORE_CODE_ADDRESS,
     )
 }
@@ -40,28 +33,21 @@ pub fn store_module() -> ModuleTx {
 
 pub fn time_module() -> ModuleTx {
     ModuleTx::new(
-        include_bytes!("../assets/target/modules/Time.mv").to_vec(),
+        include_bytes!("../assets/target/modules/DiemTimestamp.mv").to_vec(),
         CORE_CODE_ADDRESS,
     )
 }
 
-pub fn pont_module() -> ModuleTx {
-    ModuleTx::new(
-        include_bytes!("../assets/target/modules/PONT.mv").to_vec(),
-        CORE_CODE_ADDRESS,
-    )
-}
+// pub fn pont_module() -> ModuleTx {
+//     ModuleTx::new(
+//         include_bytes!("../assets/target/modules/PONT.mv").to_vec(),
+//         CORE_CODE_ADDRESS,
+//     )
+// }
 
 pub fn event_proxy_module() -> ModuleTx {
     ModuleTx::new(
         include_bytes!("../assets/target/modules/EventProxy.mv").to_vec(),
-        CORE_CODE_ADDRESS,
-    )
-}
-
-pub fn pontem_module() -> ModuleTx {
-    ModuleTx::new(
-        include_bytes!("../assets/target/modules/Pontem.mv").to_vec(),
         CORE_CODE_ADDRESS,
     )
 }
@@ -83,18 +69,18 @@ pub fn emit_event_script(addr: AccountAddress, args: u64) -> ScriptTx {
     .unwrap()
 }
 
-pub fn get_price_script(
-    addr_for_eth_btc: AccountAddress,
-    addr_for_btc_pont: AccountAddress,
-) -> ScriptTx {
-    ScriptTx::new(
-        include_bytes!("../assets/target/scripts/get_price_test.mv").to_vec(),
-        vec![],
-        vec![],
-        vec![addr_for_eth_btc, addr_for_btc_pont],
-    )
-    .unwrap()
-}
+// pub fn get_price_script(
+//     addr_for_eth_btc: AccountAddress,
+//     addr_for_btc_pont: AccountAddress,
+// ) -> ScriptTx {
+//     ScriptTx::new(
+//         include_bytes!("../assets/target/scripts/get_price_test.mv").to_vec(),
+//         vec![],
+//         vec![],
+//         vec![addr_for_eth_btc, addr_for_btc_pont],
+//     )
+//     .unwrap()
+// }
 
 pub fn store_sys_resources_script(
     addr_for_block: AccountAddress,
@@ -119,28 +105,28 @@ pub fn store_u64_script(addr: AccountAddress, args: u64) -> ScriptTx {
     .unwrap()
 }
 
-pub fn test_transfer_script(alice: AccountAddress, bob: AccountAddress, amount: u128) -> ScriptTx {
-    ScriptTx::new(
-        include_bytes!("../assets/target/scripts/test_balance_transfer.mv").to_vec(),
-        vec![ScriptArg::U128(amount)],
-        vec![],
-        vec![alice, bob],
-    )
-    .unwrap()
-}
+// pub fn test_transfer_script(alice: AccountAddress, bob: AccountAddress, amount: u128) -> ScriptTx {
+//     ScriptTx::new(
+//         include_bytes!("../assets/target/scripts/test_balance_transfer.mv").to_vec(),
+//         vec![ScriptArg::U128(amount)],
+//         vec![],
+//         vec![alice, bob],
+//     )
+//     .unwrap()
+// }
 
-pub fn reg_coin_script(ty: TypeTag, denom: &str, decimals: u8) -> ScriptTx {
-    ScriptTx::new(
-        include_bytes!("../assets/target/scripts/register_coin.mv").to_vec(),
-        vec![
-            ScriptArg::VectorU8(denom.as_bytes().to_vec()),
-            ScriptArg::U8(decimals),
-        ],
-        vec![ty],
-        vec![CORE_CODE_ADDRESS],
-    )
-    .unwrap()
-}
+// pub fn reg_coin_script(ty: TypeTag, denom: &str, decimals: u8) -> ScriptTx {
+//     ScriptTx::new(
+//         include_bytes!("../assets/target/scripts/register_coin.mv").to_vec(),
+//         vec![
+//             ScriptArg::VectorU8(denom.as_bytes().to_vec()),
+//             ScriptArg::U8(decimals),
+//         ],
+//         vec![ty],
+//         vec![CORE_CODE_ADDRESS],
+//     )
+//     .unwrap()
+// }
 
 pub fn error_script(addr: AccountAddress) -> ScriptTx {
     ScriptTx::new(
@@ -152,25 +138,25 @@ pub fn error_script(addr: AccountAddress) -> ScriptTx {
     .unwrap()
 }
 
-pub fn test_balance_script(
-    addr: AccountAddress,
-    addr_2: AccountAddress,
-    init_usdt: u128,
-    init_pont: u128,
-    init_btc: u128,
-) -> ScriptTx {
-    ScriptTx::new(
-        include_bytes!("../assets/target/scripts/test_balance.mv").to_vec(),
-        vec![
-            ScriptArg::U128(init_usdt),
-            ScriptArg::U128(init_pont),
-            ScriptArg::U128(init_btc),
-        ],
-        vec![],
-        vec![addr, addr_2],
-    )
-    .unwrap()
-}
+// pub fn test_balance_script(
+//     addr: AccountAddress,
+//     addr_2: AccountAddress,
+//     init_usdt: u128,
+//     init_pont: u128,
+//     init_btc: u128,
+// ) -> ScriptTx {
+//     ScriptTx::new(
+//         include_bytes!("../assets/target/scripts/test_balance.mv").to_vec(),
+//         vec![
+//             ScriptArg::U128(init_usdt),
+//             ScriptArg::U128(init_pont),
+//             ScriptArg::U128(init_btc),
+//         ],
+//         vec![],
+//         vec![addr, addr_2],
+//     )
+//     .unwrap()
+// }
 
 pub fn stdlib_package() -> ModulePackage {
     ModulePackage::try_from(&include_bytes!("../assets/target/packages/stdlib.pac")[..]).unwrap()
