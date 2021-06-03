@@ -24,7 +24,6 @@ use move_core_types::{
 use smallvec::SmallVec;
 use vm::errors::PartialVMResult;
 
-use crate::natives::balance::{Balance, BalanceOperation, WalletId};
 use alloc::string::String;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::language_storage::{ModuleId, TypeTag};
@@ -46,10 +45,10 @@ pub trait NativeContext {
     /// Saves contract event. Returns true if successful
     fn save_event(
         &mut self,
-        address: AccountAddress,
+        guid: Vec<u8>,
+        count: u64,
         ty: Type,
         val: Value,
-        caller: Option<ModuleId>,
     ) -> PartialVMResult<bool>;
     /// Get the a data layout via the type.
     fn type_to_type_layout(&self, ty: &Type) -> PartialVMResult<Option<MoveTypeLayout>>;
@@ -57,10 +56,6 @@ pub trait NativeContext {
     fn type_to_type_tag(&self, ty: &Type) -> PartialVMResult<TypeTag>;
     /// Caller module.
     fn caller(&self) -> Option<&ModuleId>;
-    /// Get user Balance.
-    fn get_balance(&self, wallet_id: &WalletId) -> Option<Balance>;
-    /// Save balance operation.
-    fn save_balance_operation(&mut self, wallet_id: WalletId, balance_op: BalanceOperation);
 }
 
 /// Result of a native function execution requires charges for execution cost.

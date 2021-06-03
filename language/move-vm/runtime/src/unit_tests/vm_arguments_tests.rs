@@ -13,7 +13,6 @@ use move_core_types::{
     vm_status::{StatusCode, StatusType},
 };
 use move_vm_types::gas_schedule::{zero_cost_schedule, CostStrategy};
-use move_vm_types::natives::balance::{Balance, NativeBalance, WalletId};
 use vm::{
     errors::{PartialVMResult, VMResult},
     file_format::{
@@ -255,12 +254,6 @@ impl RemoteCache for RemoteStore {
 
 struct Bank;
 
-impl NativeBalance for Bank {
-    fn get_balance(&self, _: &WalletId) -> Option<Balance> {
-        None
-    }
-}
-
 fn call_script_with_args_ty_args_signers(
     script: Vec<u8>,
     args: Vec<Vec<u8>>,
@@ -270,7 +263,7 @@ fn call_script_with_args_ty_args_signers(
     let move_vm = MoveVM::new();
     let remote_view = RemoteStore::new();
     let log_context = NoContextLog::new();
-    let mut session = move_vm.new_session(&remote_view, Bank);
+    let mut session = move_vm.new_session(&remote_view);
     let cost_table = zero_cost_schedule();
     let mut cost_strategy = CostStrategy::system(&cost_table, GasUnits::new(0));
     session.execute_script(
@@ -299,7 +292,7 @@ fn call_script_function_with_args_ty_args_signers(
     let id = module.self_id();
     remote_view.add_module(module);
     let log_context = NoContextLog::new();
-    let mut session = move_vm.new_session(&remote_view, Bank);
+    let mut session = move_vm.new_session(&remote_view);
     let cost_table = zero_cost_schedule();
     let mut cost_strategy = CostStrategy::system(&cost_table, GasUnits::new(0));
     session.execute_script_function(
@@ -774,7 +767,7 @@ fn call_missing_item() {
     let move_vm = MoveVM::new();
     let mut remote_view = RemoteStore::new();
     let log_context = NoContextLog::new();
-    let mut session = move_vm.new_session(&remote_view, Bank);
+    let mut session = move_vm.new_session(&remote_view);
     let cost_table = zero_cost_schedule();
     let mut cost_strategy = CostStrategy::system(&cost_table, GasUnits::new(0));
     let error = session
@@ -794,7 +787,7 @@ fn call_missing_item() {
 
     // missing function
     remote_view.add_module(module);
-    let mut session = move_vm.new_session(&remote_view, Bank);
+    let mut session = move_vm.new_session(&remote_view);
     let error = session
         .execute_script_function(
             id,

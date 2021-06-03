@@ -6,56 +6,33 @@ use move_core_types::account_address::AccountAddress;
 use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS};
 use move_core_types::vm_status::StatusCode;
 use move_vm_runtime::data_cache::RemoteCache;
-use move_vm_types::natives::balance::{Balance, NativeBalance, WalletId};
 use move_vm_types::natives::function::PartialVMError;
 use vm::errors::{Location, PartialVMResult, VMError, VMResult};
-
-pub trait Storage {
-    /// Returns the data for `key` in the storage or `None` if the key can not be found.
-    fn get(&self, key: &[u8]) -> Option<Vec<u8>>;
-    /// Set `key` to `value` in the storage.
-    fn insert(&self, key: &[u8], value: &[u8]);
-    /// Clear the storage of the given `key` and its value.
-    fn remove(&self, key: &[u8]);
-}
+use crate::io::traits::{Storage, BalanceAccess};
 
 pub trait WriteEffects {
     fn delete(&self, path: AccessKey);
     fn insert(&self, path: AccessKey, blob: Vec<u8>);
 }
 
-pub struct State<S, O: Oracle> {
+pub struct State<S> {
     store: S,
-    oracle: OracleView<O>,
 }
 
-pub trait EventHandler {
-    fn on_event(
-        &self,
-        address: AccountAddress,
-        ty_tag: TypeTag,
-        message: Vec<u8>,
-        caller: Option<ModuleId>,
-    );
-}
-
-impl<S, O> State<S, O>
+impl<S> State<S>
 where
     S: Storage,
-    O: Oracle,
 {
-    pub fn new(store: S, oracle: O) -> State<S, O> {
+    pub fn new(store: S) -> State<S> {
         State {
             store,
-            oracle: OracleView::new(oracle),
         }
     }
 }
 
-impl<S, O> RemoteCache for State<S, O>
+impl<S> RemoteCache for State<S>
 where
     S: Storage,
-    O: Oracle,
 {
     fn get_module(&self, module_id: &ModuleId) -> VMResult<Option<Vec<u8>>> {
         Ok(self.store.get(AccessKey::from(module_id).as_ref()))
@@ -66,20 +43,19 @@ where
         address: &AccountAddress,
         tag: &StructTag,
     ) -> PartialVMResult<Option<Vec<u8>>> {
-        if address == &CORE_CODE_ADDRESS {
-            if let Some(ticker) = self.oracle.get_ticker(tag) {
-                return Ok(self.oracle.get_price(&ticker));
-            }
-        }
+        // if address == &CORE_CODE_ADDRESS {
+        //     if let Some(ticker) = self.oracle.get_ticker(tag) {
+        //         return Ok(self.oracle.get_price(&ticker));
+        //     }
+        // }
 
         Ok(self.store.get(AccessKey::from((address, tag)).as_ref()))
     }
 }
 
-impl<S, O> WriteEffects for State<S, O>
+impl<S> WriteEffects for State<S>
 where
     S: Storage,
-    O: Oracle,
 {
     fn delete(&self, key: AccessKey) {
         self.store.remove(key.as_ref());
@@ -90,64 +66,8 @@ where
     }
 }
 
-pub trait Oracle {
-    fn get_price(&self, ticker: &str) -> Option<u128>;
-}
-
-pub struct OracleView<O: Oracle> {
-    oracle: O,
-}
-
 const PONT: &str = "PONT";
 const COINS: &str = "Coins";
-
-impl<O> OracleView<O>
-where
-    O: Oracle,
-{
-    pub fn new(oracle: O) -> OracleView<O> {
-        OracleView { oracle }
-    }
-
-    pub fn get_ticker(&self, tag: &StructTag) -> Option<String> {
-        fn extract_name(tag: &TypeTag) -> Option<String> {
-            match tag {
-                TypeTag::Struct(tg) => Some(if tg.module.as_str() == PONT {
-                    PONT.to_owned()
-                } else {
-                    tg.name.as_str().to_owned()
-                }),
-                _ => None,
-            }
-        }
-
-        if tag.address == CORE_CODE_ADDRESS
-            && tag.module.as_str() == "Coins"
-            && tag.name.as_str() == "Price"
-        {
-            if tag.type_params.len() == 2 {
-                let first_part = extract_name(&tag.type_params[0])?;
-                let second_part = extract_name(&tag.type_params[1])?;
-
-                Some(format!(
-                    "{}_{}",
-                    first_part.to_uppercase(),
-                    second_part.to_uppercase()
-                ))
-            } else {
-                None
-            }
-        } else {
-            None
-        }
-    }
-
-    pub fn get_price(&self, ticker: &str) -> Option<Vec<u8>> {
-        self.oracle
-            .get_price(ticker)
-            .map(|price| price.to_le_bytes().to_vec())
-    }
-}
 
 pub struct StateSession<'r, R: RemoteCache> {
     remote: &'r R,
@@ -202,12 +122,6 @@ impl ExecutionContext {
     }
 }
 
-pub trait BalanceAccess {
-    fn get_balance(&self, address: &AccountAddress, ticker: &str) -> Option<Balance>;
-    fn deposit(&self, address: &AccountAddress, ticker: &str, amount: Balance);
-    fn withdraw(&self, address: &AccountAddress, ticker: &str, amount: Balance);
-}
-
 pub struct Bank<B: BalanceAccess> {
     access: B,
 }
@@ -216,47 +130,48 @@ impl<B: BalanceAccess> Bank<B> {
     pub fn new(access: B) -> Bank<B> {
         Bank { access }
     }
-
-    pub fn deposit(&self, wallet_id: &WalletId, amount: Balance) -> Result<(), VMError> {
-        if let Some(ticker) = ticker(wallet_id) {
-            self.access.deposit(&wallet_id.address, ticker, amount);
-            Ok(())
-        } else {
-            Err(PartialVMError::new(StatusCode::INTERNAL_TYPE_ERROR).finish(Location::Undefined))
-        }
-    }
-
-    pub fn withdraw(&self, wallet_id: &WalletId, amount: Balance) -> Result<(), VMError> {
-        if let Some(ticker) = ticker(wallet_id) {
-            self.access.withdraw(&wallet_id.address, ticker, amount);
-            Ok(())
-        } else {
-            Err(PartialVMError::new(StatusCode::INTERNAL_TYPE_ERROR).finish(Location::Undefined))
-        }
-    }
 }
-
-impl<B: BalanceAccess> NativeBalance for &Bank<B> {
-    fn get_balance(&self, wallet_id: &WalletId) -> Option<Balance> {
-        if let Some(ticker) = ticker(wallet_id) {
-            self.access.get_balance(&wallet_id.address, ticker)
-        } else {
-            None
-        }
-    }
-}
-
-fn ticker(wallet_id: &WalletId) -> Option<&str> {
-    if wallet_id.tag.address == CORE_CODE_ADDRESS {
-        match wallet_id.tag.module.as_str() {
-            PONT => Some(PONT),
-            COINS => Some(wallet_id.tag.name.as_str()),
-            _ => None,
-        }
-    } else {
-        None
-    }
-}
+//
+//     pub fn deposit(&self, wallet_id: &WalletId, amount: Balance) -> Result<(), VMError> {
+//         if let Some(ticker) = ticker(wallet_id) {
+//             self.access.deposit(&wallet_id.address, ticker, amount);
+//             Ok(())
+//         } else {
+//             Err(PartialVMError::new(StatusCode::INTERNAL_TYPE_ERROR).finish(Location::Undefined))
+//         }
+//     }
+//
+//     pub fn withdraw(&self, wallet_id: &WalletId, amount: Balance) -> Result<(), VMError> {
+//         if let Some(ticker) = ticker(wallet_id) {
+//             self.access.withdraw(&wallet_id.address, ticker, amount);
+//             Ok(())
+//         } else {
+//             Err(PartialVMError::new(StatusCode::INTERNAL_TYPE_ERROR).finish(Location::Undefined))
+//         }
+//     }
+// }
+//
+// impl<B: BalanceAccess> NativeBalance for &Bank<B> {
+//     fn get_balance(&self, wallet_id: &WalletId) -> Option<Balance> {
+//         if let Some(ticker) = ticker(wallet_id) {
+//             self.access.get_balance(&wallet_id.address, ticker)
+//         } else {
+//             None
+//         }
+//     }
+// }
+//
+// fn ticker(wallet_id: &WalletId) -> Option<&str> {
+//     if wallet_id.tag.address == CORE_CODE_ADDRESS {
+//         match wallet_id.tag.module.as_str() {
+//             PONT => Some(PONT),
+//             COINS => Some(wallet_id.tag.name.as_str()),
+//             _ => None,
+//         }
+//     } else {
+//         None
+//     }
+// }
 
 pub struct AccessKey(Vec<u8>);
 

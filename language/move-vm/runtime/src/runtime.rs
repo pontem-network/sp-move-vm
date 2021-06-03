@@ -17,7 +17,6 @@ use move_core_types::{
     value::{MoveTypeLayout, MoveValue},
     vm_status::StatusCode,
 };
-use move_vm_types::natives::balance::NativeBalance;
 use move_vm_types::{
     data_store::DataStore, gas_schedule::CostStrategy, loaded_data::runtime_types::Type,
     values::Value,
@@ -50,14 +49,13 @@ impl VMRuntime {
         }
     }
 
-    pub fn new_session<'r, R: RemoteCache, B: NativeBalance>(
+    pub fn new_session<'r, R: RemoteCache>(
         &self,
         remote: &'r R,
-        balance: B,
-    ) -> Session<'r, '_, R, B> {
+    ) -> Session<'r, '_, R> {
         Session {
             runtime: self,
-            data_cache: TransactionDataCache::new(remote, &self.loader, balance),
+            data_cache: TransactionDataCache::new(remote, &self.loader),
         }
     }
 

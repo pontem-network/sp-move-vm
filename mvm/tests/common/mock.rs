@@ -5,13 +5,14 @@ use std::rc::Rc;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::language_storage::{ModuleId, TypeTag};
 use move_core_types::vm_status::StatusCode;
-use move_vm_types::natives::balance::Balance;
-use mvm::data::{BalanceAccess, EventHandler, ExecutionContext, Oracle, Storage};
+use mvm::data::{ExecutionContext};
 use mvm::mvm::Mvm;
 use mvm::types::{ModuleTx, ScriptTx};
 use mvm::Vm;
 
 use crate::common::assets::gas;
+use mvm::io::traits::{EventHandler, Balance, BalanceAccess, Storage};
+use move_core_types::effects::Event;
 
 #[derive(Clone, Debug)]
 pub struct StorageMock {
@@ -51,11 +52,11 @@ impl Storage for StorageMock {
 
 #[derive(Clone, Default)]
 pub struct EventHandlerMock {
-    pub data: Rc<RefCell<Vec<(AccountAddress, TypeTag, Vec<u8>, Option<ModuleId>)>>>,
+    pub data: Rc<RefCell<Vec<Event>>>,
 }
 
 impl EventHandlerMock {
-    pub fn pop(&self) -> Option<(AccountAddress, TypeTag, Vec<u8>, Option<ModuleId>)> {
+    pub fn pop(&self) -> Option<Event> {
         self.data.borrow_mut().pop()
     }
 }
@@ -63,34 +64,13 @@ impl EventHandlerMock {
 impl EventHandler for EventHandlerMock {
     fn on_event(
         &self,
-        address: AccountAddress,
+        guid: Vec<u8>,
+        seq_num: u64,
         ty_tag: TypeTag,
         message: Vec<u8>,
-        caller: Option<ModuleId>,
     ) {
         let mut data = self.data.borrow_mut();
-        data.push((address, ty_tag, message, caller));
-    }
-}
-
-#[derive(Clone, Default)]
-pub struct OracleMock {
-    price_map: Rc<RefCell<HashMap<String, u128>>>,
-}
-
-impl OracleMock {
-    pub fn set_price(&self, ticker: &str, price: u128) {
-        self.price_map.borrow_mut().insert(ticker.to_owned(), price);
-    }
-
-    pub fn remove_price(&self, ticker: &str) {
-        self.price_map.borrow_mut().remove(ticker);
-    }
-}
-
-impl Oracle for OracleMock {
-    fn get_price(&self, ticker: &str) -> Option<u128> {
-        self.price_map.borrow().get(ticker).cloned()
+        data.push((guid, seq_num, ty_tag, message));
     }
 }
 
@@ -144,11 +124,10 @@ pub trait Utils {
     fn exec_with_context(&self, context: ExecutionContext, script: ScriptTx);
 }
 
-impl<S, E, O, B> Utils for Mvm<S, E, O, B>
+impl<S, E, B> Utils for Mvm<S, E, B>
 where
     S: Storage,
     E: EventHandler,
-    O: Oracle,
     B: BalanceAccess,
 {
     fn pub_mod(&self, module: ModuleTx) {

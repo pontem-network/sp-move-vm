@@ -8,6 +8,7 @@ use crate::types::{Gas, ModuleTx, PublishPackageTx, ScriptTx, VmResult};
 
 pub mod access_path;
 pub mod data;
+pub mod io;
 pub mod gas_schedule;
 pub mod mvm;
 pub mod types;

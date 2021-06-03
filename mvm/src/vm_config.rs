@@ -19,7 +19,6 @@ impl Default for VmConfig {
 
 pub mod loader {
     use crate::access_path::AccessPath;
-    use crate::data::Storage;
     use crate::vm_config::VmConfig;
     use alloc::vec::Vec;
     use anyhow::{Error, Result};
@@ -27,6 +26,7 @@ pub mod loader {
     use move_core_types::identifier::Identifier;
     use move_core_types::language_storage::StructTag;
     use parity_scale_codec::{Decode, Encode};
+    use crate::io::traits::Storage;
 
     const IDENTIFIER: &str = "MVMConfig";
     const CONFIG_ADDRESS_STR: &str = "0xA550C18";

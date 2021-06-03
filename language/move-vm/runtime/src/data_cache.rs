@@ -14,7 +14,6 @@ use move_core_types::{
     value::MoveTypeLayout,
     vm_status::StatusCode,
 };
-use move_vm_types::natives::balance::{BalanceOperation, MasterOfCoin, NativeBalance, WalletId};
 use move_vm_types::{
     data_store::DataStore,
     loaded_data::runtime_types::Type,
@@ -77,30 +76,22 @@ impl AccountDataCache {
 /// The Move VM takes a `DataStore` in input and this is the default and correct implementation
 /// for a data store related to a transaction. Clients should create an instance of this type
 /// and pass it to the Move VM.
-pub struct TransactionDataCache<'r, 'l, R, B: NativeBalance> {
+pub struct TransactionDataCache<'r, 'l, R> {
     pub remote: &'r R,
     pub loader: &'l Loader,
     pub account_map: BTreeMap<AccountAddress, AccountDataCache>,
-    pub event_data: Vec<(
-        AccountAddress,
-        Type,
-        MoveTypeLayout,
-        Value,
-        Option<ModuleId>,
-    )>,
-    pub master_of_coin: MasterOfCoin<B>,
+    pub event_data: Vec<(Vec<u8>, u64, Type, MoveTypeLayout, Value)>,
 }
 
-impl<'r, 'l, R: RemoteCache, B: NativeBalance> TransactionDataCache<'r, 'l, R, B> {
+impl<'r, 'l, R: RemoteCache> TransactionDataCache<'r, 'l, R> {
     /// Create a `TransactionDataCache` with a `RemoteCache` that provides access to data
     /// not updated in the transaction.
-    pub(crate) fn new(remote: &'r R, loader: &'l Loader, balance: B) -> Self {
+    pub(crate) fn new(remote: &'r R, loader: &'l Loader) -> Self {
         TransactionDataCache {
             remote,
             loader,
             account_map: BTreeMap::new(),
             event_data: vec![],
-            master_of_coin: MasterOfCoin::new(balance),
         }
     }
 
@@ -110,7 +101,7 @@ impl<'r, 'l, R: RemoteCache, B: NativeBalance> TransactionDataCache<'r, 'l, R, B
     /// Gives all proper guarantees on lifetime of global data as well.
     pub(crate) fn into_effects(
         self,
-    ) -> PartialVMResult<(ChangeSet, Vec<Event>, HashMap<WalletId, BalanceOperation>)> {
+    ) -> PartialVMResult<(ChangeSet, Vec<Event>)> {
         let mut account_changesets = BTreeMap::new();
         for (addr, account_data_cache) in self.account_map.into_iter() {
             let mut modules = BTreeMap::new();
@@ -146,19 +137,18 @@ impl<'r, 'l, R: RemoteCache, B: NativeBalance> TransactionDataCache<'r, 'l, R, B
         }
 
         let mut events = vec![];
-        for (addr, ty, ty_layout, val, caller) in self.event_data {
+        for (guid, seq_num, ty, ty_layout, val) in self.event_data {
             let ty_tag = self.loader.type_to_type_tag(&ty)?;
             let blob = val
                 .simple_serialize(&ty_layout)
                 .ok_or_else(|| PartialVMError::new(StatusCode::INTERNAL_TYPE_ERROR))?;
-            events.push((addr, ty_tag, blob, caller))
+            events.push((guid, seq_num, ty_tag, blob))
         }
         Ok((
             ChangeSet {
                 accounts: account_changesets,
             },
             events,
-            self.master_of_coin.into(),
         ))
     }
 
@@ -187,7 +177,7 @@ impl<'r, 'l, R: RemoteCache, B: NativeBalance> TransactionDataCache<'r, 'l, R, B
 }
 
 // `DataStore` implementation for the `TransactionDataCache`
-impl<'r, 'l, C: RemoteCache, B: NativeBalance> DataStore for TransactionDataCache<'r, 'l, C, B> {
+impl<'r, 'l, C: RemoteCache> DataStore for TransactionDataCache<'r, 'l, C> {
     // Retrieve data from the local cache or loads it from the remote cache into the local cache.
     // All operations on the global data are based on this API and they all load the data
     // into the cache.
@@ -303,21 +293,12 @@ impl<'r, 'l, C: RemoteCache, B: NativeBalance> DataStore for TransactionDataCach
     #[allow(clippy::unit_arg)]
     fn emit_event(
         &mut self,
-        address: AccountAddress,
+        guid: Vec<u8>,
+        seq_num: u64,
         ty: Type,
         val: Value,
-        caller: Option<ModuleId>,
     ) -> PartialVMResult<()> {
         let ty_layout = self.loader.type_to_type_layout(&ty)?;
-        Ok(self.event_data.push((address, ty, ty_layout, val, caller)))
-    }
-
-    fn get_balance(&self, wallet_id: &WalletId) -> Option<u128> {
-        self.master_of_coin.get_balance(wallet_id)
-    }
-
-    fn save_balance_operation(&mut self, wallet_id: WalletId, balance_op: BalanceOperation) {
-        self.master_of_coin
-            .save_balance_operation(wallet_id, balance_op)
+        Ok(self.event_data.push((guid, seq_num, ty, ty_layout, val)))
     }
 }

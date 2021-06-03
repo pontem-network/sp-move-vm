@@ -8,16 +8,17 @@ use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS};
 use move_core_types::vm_status::StatusCode;
 use move_vm_runtime::data_cache::RemoteCache;
-use mvm::data::{BalanceAccess, ExecutionContext, State};
+use mvm::data::{ExecutionContext, State};
 use mvm::types::Gas;
 use mvm::Vm;
+use mvm::io::traits::BalanceAccess;
 
 mod common;
 
 #[test]
 fn test_public_module() {
-    let (vm, store, _, oracle, _) = vm();
-    let state = State::new(store, oracle);
+    let (vm, store, _, _) = vm();
+    let state = State::new(store);
 
     vm.pub_mod(store_module());
 
@@ -31,7 +32,7 @@ fn test_public_module() {
 
 #[test]
 fn test_public_module_without_gas() {
-    let (vm, _, _, _, _) = vm();
+    let (vm, _, _, _) = vm();
     let gas = Gas::new(1, 1).unwrap();
     let res = vm.publish_module(gas, store_module(), false);
     assert_eq!(res.status_code, StatusCode::OUT_OF_GAS);
@@ -41,8 +42,8 @@ fn test_public_module_without_gas() {
 fn test_execute_script() {
     let test_value = 13;
 
-    let (vm, store, _, oracle, _) = vm();
-    let state = State::new(store, oracle);
+    let (vm, store, _, _) = vm();
+    let state = State::new(store);
 
     vm.pub_mod(store_module());
 
@@ -61,54 +62,54 @@ fn test_execute_script() {
     let store: StoreU64 = bcs::from_bytes(&blob).unwrap();
     assert_eq!(test_value, store.val);
 }
-
-#[test]
-fn test_store_event() {
-    let test_value = 13;
-
-    let (vm, _, event, _, _) = vm();
-
-    vm.pub_mod(event_module());
-    vm.pub_mod(event_proxy_module());
-
-    vm.exec(emit_event_script(addr("0x1"), test_value));
-
-    let (address, tag, msg, caller) = event.data.borrow_mut().remove(0);
-    assert_eq!(address, addr("0x1"));
-    assert_eq!(test_value, bcs::from_bytes::<StoreU64>(&msg).unwrap().val);
-    assert_eq!(
-        caller.unwrap(),
-        ModuleId::new(addr("0x1"), Identifier::new("EventProxy").unwrap())
-    );
-    assert_eq!(
-        TypeTag::Struct(StructTag {
-            address: CORE_CODE_ADDRESS,
-            module: Identifier::new("EventProxy").unwrap(),
-            name: Identifier::new("U64").unwrap(),
-            type_params: vec![],
-        }),
-        tag
-    );
-
-    let (address, tag, msg, caller) = event.data.borrow_mut().remove(0);
-    assert_eq!(address, addr("0x1"));
-    assert_eq!(test_value, bcs::from_bytes::<StoreU64>(&msg).unwrap().val);
-    assert_eq!(caller, None);
-    assert_eq!(
-        TypeTag::Struct(StructTag {
-            address: CORE_CODE_ADDRESS,
-            module: Identifier::new("EventProxy").unwrap(),
-            name: Identifier::new("U64").unwrap(),
-            type_params: vec![],
-        }),
-        tag
-    );
-}
+//
+// #[test]
+// fn test_store_event() {
+//     let test_value = 13;
+//
+//     let (vm, _, event, _) = vm();
+//
+//     vm.pub_mod(event_module());
+//     vm.pub_mod(event_proxy_module());
+//
+//     vm.exec(emit_event_script(addr("0x1"), test_value));
+//
+//     let (address, tag, msg, caller) = event.data.borrow_mut().remove(0);
+//     assert_eq!(address, addr("0x1"));
+//     assert_eq!(test_value, bcs::from_bytes::<StoreU64>(&msg).unwrap().val);
+//     assert_eq!(
+//         caller.unwrap(),
+//         ModuleId::new(addr("0x1"), Identifier::new("EventProxy").unwrap())
+//     );
+//     assert_eq!(
+//         TypeTag::Struct(StructTag {
+//             address: CORE_CODE_ADDRESS,
+//             module: Identifier::new("EventProxy").unwrap(),
+//             name: Identifier::new("U64").unwrap(),
+//             type_params: vec![],
+//         }),
+//         tag
+//     );
+//
+//     let (address, tag, msg, caller) = event.data.borrow_mut().remove(0);
+//     assert_eq!(address, addr("0x1"));
+//     assert_eq!(test_value, bcs::from_bytes::<StoreU64>(&msg).unwrap().val);
+//     assert_eq!(caller, None);
+//     assert_eq!(
+//         TypeTag::Struct(StructTag {
+//             address: CORE_CODE_ADDRESS,
+//             module: Identifier::new("EventProxy").unwrap(),
+//             name: Identifier::new("U64").unwrap(),
+//             type_params: vec![],
+//         }),
+//         tag
+//     );
+// }
 
 #[test]
 fn test_load_system_resources() {
-    let (vm, store, _, oracle, _) = vm();
-    let state = State::new(store, oracle);
+    let (vm, store, _, _) = vm();
+    let state = State::new(store);
 
     vm.pub_mod(store_module());
     vm.pub_mod(time_module());
@@ -137,63 +138,32 @@ fn test_load_system_resources() {
     assert_eq!(store.val, timestamp);
 }
 
-#[test]
-fn test_oracle() {
-    let (vm, store, _, oracle, _) = vm();
-    let state = State::new(store, oracle.clone());
-
-    vm.pub_mod(store_module());
-    vm.pub_mod(coins_module());
-    vm.pub_mod(pont_module());
-
-    let eth_btc = 13;
-    let btc_pont = 234646734213;
-    oracle.set_price("ETH_BTC", eth_btc);
-    oracle.set_price("BTC_PONT", btc_pont);
-
-    vm.exec(get_price_script(addr("0x1"), addr("0x2")));
-
-    let tag = StructTag {
-        address: CORE_CODE_ADDRESS,
-        module: Identifier::new("Store").unwrap(),
-        name: Identifier::new("U128").unwrap(),
-        type_params: vec![],
-    };
-    let blob = state.get_resource(&addr("0x1"), &tag).unwrap().unwrap();
-    let store: StoreU128 = bcs::from_bytes(&blob).unwrap();
-    assert_eq!(store.val, eth_btc);
-
-    let blob = state.get_resource(&addr("0x2"), &tag).unwrap().unwrap();
-    let store: StoreU128 = bcs::from_bytes(&blob).unwrap();
-    assert_eq!(store.val, btc_pont);
-}
-
-#[test]
-fn test_error_event() {
-    let (vm, _, events, _, _) = vm();
-    vm.pub_mod(abort_module());
-    let sender = AccountAddress::random();
-    vm.execute_script(
-        gas(),
-        ExecutionContext::new(0, 0),
-        error_script(sender),
-        false,
-    );
-    let event = events.pop().unwrap();
-    assert_eq!(sender, event.0);
-    assert_eq!(
-        Some(ModuleId::new(
-            CORE_CODE_ADDRESS,
-            Identifier::new("Abort").unwrap()
-        )),
-        event.3
-    );
-}
+// #[test]
+// fn test_error_event() {
+//     let (vm, _, events, _) = vm();
+//     vm.pub_mod(abort_module());
+//     let sender = AccountAddress::random();
+//     vm.execute_script(
+//         gas(),
+//         ExecutionContext::new(0, 0),
+//         error_script(sender),
+//         false,
+//     );
+//     let event = events.pop().unwrap();
+//     assert_eq!(sender, event.0);
+//     assert_eq!(
+//         Some(ModuleId::new(
+//             CORE_CODE_ADDRESS,
+//             Identifier::new("Abort").unwrap()
+//         )),
+//         event.3
+//     );
+// }
 
 #[test]
 fn test_publish_pac() {
-    let (vm, state, _, oracle, _) = vm();
-    let state = State::new(state, oracle);
+    let (vm, state, _, _) = vm();
+    let state = State::new(state);
 
     let pac = stdlib_package().into_tx(CORE_CODE_ADDRESS);
 
@@ -202,7 +172,7 @@ fn test_publish_pac() {
         panic!("Transaction failed: {:?}", res);
     }
 
-    fn contains_module(state: &State<StorageMock, OracleMock>, name: &str) {
+    fn contains_module(state: &State<StorageMock>, name: &str) {
         if state
             .get_module(&ModuleId::new(
                 CORE_CODE_ADDRESS,
@@ -225,7 +195,7 @@ fn test_publish_pac() {
 
 #[test]
 fn test_invalid_pac() {
-    let (vm, _, _, _, _) = vm();
+    let (vm, _, _, _) = vm();
     let pac = invalid_package().into_tx(CORE_CODE_ADDRESS);
     let res = vm.publish_module_package(gas(), pac, false);
     assert_eq!(res.status_code, StatusCode::LINKER_ERROR);
@@ -233,7 +203,7 @@ fn test_invalid_pac() {
 
 #[test]
 fn test_balance() {
-    let (vm, _, _, _, bank) = vm();
+    let (vm, _, _,  bank) = vm();
     vm.pub_mod(coins_module());
     vm.pub_mod(pont_module());
     vm.pub_mod(event_module());
@@ -264,8 +234,8 @@ fn test_balance() {
 
 #[test]
 fn test_transfer() {
-    let (vm, store, _, oracle, bank) = vm();
-    let state = State::new(store, oracle);
+    let (vm, store, _, bank) = vm();
+    let state = State::new(store);
 
     vm.pub_mod(coins_module());
     vm.pub_mod(pont_module());
