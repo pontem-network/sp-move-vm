@@ -15,6 +15,8 @@ use move_lang::parser::ast::{ModuleAccess_, Type, Type_};
 use move_lang::parser::lexer::{Lexer, Tok};
 use move_lang::parser::syntax::parse_type;
 
+use crate::error::SubStatus;
+
 const GAS_AMOUNT_MAX_VALUE: u64 = u64::MAX / 1000;
 
 /// Stores gas metadata for vm execution.
@@ -162,7 +164,7 @@ pub struct VmResult {
     /// Execution status code.
     pub status_code: StatusCode,
     /// Execution sub status code.
-    pub sub_status: Option<u64>,
+    pub sub_status: Option<SubStatus>,
     /// Gas used.
     pub gas_used: u64,
 }
@@ -172,7 +174,7 @@ impl VmResult {
     pub(crate) fn new(status_code: StatusCode, sub_status: Option<u64>, gas_used: u64) -> VmResult {
         VmResult {
             status_code,
-            sub_status,
+            sub_status: sub_status.map(|code| SubStatus::new(code)),
             gas_used,
         }
     }
@@ -373,10 +375,4 @@ impl PublishPackageTx {
     pub fn into_inner(self) -> (Vec<Vec<u8>>, AccountAddress) {
         (self.modules, self.address)
     }
-}
-
-pub fn error_split(code: u64) -> (u8, u64) {
-    let category = code as u8;
-    let reason = code >> 8;
-    (category, reason)
 }

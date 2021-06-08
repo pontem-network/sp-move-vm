@@ -12,6 +12,7 @@ pub mod genesis;
 pub mod io;
 pub mod mvm;
 pub mod types;
+pub mod error;
 
 pub trait Vm {
     /// Publishes module to the chain.

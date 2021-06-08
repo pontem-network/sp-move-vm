@@ -24,7 +24,7 @@ use crate::data::ExecutionContext;
 use crate::gas_schedule::cost_table;
 use crate::io::traits::{Balance, BalanceAccess, CurrencyAccessPath, CurrencyInfo, EventHandler, Storage};
 use crate::mvm::Mvm;
-use crate::types::{error_split, Gas, ModulePackage, PublishPackageTx};
+use crate::types::{Gas, ModulePackage, PublishPackageTx};
 use crate::Vm;
 
 const GENESIS_MODULE_NAME: &str = "Genesis";
@@ -83,7 +83,6 @@ pub fn init_storage<S>(storage: S, config: GenesisConfig) -> Result<(), Error>
     );
 
     if res.status_code != StatusCode::EXECUTED {
-        dbg!(error_split(res.sub_status.unwrap()));
         return Err(anyhow!("Failed to execution genesis function:{:?}", res));
     }
 
