@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::account_config::constants::{from_currency_code_string, CORE_CODE_ADDRESS};
+use alloc::string::{String, ToString};
+use cell::Lazy;
 use move_core_types::{
     identifier::Identifier,
     language_storage::{ModuleId, StructTag, TypeTag},
 };
-use cell::Lazy;
-use alloc::string::{String, ToString};
 
 pub const XDX_NAME: &str = "XDX";
 pub const XUS_NAME: &str = "XUS";

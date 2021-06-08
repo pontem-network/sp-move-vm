@@ -2,10 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::on_chain_config::OnChainConfig;
+use alloc::vec::Vec;
+use anyhow::anyhow;
 use anyhow::{format_err, Result};
 use move_core_types::gas_schedule::{CostTable, GasConstants};
 use serde::{Deserialize, Serialize};
-use alloc::vec::Vec;
 
 /// Defines all the on chain configuration data needed by VM.
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -27,8 +28,10 @@ struct VMConfigInner {
 
 impl CostTableInner {
     pub fn as_cost_table(&self) -> Result<CostTable> {
-        let instruction_table = bcs::from_bytes(&self.instruction_table)?;
-        let native_table = bcs::from_bytes(&self.native_table)?;
+        let instruction_table = bcs::from_bytes(&self.instruction_table)
+            .map_err(|err| anyhow!("Failed to decode bcs. {:?}", err))?;
+        let native_table = bcs::from_bytes(&self.native_table)
+            .map_err(|err| anyhow!("Failed to decode bcs. {:?}", err))?;
         Ok(CostTable {
             instruction_table,
             native_table,

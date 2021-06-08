@@ -1,11 +1,12 @@
-use move_core_types::account_address::AccountAddress;
-use move_core_types::language_storage::{StructTag, ModuleId};
 use diem_types::access_path::AccessPath;
+use move_core_types::account_address::AccountAddress;
+use move_core_types::language_storage::{ModuleId, StructTag};
 
 pub struct AccessKey(Vec<u8>);
 
 pub enum KeyType {
-    Resource, Module
+    Resource,
+    Module,
 }
 
 impl AccessKey {
@@ -17,9 +18,7 @@ impl AccessKey {
                 key.extend_from_slice(path.path.as_ref());
                 AccessKey(key)
             }
-            KeyType::Module => {
-                AccessKey(path.path)
-            }
+            KeyType::Module => AccessKey(path.path),
         }
     }
 }

@@ -1,4 +1,3 @@
-use move_core_types::language_storage::CORE_CODE_ADDRESS;
 use move_core_types::language_storage::StructTag;
 
 pub const TIMESTAMP_MODULE: &str = "DiemTimestamp";
@@ -6,7 +5,6 @@ pub const CURRENT_TIME_MICROSECONDS: &str = "CurrentTimeMicroseconds";
 
 pub const BLOCK_MODULE: &str = "DiemBlock";
 pub const BLOCK_METADATA: &str = "BlockMetadata";
-
 
 #[derive(Debug)]
 pub struct ExecutionContext {
@@ -23,13 +21,13 @@ impl ExecutionContext {
     }
 
     pub fn resolve(&self, tag: &StructTag) -> Option<Vec<u8>> {
-        if tag.module.as_str() == TIMESTAMP_MODULE && tag.name.as_str() == CURRENT_TIME_MICROSECONDS {
-             bcs::to_bytes(&self.timestamp).ok()
+        if tag.module.as_str() == TIMESTAMP_MODULE && tag.name.as_str() == CURRENT_TIME_MICROSECONDS
+        {
+            bcs::to_bytes(&self.timestamp).ok()
         } else if tag.module.as_str() == BLOCK_MODULE && tag.name.as_str() == BLOCK_METADATA {
-            return bcs::to_bytes(&self.block_height).ok()
+            return bcs::to_bytes(&self.block_height).ok();
         } else {
             None
         }
     }
 }
-

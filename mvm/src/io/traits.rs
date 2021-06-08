@@ -1,7 +1,6 @@
+use crate::io::balance::CurrencyInfo;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::language_storage::TypeTag;
-use parity_scale_codec::{Encode, Decode};
-use serde::{Deserialize, Serialize};
 
 pub trait EventHandler {
     fn on_event(&self, guid: Vec<u8>, seq_num: u64, ty_tag: TypeTag, message: Vec<u8>);
@@ -16,7 +15,6 @@ pub trait Storage {
     fn remove(&self, key: &[u8]);
 }
 
-
 pub type CurrencyAccessPath = [u8];
 pub type Balance = u128;
 
@@ -25,9 +23,4 @@ pub trait BalanceAccess {
     fn get_balance(&self, address: &AccountAddress, path: &CurrencyAccessPath) -> Option<Balance>;
     fn deposit(&self, address: &AccountAddress, path: &CurrencyAccessPath, amount: Balance);
     fn withdraw(&self, address: &AccountAddress, path: &CurrencyAccessPath, amount: Balance);
-}
-
-#[derive(Debug, Serialize, Deserialize, Encode, Decode, Copy, Clone)]
-pub struct CurrencyInfo {
-    total_supply: u128
 }

@@ -3,26 +3,25 @@ use alloc::vec::Vec;
 use core::cell::RefCell;
 use core::convert::TryFrom;
 
-use anyhow::{anyhow, ensure};
 use anyhow::Error;
+use anyhow::{anyhow, ensure};
 use hashbrown::HashMap;
 
 use diem_crypto::HashValue;
-use diem_types::access_path::{AccessPath, Path};
 use diem_types::account_config;
 use diem_types::chain_id::ChainId;
 use diem_types::on_chain_config::VMConfig;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::gas_schedule::CostTable;
-use move_core_types::identifier::{Identifier, IdentStr};
-use move_core_types::language_storage::{CORE_CODE_ADDRESS, ModuleId, TypeTag};
-use move_core_types::value::{MoveValue, serialize_values};
+use move_core_types::identifier::{IdentStr, Identifier};
+use move_core_types::language_storage::{ModuleId, TypeTag, CORE_CODE_ADDRESS};
+use move_core_types::value::{serialize_values, MoveValue};
 use move_core_types::vm_status::StatusCode;
 use stdlib::stdlib_package;
 
-use crate::data::ExecutionContext;
 use crate::gas_schedule::cost_table;
-use crate::io::traits::{Balance, BalanceAccess, CurrencyAccessPath, CurrencyInfo, EventHandler, Storage};
+use crate::io::balance::CurrencyInfo;
+use crate::io::traits::{Balance, BalanceAccess, CurrencyAccessPath, EventHandler, Storage};
 use crate::mvm::Mvm;
 use crate::types::{Gas, ModulePackage, PublishPackageTx};
 use crate::Vm;
@@ -30,13 +29,14 @@ use crate::Vm;
 const GENESIS_MODULE_NAME: &str = "Genesis";
 const INIT_FUN_NAME: &str = "initialize";
 
-
 pub fn init_storage<S>(storage: S, config: GenesisConfig) -> Result<(), Error>
-    where
-        S: Storage,
+where
+    S: Storage,
 {
     let fork = StorageFork::new(storage);
-    let vm_config = VMConfig { gas_schedule: config.cost_table.clone() };
+    let vm_config = VMConfig {
+        gas_schedule: config.cost_table.clone(),
+    };
     let vm = Mvm::new_with_config(&fork, NopeEventHandler, NopeBalance, vm_config)?;
     let result = vm.publish_module_package(Gas::infinite(), config.stdlib, false);
     ensure!(
@@ -58,7 +58,6 @@ pub fn init_storage<S>(storage: S, config: GenesisConfig) -> Result<(), Error>
     let native_gas_costs = bcs::to_bytes(&config.cost_table.native_table)
         .map_err(|err| anyhow!("Failure serializing genesis native gas costs. {:?}", err))?;
 
-
     let res = vm.execute_function(
         CORE_CODE_ADDRESS,
         Gas::infinite(),
@@ -76,10 +75,7 @@ pub fn init_storage<S>(storage: S, config: GenesisConfig) -> Result<(), Error>
             MoveValue::vector_u8(native_gas_costs),
             MoveValue::U8(config.chain_id.id()),
         ]),
-        ExecutionContext {
-            timestamp: 0,
-            block_height: 0,
-        },
+        None,
     );
 
     if res.status_code != StatusCode::EXECUTED {
@@ -113,7 +109,8 @@ impl Default for GenesisConfig {
             is_open_module: true,
             chain_id: Default::default(),
             diem_root_address: account_config::diem_root_address(),
-            treasury_compliance_account_address: account_config::treasury_compliance_account_address(),
+            treasury_compliance_account_address:
+                account_config::treasury_compliance_account_address(),
         }
     }
 }
@@ -129,19 +126,19 @@ impl EventHandler for NopeEventHandler {
 struct NopeBalance;
 
 impl BalanceAccess for NopeBalance {
-    fn get_currency_info(&self, path: &CurrencyAccessPath) -> Option<CurrencyInfo> {
+    fn get_currency_info(&self, _: &CurrencyAccessPath) -> Option<CurrencyInfo> {
         None
     }
 
-    fn get_balance(&self, address: &AccountAddress, path: &CurrencyAccessPath) -> Option<Balance> {
+    fn get_balance(&self, _: &AccountAddress, _: &CurrencyAccessPath) -> Option<Balance> {
         None
     }
 
-    fn deposit(&self, address: &AccountAddress, path: &CurrencyAccessPath, amount: Balance) {
+    fn deposit(&self, _: &AccountAddress, _: &CurrencyAccessPath, _: Balance) {
         //no-op
     }
 
-    fn withdraw(&self, address: &AccountAddress, path: &CurrencyAccessPath, amount: Balance) {
+    fn withdraw(&self, _: &AccountAddress, _: &CurrencyAccessPath, _: Balance) {
         //no-op
     }
 }
@@ -166,7 +163,6 @@ impl<S: Storage> StorageFork<S> {
                     self.inner.remove(key.as_ref());
                 }
                 Some(val) => {
-                    dbg!(Path::try_from(key.as_ref()));
                     self.inner.insert(key.as_ref(), val.as_ref());
                 }
             }

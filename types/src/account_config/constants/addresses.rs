@@ -1,8 +1,8 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-pub use move_core_types::language_storage::CORE_CODE_ADDRESS;
 use move_core_types::account_address::AccountAddress;
+pub use move_core_types::language_storage::CORE_CODE_ADDRESS;
 
 pub fn diem_root_address() -> AccountAddress {
     AccountAddress::from_hex_literal("0xA550C18")

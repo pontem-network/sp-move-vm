@@ -1,8 +1,8 @@
-use mvm::data::State;
-use mvm::genesis::{GenesisConfig, init_storage};
+use mvm::genesis::{init_storage, GenesisConfig};
 
 use crate::common::contains_core_module;
 use crate::common::mock::StorageMock;
+use mvm::io::state::State;
 
 mod common;
 
@@ -58,6 +58,4 @@ fn test_genesis_success() {
     contains_core_module(&state, "SystemAdministrationScripts");
     contains_core_module(&state, "TreasuryComplianceScripts");
     contains_core_module(&state, "ValidatorAdministrationScripts");
-
-
 }

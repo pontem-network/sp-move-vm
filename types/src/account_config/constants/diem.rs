@@ -3,11 +3,11 @@
 
 use crate::account_config::constants::CORE_CODE_ADDRESS;
 use anyhow::{bail, Result};
+use cell::Lazy;
 use move_core_types::{
     identifier::Identifier,
     language_storage::{ModuleId, StructTag, TypeTag},
 };
-use cell::Lazy;
 
 pub const DIEM_MODULE_NAME: &str = "Diem";
 static COIN_MODULE_NAME: Lazy<Identifier> = Lazy::new(|| Identifier::new("Diem").unwrap());

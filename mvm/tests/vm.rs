@@ -2,14 +2,15 @@
 extern crate alloc;
 
 use common::mock::Utils;
-use common::{assets::*, mock::*, vm, contains_core_module};
+use common::{assets::*, contains_core_module, mock::*, vm};
+use diem_types::event::EventKey;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS};
-use move_core_types::vm_status::StatusCode;
+use move_core_types::vm_status::{AbortLocation, StatusCode, VMStatus};
 use move_vm_runtime::data_cache::RemoteCache;
-use mvm::data::{ExecutionContext, State};
-use mvm::io::traits::BalanceAccess;
+use mvm::io::context::ExecutionContext;
+use mvm::io::state::State;
 use mvm::types::Gas;
 use mvm::Vm;
 
@@ -68,7 +69,6 @@ fn test_store_event() {
     let test_value = 13;
 
     let (vm, _, event, _) = vm();
-    vm.pub_stdlib();
     vm.pub_mod(event_proxy_module());
 
     vm.exec(emit_event_script(addr("0x1"), test_value));
@@ -98,8 +98,6 @@ fn test_store_event() {
 fn test_load_system_resources() {
     let (vm, store, _, _) = vm();
     let state = State::new(store);
-
-    vm.pub_stdlib();
     vm.pub_mod(store_module());
 
     let block = 1000;
@@ -125,46 +123,62 @@ fn test_load_system_resources() {
     assert_eq!(store.val, timestamp);
 }
 
-// #[test]
-// fn test_error_event() {
-//     let (vm, _, events, _) = vm();
-//     vm.pub_mod(abort_module());
-//     let sender = AccountAddress::random();
-//     vm.execute_script(
-//         gas(),
-//         ExecutionContext::new(0, 0),
-//         error_script(sender),
-//         false,
-//     );
-//     let event = events.pop().unwrap();
-//     assert_eq!(sender, event.0);
-//     assert_eq!(
-//         Some(ModuleId::new(
-//             CORE_CODE_ADDRESS,
-//             Identifier::new("Abort").unwrap()
-//         )),
-//         event.3
-//     );
-// }
+#[test]
+fn test_error_event() {
+    let (vm, _, events, _) = vm();
+    vm.pub_mod(abort_module());
+    let sender = AccountAddress::random();
+    vm.execute_script(
+        gas(),
+        ExecutionContext::new(0, 0),
+        error_script(sender),
+        false,
+    );
+
+    let (guid, seq, tag, msg) = events.pop().unwrap();
+    let key = EventKey::from_bytes(&guid).unwrap();
+    assert_eq!(sender, key.get_creator_address());
+    assert_eq!(0, key.get_creation_number());
+    assert_eq!(0, seq);
+
+    assert_eq!(
+        TypeTag::Struct(StructTag {
+            address: CORE_CODE_ADDRESS,
+            module: Identifier::new("VMStatus").unwrap(),
+            name: Identifier::new("VMStatus").unwrap(),
+            type_params: vec![]
+        }),
+        tag
+    );
+    let status = bcs::from_bytes::<VMStatus>(&msg).unwrap();
+    assert_eq!(
+        status,
+        VMStatus::MoveAbort(
+            AbortLocation::Module(ModuleId::new(
+                CORE_CODE_ADDRESS,
+                Identifier::new("Abort").unwrap()
+            )),
+            13
+        )
+    );
+}
 
 #[test]
 fn test_publish_pac() {
     let (vm, state, _, _) = vm();
     let state = State::new(state);
 
-    let pac = stdlib_package().into_tx(CORE_CODE_ADDRESS);
+    let pac = valid_package().into_tx(CORE_CODE_ADDRESS);
 
     let res = vm.publish_module_package(gas(), pac, false);
     if res.status_code != StatusCode::EXECUTED {
         panic!("Transaction failed: {:?}", res);
     }
 
-    contains_core_module(&state, "Block");
-    contains_core_module(&state, "Coins");
-    contains_core_module(&state, "PONT");
-    contains_core_module(&state, "Time");
-    contains_core_module(&state, "Event");
-    contains_core_module(&state, "Pontem");
+    contains_core_module(&state, "Abort");
+    contains_core_module(&state, "EventProxy");
+    contains_core_module(&state, "Foo");
+    contains_core_module(&state, "Store");
 }
 
 #[test]

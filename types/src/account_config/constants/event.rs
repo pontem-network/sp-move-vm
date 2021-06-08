@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::account_config::constants::CORE_CODE_ADDRESS;
+use cell::Lazy;
 use move_core_types::{
     identifier::{IdentStr, Identifier},
     language_storage::{ModuleId, StructTag},
 };
-use cell::Lazy;
 
 static EVENT_MODULE_NAME: Lazy<Identifier> = Lazy::new(|| Identifier::new("Event").unwrap());
 pub static EVENT_MODULE: Lazy<ModuleId> =

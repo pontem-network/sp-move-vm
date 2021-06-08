@@ -16,6 +16,7 @@ use move_lang::parser::lexer::{Lexer, Tok};
 use move_lang::parser::syntax::parse_type;
 
 use crate::error::SubStatus;
+use vm::errors::Location;
 
 const GAS_AMOUNT_MAX_VALUE: u64 = u64::MAX / 1000;
 
@@ -167,15 +168,23 @@ pub struct VmResult {
     pub sub_status: Option<SubStatus>,
     /// Gas used.
     pub gas_used: u64,
+    /// Error location
+    pub location: Option<Location>,
 }
 
 impl VmResult {
     /// Create new Vm result
-    pub(crate) fn new(status_code: StatusCode, sub_status: Option<u64>, gas_used: u64) -> VmResult {
+    pub(crate) fn new(
+        status_code: StatusCode,
+        sub_status: Option<u64>,
+        location: Option<Location>,
+        gas_used: u64,
+    ) -> VmResult {
         VmResult {
             status_code,
             sub_status: sub_status.map(|code| SubStatus::new(code)),
             gas_used,
+            location,
         }
     }
 }

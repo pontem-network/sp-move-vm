@@ -5,15 +5,16 @@ use std::rc::Rc;
 
 use move_core_types::account_address::AccountAddress;
 use move_core_types::effects::Event;
-use move_core_types::language_storage::{CORE_CODE_ADDRESS, ModuleId, TypeTag};
+use move_core_types::language_storage::TypeTag;
 use move_core_types::vm_status::StatusCode;
-use mvm::data::ExecutionContext;
-use mvm::io::traits::{Balance, BalanceAccess, CurrencyAccessPath, CurrencyInfo, EventHandler, Storage};
+use mvm::io::traits::{Balance, BalanceAccess, CurrencyAccessPath, EventHandler, Storage};
 use mvm::mvm::Mvm;
-use mvm::types::{ModulePackage, ModuleTx, ScriptTx};
+use mvm::types::{ModuleTx, ScriptTx};
 use mvm::Vm;
 
-use crate::common::assets::{gas, stdlib_package};
+use crate::common::assets::gas;
+use mvm::io::balance::CurrencyInfo;
+use mvm::io::context::ExecutionContext;
 
 #[derive(Clone, Debug)]
 pub struct StorageMock {
@@ -81,7 +82,12 @@ impl BankMock {
         map.insert(Cow::Owned(path.to_vec()), info);
     }
 
-    pub fn set_balance(&self, address: &AccountAddress, path: &CurrencyAccessPath, amount: Balance) {
+    pub fn set_balance(
+        &self,
+        address: &AccountAddress,
+        path: &CurrencyAccessPath,
+        amount: Balance,
+    ) {
         let mut acc_map = self.balances.borrow_mut();
         let acc = acc_map.entry(*address).or_insert_with(HashMap::new);
         *acc.entry(Cow::Owned(path.to_vec())).or_insert(amount) = amount;
@@ -123,7 +129,6 @@ impl BalanceAccess for BankMock {
 }
 
 pub trait Utils {
-    fn pub_stdlib(&self);
     fn pub_mod(&self, module: ModuleTx);
     fn exec(&self, script: ScriptTx) {
         self.exec_with_context(ExecutionContext::new(100, 100), script)
@@ -132,19 +137,11 @@ pub trait Utils {
 }
 
 impl<S, E, B> Utils for Mvm<S, E, B>
-    where
-        S: Storage,
-        E: EventHandler,
-        B: BalanceAccess,
+where
+    S: Storage,
+    E: EventHandler,
+    B: BalanceAccess,
 {
-    fn pub_stdlib(&self) {
-        let pac = stdlib_package().into_tx(CORE_CODE_ADDRESS);
-        let res = self.publish_module_package(gas(), pac, false);
-        if res.status_code != StatusCode::EXECUTED {
-            panic!("Transaction failed: {:?}", res);
-        }
-    }
-
     fn pub_mod(&self, module: ModuleTx) {
         let res = self.publish_module(gas(), module, false);
         if res.status_code != StatusCode::EXECUTED {

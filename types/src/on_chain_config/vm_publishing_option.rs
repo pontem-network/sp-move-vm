@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::on_chain_config::OnChainConfig;
+use alloc::vec::Vec;
 use anyhow::{format_err, Result};
 use diem_crypto::HashValue;
 use serde::{Deserialize, Serialize};
-use alloc::vec::Vec;
 
 /// Defines and holds the publishing policies for the VM. There are three possible configurations:
 /// 1. No module publishing, only allowlisted scripts are allowed.

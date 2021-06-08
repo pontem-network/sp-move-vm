@@ -1,9 +1,9 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
-use anyhow::{ensure, format_err, Error, Result};
-use serde::{de::Visitor, Deserialize, Deserializer, Serialize};
-use core::{convert::TryFrom, fmt, str::FromStr};
 use alloc::string::{String, ToString};
+use anyhow::{ensure, format_err, Error, Result};
+use core::{convert::TryFrom, fmt, str::FromStr};
+use serde::{de::Visitor, Deserialize, Deserializer, Serialize};
 
 /// A registry of named chain IDs
 /// Its main purpose is to improve human readability of reserved chain IDs in config files and CLI

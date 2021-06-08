@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::on_chain_config::OnChainConfig;
-use anyhow::Result;
+use alloc::vec::Vec;
+use anyhow::{anyhow, Result};
+use core::fmt;
 use move_core_types::identifier::Identifier;
 use serde::{Deserialize, Serialize};
-use core::fmt;
-use alloc::vec::Vec;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct RegisteredCurrencies {
@@ -29,7 +29,8 @@ impl RegisteredCurrencies {
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
-        bcs::from_bytes(bytes).map_err(Into::into)
+        bcs::from_bytes(bytes)
+            .map_err(|err| anyhow!("Failed to decode RegisteredCurrencies. {:?}", err))
     }
 }
 

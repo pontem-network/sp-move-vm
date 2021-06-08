@@ -1,19 +1,16 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    account_config::CORE_CODE_ADDRESS,
-};
+use crate::account_config::CORE_CODE_ADDRESS;
+use alloc::fmt;
+use alloc::sync::Arc;
 use anyhow::{format_err, Result};
+use hashbrown::HashMap;
 use move_core_types::{
     identifier::Identifier,
     language_storage::{StructTag, TypeTag},
-    move_resource::MoveResource,
 };
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use hashbrown::HashMap;
-use alloc::sync::Arc;
-use alloc::fmt;
+use serde::de::DeserializeOwned;
 mod diem_version;
 mod registered_currencies;
 mod vm_config;
@@ -25,10 +22,10 @@ pub use self::{
     vm_config::VMConfig,
     vm_publishing_option::VMPublishingOption,
 };
-use move_core_types::account_address::AccountAddress;
-use alloc::vec::Vec;
-use alloc::string::ToString;
 use crate::access_path::AccessPath;
+use alloc::string::ToString;
+use alloc::vec::Vec;
+use move_core_types::account_address::AccountAddress;
 
 /// To register an on-chain config in Rust:
 /// 1. Implement the `OnChainConfig` trait for the Rust representation of the config
@@ -154,7 +151,6 @@ pub trait OnChainConfig: Send + Sync + DeserializeOwned {
             .and_then(|bytes| Self::deserialize_into_config(&bytes).ok())
     }
 }
-
 
 pub fn access_path_for_config(address: AccountAddress, config_name: Identifier) -> AccessPath {
     AccessPath::new(

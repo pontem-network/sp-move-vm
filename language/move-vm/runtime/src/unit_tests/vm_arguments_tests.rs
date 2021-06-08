@@ -252,8 +252,6 @@ impl RemoteCache for RemoteStore {
     }
 }
 
-struct Bank;
-
 fn call_script_with_args_ty_args_signers(
     script: Vec<u8>,
     args: Vec<Vec<u8>>,

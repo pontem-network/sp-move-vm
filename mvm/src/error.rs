@@ -22,13 +22,11 @@ impl SubStatus {
             _ => Category::CUSTOM,
         };
 
-        SubStatus {
-            category,
-            reason,
-        }
+        SubStatus { category, reason }
     }
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub enum Category {
     /// The system is in a state where the performed operation is not allowed. Example: call to a function only allowed

@@ -1,10 +1,12 @@
-use crate::io::traits::{Storage, BalanceAccess};
-use move_vm_runtime::data_cache::RemoteCache;
-use crate::io::key::AccessKey;
-use move_core_types::language_storage::{ModuleId, StructTag};
-use vm::errors::{VMResult, PartialVMResult};
-use move_core_types::account_address::AccountAddress;
 use crate::io::balance::MasterOfCoin;
+use crate::io::context::ExecutionContext;
+use crate::io::key::AccessKey;
+use crate::io::session::StateSession;
+use crate::io::traits::{BalanceAccess, Storage};
+use move_core_types::account_address::AccountAddress;
+use move_core_types::language_storage::{ModuleId, StructTag};
+use move_vm_runtime::data_cache::RemoteCache;
+use vm::errors::{PartialVMResult, VMResult};
 
 pub struct State<S: Storage> {
     store: S,
@@ -12,9 +14,15 @@ pub struct State<S: Storage> {
 
 impl<S: Storage> State<S> {
     pub fn new(store: S) -> State<S> {
-        State {
-            store,
-        }
+        State { store }
+    }
+
+    pub fn state_session<'c, B: BalanceAccess>(
+        &self,
+        context: Option<ExecutionContext>,
+        master_of_coin: &'c MasterOfCoin<B>,
+    ) -> StateSession<'c, '_, State<S>, B> {
+        StateSession::new(&self, context, master_of_coin.session(&self))
     }
 }
 
@@ -28,12 +36,6 @@ impl<S: Storage> RemoteCache for State<S> {
         address: &AccountAddress,
         tag: &StructTag,
     ) -> PartialVMResult<Option<Vec<u8>>> {
-        // if address == &CORE_CODE_ADDRESS {
-        //     if let Some(ticker) = self.oracle.get_ticker(tag) {
-        //         return Ok(self.oracle.get_price(&ticker));
-        //     }
-        // }
-
         Ok(self.store.get(AccessKey::from((address, tag)).as_ref()))
     }
 }

@@ -3,16 +3,16 @@
 #[macro_use]
 extern crate alloc;
 extern crate sp_core;
-use crate::data::ExecutionContext;
+use crate::io::context::ExecutionContext;
 use crate::types::{Gas, ModuleTx, PublishPackageTx, ScriptTx, VmResult};
 
-pub mod data;
+//pub mod data;
+pub mod error;
 pub mod gas_schedule;
 pub mod genesis;
 pub mod io;
 pub mod mvm;
 pub mod types;
-pub mod error;
 
 pub trait Vm {
     /// Publishes module to the chain.

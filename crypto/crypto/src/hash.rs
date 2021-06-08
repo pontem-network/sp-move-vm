@@ -117,8 +117,8 @@ use serde::ser;
 
 use core::convert::TryFrom;
 use hex::FromHex;
-use tiny_keccak::{Hasher, Sha3};
 use serde::{Deserialize, Serialize};
+use tiny_keccak::{Hasher, Sha3};
 
 /// A prefix used to begin the salt of every diem hashable structure. The salt
 /// consists in this global prefix, concatenated with the specified
