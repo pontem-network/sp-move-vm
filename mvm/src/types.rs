@@ -41,6 +41,14 @@ impl Gas {
         })
     }
 
+    /// Create infinite gas.
+    pub fn infinite() -> Gas {
+        Gas {
+            max_gas_amount: GAS_AMOUNT_MAX_VALUE,
+            gas_unit_price: 1,
+        }
+    }
+
     /// Returns max gas units to be used in transaction execution.
     pub fn max_gas_amount(&self) -> u64 {
         self.max_gas_amount
@@ -365,4 +373,10 @@ impl PublishPackageTx {
     pub fn into_inner(self) -> (Vec<Vec<u8>>, AccountAddress) {
         (self.modules, self.address)
     }
+}
+
+pub fn error_split(code: u64) -> (u8, u64) {
+    let category = code as u8;
+    let reason = code >> 8;
+    (category, reason)
 }

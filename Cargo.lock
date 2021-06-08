@@ -617,6 +617,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "diem-types"
+version = "0.0.1"
+dependencies = [
+ "alt_serde",
+ "anyhow",
+ "bcs",
+ "cell",
+ "diem-crypto",
+ "diem-crypto-derive",
+ "hashbrown",
+ "hex",
+ "move-core-types",
+]
+
+[[package]]
 name = "digest"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1283,6 +1298,7 @@ dependencies = [
  "anyhow",
  "bcs",
  "diem-crypto",
+ "diem-types",
  "hashbrown",
  "hex",
  "log",
@@ -1292,6 +1308,7 @@ dependencies = [
  "move-vm-types",
  "parity-scale-codec 1.3.7",
  "sp-core",
+ "stdlib",
  "vm",
 ]
 

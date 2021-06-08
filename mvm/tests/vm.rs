@@ -2,16 +2,16 @@
 extern crate alloc;
 
 use common::mock::Utils;
-use common::{assets::*, mock::*, vm};
+use common::{assets::*, mock::*, vm, contains_core_module};
 use move_core_types::account_address::AccountAddress;
 use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS};
 use move_core_types::vm_status::StatusCode;
 use move_vm_runtime::data_cache::RemoteCache;
 use mvm::data::{ExecutionContext, State};
+use mvm::io::traits::BalanceAccess;
 use mvm::types::Gas;
 use mvm::Vm;
-use mvm::io::traits::BalanceAccess;
 
 mod common;
 
@@ -74,7 +74,13 @@ fn test_store_event() {
     vm.exec(emit_event_script(addr("0x1"), test_value));
 
     let (guid, seq, tag, msg) = event.data.borrow_mut().remove(0);
-    assert_eq!(guid, vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
+    assert_eq!(
+        guid,
+        vec![
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1
+        ]
+    );
     assert_eq!(seq, 0);
     assert_eq!(test_value, bcs::from_bytes::<StoreU64>(&msg).unwrap().val);
     assert_eq!(
@@ -153,25 +159,12 @@ fn test_publish_pac() {
         panic!("Transaction failed: {:?}", res);
     }
 
-    fn contains_module(state: &State<StorageMock>, name: &str) {
-        if state
-            .get_module(&ModuleId::new(
-                CORE_CODE_ADDRESS,
-                Identifier::new(name).unwrap(),
-            ))
-            .unwrap()
-            .is_none()
-        {
-            panic!("Module {} not found", name);
-        }
-    }
-
-    contains_module(&state, "Block");
-    contains_module(&state, "Coins");
-    contains_module(&state, "PONT");
-    contains_module(&state, "Time");
-    contains_module(&state, "Event");
-    contains_module(&state, "Pontem");
+    contains_core_module(&state, "Block");
+    contains_core_module(&state, "Coins");
+    contains_core_module(&state, "PONT");
+    contains_core_module(&state, "Time");
+    contains_core_module(&state, "Event");
+    contains_core_module(&state, "Pontem");
 }
 
 #[test]

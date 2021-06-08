@@ -1,4 +1,4 @@
-// Copyright (c) The Libra Core Contributors
+// Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
 //! Suppose we have the following data structure in a smart contract:
@@ -35,56 +35,72 @@
 //! On the other hand, if you want to query only <Alice>/a/*, `address` will be set to Alice and
 //! `path` will be set to "/a" and use the `get_prefix()` method from statedb
 
-use alloc::string::String;
-use alloc::vec::Vec;
-use core::fmt;
 use diem_crypto::hash::HashValue;
-use move_core_types::account_address::AccountAddress;
 use move_core_types::language_storage::{ModuleId, ResourceKey, StructTag, CODE_TAG, RESOURCE_TAG};
+use serde::{Deserialize, Serialize};
+use core::{convert::TryFrom, fmt};
+use move_core_types::account_address::AccountAddress;
+use alloc::vec::Vec;
+use alloc::string::String;
 
-#[derive(Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
+#[derive(Clone, Eq, PartialEq, Hash, Serialize, Deserialize, Ord, PartialOrd)]
 pub struct AccessPath {
     pub address: AccountAddress,
     pub path: Vec<u8>,
 }
 
-impl AccessPath {
-    pub const CODE_TAG: u8 = 0;
-    pub const RESOURCE_TAG: u8 = 1;
+#[derive(Clone, Eq, PartialEq, Hash, Serialize, Deserialize, Ord, PartialOrd, Debug)]
+pub enum Path {
+    Code(ModuleId),
+    Resource(StructTag),
+}
 
+impl AccessPath {
     pub fn new(address: AccountAddress, path: Vec<u8>) -> Self {
         AccessPath { address, path }
     }
 
-    pub fn resource_access_vec(tag: &StructTag) -> Vec<u8> {
-        tag.access_vector()
+    pub fn resource_access_vec(tag: StructTag) -> Vec<u8> {
+        bcs::to_bytes(&Path::Resource(tag)).expect("Unexpected serialization error")
     }
 
     /// Convert Accesses into a byte offset which would be used by the storage layer to resolve
     /// where fields are stored.
-    pub fn resource_access_path(key: &ResourceKey) -> AccessPath {
-        let path = AccessPath::resource_access_vec(&key.type_());
+    pub fn resource_access_path(key: ResourceKey) -> AccessPath {
+        let path = AccessPath::resource_access_vec(key.type_);
         AccessPath {
-            address: key.address(),
+            address: key.address,
             path,
         }
     }
 
-    fn code_access_path_vec(key: &ModuleId) -> Vec<u8> {
-        key.access_vector()
+    fn code_access_path_vec(key: ModuleId) -> Vec<u8> {
+        bcs::to_bytes(&Path::Code(key)).expect("Unexpected serialization error")
     }
 
-    pub fn code_access_path(key: &ModuleId) -> AccessPath {
+    pub fn code_access_path(key: ModuleId) -> AccessPath {
+        let address = *key.address();
         let path = AccessPath::code_access_path_vec(key);
-        AccessPath {
-            address: *key.address(),
-            path,
+        AccessPath { address, path }
+    }
+
+    /// Extract the structured resource or module `Path` from `self`
+    pub fn get_path(&self) -> Path {
+        bcs::from_bytes::<Path>(&self.path).expect("Unexpected serialization error")
+    }
+
+    /// Extract a StructTag from `self`. Returns Some if this is a resource access
+    /// path and None otherwise
+    pub fn get_struct_tag(&self) -> Option<StructTag> {
+        match self.get_path() {
+            Path::Resource(s) => Some(s),
+            Path::Code(_) => None,
         }
     }
 }
 
 impl fmt::Debug for AccessPath {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "AccessPath {{ address: {:x}, path: {} }}",
@@ -125,5 +141,21 @@ impl From<&ModuleId> for AccessPath {
             address: *id.address(),
             path: id.access_vector(),
         }
+    }
+}
+
+impl TryFrom<&[u8]> for Path {
+    type Error = bcs::Error;
+
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        bcs::from_bytes::<Path>(bytes)
+    }
+}
+
+impl TryFrom<&Vec<u8>> for Path {
+    type Error = bcs::Error;
+
+    fn try_from(bytes: &Vec<u8>) -> Result<Self, Self::Error> {
+        bcs::from_bytes::<Path>(bytes)
     }
 }

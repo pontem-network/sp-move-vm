@@ -49,10 +49,7 @@ impl VMRuntime {
         }
     }
 
-    pub fn new_session<'r, R: RemoteCache>(
-        &self,
-        remote: &'r R,
-    ) -> Session<'r, '_, R> {
+    pub fn new_session<'r, R: RemoteCache>(&self, remote: &'r R) -> Session<'r, '_, R> {
         Session {
             runtime: self,
             data_cache: TransactionDataCache::new(remote, &self.loader),

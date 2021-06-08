@@ -1,18 +1,19 @@
+use std::borrow::Cow;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
 use move_core_types::account_address::AccountAddress;
-use move_core_types::language_storage::{ModuleId, TypeTag, CORE_CODE_ADDRESS};
+use move_core_types::effects::Event;
+use move_core_types::language_storage::{CORE_CODE_ADDRESS, ModuleId, TypeTag};
 use move_core_types::vm_status::StatusCode;
-use mvm::data::{ExecutionContext};
+use mvm::data::ExecutionContext;
+use mvm::io::traits::{Balance, BalanceAccess, CurrencyAccessPath, CurrencyInfo, EventHandler, Storage};
 use mvm::mvm::Mvm;
-use mvm::types::{ModuleTx, ScriptTx, ModulePackage};
+use mvm::types::{ModulePackage, ModuleTx, ScriptTx};
 use mvm::Vm;
 
 use crate::common::assets::{gas, stdlib_package};
-use mvm::io::traits::{EventHandler, Balance, BalanceAccess, Storage};
-use move_core_types::effects::Event;
 
 #[derive(Clone, Debug)]
 pub struct StorageMock {
@@ -62,13 +63,7 @@ impl EventHandlerMock {
 }
 
 impl EventHandler for EventHandlerMock {
-    fn on_event(
-        &self,
-        guid: Vec<u8>,
-        seq_num: u64,
-        ty_tag: TypeTag,
-        message: Vec<u8>,
-    ) {
+    fn on_event(&self, guid: Vec<u8>, seq_num: u64, ty_tag: TypeTag, message: Vec<u8>) {
         let mut data = self.data.borrow_mut();
         data.push((guid, seq_num, ty_tag, message));
     }
@@ -76,42 +71,53 @@ impl EventHandler for EventHandlerMock {
 
 #[derive(Clone, Debug, Default)]
 pub struct BankMock {
-    balances: Rc<RefCell<HashMap<AccountAddress, HashMap<String, Balance>>>>,
+    currency_info: Rc<RefCell<HashMap<Cow<'static, [u8]>, CurrencyInfo>>>,
+    balances: Rc<RefCell<HashMap<AccountAddress, HashMap<Cow<'static, [u8]>, Balance>>>>,
 }
 
 impl BankMock {
-    pub fn set_balance(&self, address: &AccountAddress, ticker: &str, amount: Balance) {
+    pub fn set_currency_info(&self, path: &CurrencyAccessPath, info: CurrencyInfo) {
+        let mut map = self.currency_info.borrow_mut();
+        map.insert(Cow::Owned(path.to_vec()), info);
+    }
+
+    pub fn set_balance(&self, address: &AccountAddress, path: &CurrencyAccessPath, amount: Balance) {
         let mut acc_map = self.balances.borrow_mut();
         let acc = acc_map.entry(*address).or_insert_with(HashMap::new);
-        *acc.entry(ticker.to_owned()).or_insert(amount) = amount;
+        *acc.entry(Cow::Owned(path.to_vec())).or_insert(amount) = amount;
     }
 }
 
 impl BalanceAccess for BankMock {
-    fn get_balance(&self, address: &AccountAddress, ticker: &str) -> Option<Balance> {
+    fn get_currency_info(&self, path: &CurrencyAccessPath) -> Option<CurrencyInfo> {
+        let map = self.currency_info.borrow();
+        map.get(path).copied()
+    }
+
+    fn get_balance(&self, address: &AccountAddress, path: &CurrencyAccessPath) -> Option<Balance> {
         self.balances
             .borrow()
             .get(address)
-            .and_then(|acc| acc.get(ticker).cloned())
+            .and_then(|acc| acc.get(path).cloned())
     }
 
-    fn deposit(&self, address: &AccountAddress, ticker: &str, amount: Balance) {
+    fn deposit(&self, address: &AccountAddress, path: &CurrencyAccessPath, amount: Balance) {
         let mut acc_map = self.balances.borrow_mut();
         let acc = acc_map.entry(*address).or_insert_with(HashMap::new);
-        let val = acc.entry(ticker.to_owned()).or_insert(0);
+        let val = acc.entry(Cow::Owned(path.to_vec())).or_insert(0);
         if *val < amount {
             panic!(
-                "Not enough currency in the account [{}::{}] You need {} units in stock {}",
-                address, ticker, amount, val
+                "Not enough currency in the account [{}::{:?}] You need {} units in stock {}",
+                address, path, amount, val
             );
         }
         *val -= amount;
     }
 
-    fn withdraw(&self, address: &AccountAddress, ticker: &str, amount: Balance) {
+    fn withdraw(&self, address: &AccountAddress, path: &CurrencyAccessPath, amount: Balance) {
         let mut acc_map = self.balances.borrow_mut();
         let acc = acc_map.entry(*address).or_insert_with(HashMap::new);
-        let val = acc.entry(ticker.to_owned()).or_insert(0);
+        let val = acc.entry(Cow::Owned(path.to_vec())).or_insert(0);
         *val += amount;
     }
 }
@@ -126,10 +132,10 @@ pub trait Utils {
 }
 
 impl<S, E, B> Utils for Mvm<S, E, B>
-where
-    S: Storage,
-    E: EventHandler,
-    B: BalanceAccess,
+    where
+        S: Storage,
+        E: EventHandler,
+        B: BalanceAccess,
 {
     fn pub_stdlib(&self) {
         let pac = stdlib_package().into_tx(CORE_CODE_ADDRESS);

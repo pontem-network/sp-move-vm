@@ -1,14 +1,10 @@
-use alloc::borrow::ToOwned;
-use alloc::string::String;
 use alloc::vec::Vec;
-
+use crate::io::traits::{BalanceAccess, Storage};
 use move_core_types::account_address::AccountAddress;
-use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS};
-use move_core_types::vm_status::StatusCode;
+use move_core_types::language_storage::{ModuleId, StructTag, CORE_CODE_ADDRESS};
 use move_vm_runtime::data_cache::RemoteCache;
-use move_vm_types::natives::function::PartialVMError;
-use vm::errors::{Location, PartialVMResult, VMError, VMResult};
-use crate::io::traits::{Storage, BalanceAccess};
+use vm::errors::{PartialVMResult, VMResult};
+use crate::io::key::AccessKey;
 
 pub trait WriteEffects {
     fn delete(&self, path: AccessKey);
@@ -24,9 +20,7 @@ where
     S: Storage,
 {
     pub fn new(store: S) -> State<S> {
-        State {
-            store,
-        }
+        State { store }
     }
 }
 
@@ -172,27 +166,3 @@ impl<B: BalanceAccess> Bank<B> {
 //         None
 //     }
 // }
-
-pub struct AccessKey(Vec<u8>);
-
-impl From<(&AccountAddress, &StructTag)> for AccessKey {
-    fn from((addr, tag): (&AccountAddress, &StructTag)) -> Self {
-        let tag = tag.access_vector();
-        let mut key = Vec::with_capacity(AccountAddress::LENGTH + tag.len());
-        key.extend_from_slice(addr.as_ref());
-        key.extend_from_slice(&tag);
-        AccessKey(key)
-    }
-}
-
-impl From<&ModuleId> for AccessKey {
-    fn from(id: &ModuleId) -> Self {
-        AccessKey(id.access_vector())
-    }
-}
-
-impl AsRef<[u8]> for AccessKey {
-    fn as_ref(&self) -> &[u8] {
-        &self.0
-    }
-}

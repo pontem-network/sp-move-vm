@@ -11,9 +11,7 @@ use move_core_types::{
     account_address::AccountAddress, gas_schedule::CostTable, language_storage::CORE_CODE_ADDRESS,
     value::MoveTypeLayout, vm_status::StatusType,
 };
-use move_vm_natives::{
-    account, bcs, debug, event, hash, signature, signer, u256, vector,
-};
+use move_vm_natives::{account, bcs, debug, event, hash, signature, signer, u256, vector};
 use move_vm_types::{
     data_store::DataStore,
     gas_schedule::CostStrategy,

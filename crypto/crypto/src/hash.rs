@@ -118,6 +118,7 @@ use serde::ser;
 use core::convert::TryFrom;
 use hex::FromHex;
 use tiny_keccak::{Hasher, Sha3};
+use serde::{Deserialize, Serialize};
 
 /// A prefix used to begin the salt of every diem hashable structure. The salt
 /// consists in this global prefix, concatenated with the specified
@@ -125,7 +126,7 @@ use tiny_keccak::{Hasher, Sha3};
 pub(crate) const DIEM_HASH_PREFIX: &[u8] = b"DIEM::";
 
 /// Output value of our hash function. Intentionally opaque for safety and modularity.
-#[derive(Clone, Copy, Eq, Hash, PartialEq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize, Deserialize)]
 #[cfg_attr(any(test, feature = "fuzzing"), derive(Arbitrary))]
 pub struct HashValue {
     hash: [u8; HashValue::LENGTH],

@@ -28,10 +28,7 @@ impl MoveVM {
     ///     cases where this may not be necessary, with the most notable one being the common module
     ///     publishing flow: you can keep using the same Move VM if you publish some modules in a Session
     ///     and apply the effects to the storage when the Session ends.
-    pub fn new_session<'r, R: RemoteCache>(
-        &self,
-        remote: &'r R,
-    ) -> Session<'r, '_, R> {
+    pub fn new_session<'r, R: RemoteCache>(&self, remote: &'r R) -> Session<'r, '_, R> {
         self.runtime.new_session(remote)
     }
 

@@ -123,14 +123,11 @@ fn test_parse_pac() {
         .map(|module| module.name().to_string())
         .collect::<Vec<_>>();
     assert_eq!(
-        modules,
+        modules.iter().map(|s|s.as_str()).collect::<Vec<_>>(),
         vec![
-            "Block".to_owned(),
-            "Coins".to_owned(),
-            "Event".to_owned(),
-            "PONT".to_owned(),
-            "Pontem".to_owned(),
-            "Time".to_owned(),
+            "Signer", "Errors", "CoreAddresses", "Vector", "BCS", "Event",
+            "DiemTimestamp", "Roles", "ValidatorOperatorConfig", "Signature",
+            "Option", "ValidatorConfig", "DiemConfig", "DiemSystem", "DiemBlock"
         ]
     );
 }

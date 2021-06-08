@@ -1,40 +1,35 @@
-use alloc::borrow::ToOwned;
 use alloc::vec::Vec;
-
-use anyhow::Error;
-use hashbrown::HashMap;
-
+use anyhow::{Error, anyhow};
 use move_core_types::account_address::AccountAddress;
 use move_core_types::effects::{ChangeSet, Event};
-use move_core_types::gas_schedule::{AbstractMemorySize, GasAlgebra, GasUnits};
 use move_core_types::gas_schedule::CostTable;
 use move_core_types::gas_schedule::InternalGasUnits;
-use move_core_types::identifier::Identifier;
-use move_core_types::language_storage::{CORE_CODE_ADDRESS, ModuleId, StructTag, TypeTag};
-use move_core_types::vm_status::{AbortLocation, StatusCode, VMStatus};
+use move_core_types::gas_schedule::{AbstractMemorySize, GasAlgebra, GasUnits};
+use move_core_types::identifier::{IdentStr, Identifier};
+use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS};
+use move_core_types::vm_status::{StatusCode, VMStatus};
 use move_vm_runtime::data_cache::RemoteCache;
 use move_vm_runtime::logging::NoContextLog;
 use move_vm_runtime::move_vm::MoveVM;
 use move_vm_runtime::session::Session;
 use move_vm_types::gas_schedule::CostStrategy;
 use vm::errors::{Location, VMError, VMResult};
-
-use crate::data::{AccessKey, Bank};
-use crate::data::{
-    ExecutionContext, State, StateSession,
-    WriteEffects,
-};
+use crate::io::key::AccessKey;
+use crate::data::Bank;
+use crate::data::{ExecutionContext, State, StateSession, WriteEffects};
 use crate::io::traits::{BalanceAccess, EventHandler, Storage};
 use crate::types::{Gas, ModuleTx, PublishPackageTx, ScriptTx, VmResult};
 use crate::Vm;
-use crate::vm_config::loader::load_vm_config;
+use diem_types::on_chain_config::{VMConfig, OnChainConfig};
+use crate::gas_schedule::cost_table;
+use crate::io::config::ConfigStore;
 
 /// MoveVM.
 pub struct Mvm<S, E, B>
-    where
-        S: Storage,
-        E: EventHandler,
-        B: BalanceAccess,
+where
+    S: Storage,
+    E: EventHandler,
+    B: BalanceAccess,
 {
     vm: MoveVM,
     cost_table: CostTable,
@@ -44,19 +39,24 @@ pub struct Mvm<S, E, B>
 }
 
 impl<S, E, B> Mvm<S, E, B>
-    where
-        S: Storage,
-        E: EventHandler,
-        B: BalanceAccess,
+where
+    S: Storage,
+    E: EventHandler,
+    B: BalanceAccess,
 {
     /// Creates a new move vm with given store and event handler.
-    pub fn new(
+    pub fn new(store: S, event_handler: E, balance: B) -> Result<Mvm<S, E, B>, Error> {
+        let config = VMConfig::fetch_config(&ConfigStore::from(&store))
+            .ok_or_else(|| anyhow!("Failed to load VMConfig."))?;
+        Self::new_with_config(store, event_handler, balance, config)
+    }
+
+    pub(crate) fn new_with_config(
         store: S,
         event_handler: E,
         balance: B,
+        config: VMConfig,
     ) -> Result<Mvm<S, E, B>, Error> {
-        let config = load_vm_config(&store)?;
-
         Ok(Mvm {
             vm: MoveVM::new(),
             cost_table: config.gas_schedule,
@@ -66,11 +66,42 @@ impl<S, E, B> Mvm<S, E, B>
         })
     }
 
-    /// Stores write set into storage and handle events.
-    fn handle_tx_effects(
+    pub(crate) fn execute_function(
         &self,
-        tx_effects: (ChangeSet, Vec<Event>),
-    ) -> Result<(), VMError> {
+        sender: AccountAddress,
+        gas: Gas,
+        module: &ModuleId,
+        function_name: &IdentStr,
+        ty_args: Vec<TypeTag>,
+        args: Vec<Vec<u8>>,
+        context: ExecutionContext
+    ) -> VmResult {
+        let state_session = StateSession::new(&self.state, context);
+        let mut session = self.vm.new_session(&state_session);
+        let mut cost_strategy =
+            CostStrategy::transaction(&self.cost_table, GasUnits::new(gas.max_gas_amount()));
+
+        let result = session
+            .execute_function(
+                module,
+                function_name,
+                ty_args,
+                args,
+                &mut cost_strategy,
+                &NoContextLog::new(),
+            );
+
+        self.handle_vm_result(
+            sender,
+            cost_strategy,
+            gas,
+            result.and_then(|_| session.finish()),
+            false,
+        )
+    }
+
+    /// Stores write set into storage and handle events.
+    fn handle_tx_effects(&self, tx_effects: (ChangeSet, Vec<Event>)) -> Result<(), VMError> {
         let (change_set, events) = tx_effects;
 
         for (addr, acc) in change_set.accounts {
@@ -171,8 +202,8 @@ impl<S, E, B> Mvm<S, E, B>
         sender: AccountAddress,
         cost_strategy: &mut CostStrategy,
     ) -> VMResult<()>
-        where
-            R: RemoteCache,
+    where
+        R: RemoteCache,
     {
         cost_strategy.charge_intrinsic_gas(AbstractMemorySize::new(module.len() as u64))?;
 
@@ -186,21 +217,21 @@ impl<S, E, B> Mvm<S, E, B>
         session: &mut Session<'_, '_, R>,
         sender: &AccountAddress,
     ) -> VMResult<()>
-        where
-            R: RemoteCache,
+    where
+        R: RemoteCache,
     {
         let total_cost = session.num_mutated_accounts(sender)
             * cost_strategy
-            .cost_table()
-            .gas_constants
-            .global_memory_per_byte_write_cost
-            .mul(
-                cost_strategy
-                    .cost_table()
-                    .gas_constants
-                    .default_account_size,
-            )
-            .get();
+                .cost_table()
+                .gas_constants
+                .global_memory_per_byte_write_cost
+                .mul(
+                    cost_strategy
+                        .cost_table()
+                        .gas_constants
+                        .default_account_size,
+                )
+                .get();
         cost_strategy
             .deduct_gas(InternalGasUnits::new(total_cost))
             .map_err(|p_err| p_err.finish(Location::Undefined))
@@ -208,10 +239,10 @@ impl<S, E, B> Mvm<S, E, B>
 }
 
 impl<S, E, B> Vm for Mvm<S, E, B>
-    where
-        S: Storage,
-        E: EventHandler,
-        B: BalanceAccess,
+where
+    S: Storage,
+    E: EventHandler,
+    B: BalanceAccess,
 {
     fn publish_module(&self, gas: Gas, module: ModuleTx, dry_run: bool) -> VmResult {
         let (module, sender) = module.into_inner();

@@ -23,4 +23,5 @@ members = [
     "common/proptest-helpers",
     "common/fallible",
     "stdlib",
+    "types"
 ]

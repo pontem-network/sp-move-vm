@@ -7,7 +7,6 @@ use crate::{
     runtime::VMRuntime,
 };
 use alloc::vec::Vec;
-use hashbrown::HashMap;
 use move_core_types::{
     account_address::AccountAddress,
     effects::{ChangeSet, Event},

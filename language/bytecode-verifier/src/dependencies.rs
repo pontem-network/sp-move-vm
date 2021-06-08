@@ -3,7 +3,6 @@
 
 //! This module contains verification of usage of dependencies for modules and scripts.
 use crate::binary_views::BinaryIndexedView;
-use alloc::borrow::ToOwned;
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::string::ToString;
 use hashbrown::HashMap;

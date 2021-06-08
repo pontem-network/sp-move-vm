@@ -34,7 +34,6 @@ use crate::{
     internals::ModuleIndex,
     IndexKind, SignatureTokenKind,
 };
-use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
 use alloc::string::ToString;
 use alloc::vec::Vec;
