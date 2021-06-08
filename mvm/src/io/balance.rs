@@ -1,10 +1,10 @@
 use alloc::borrow::Cow;
 use core::cell::RefCell;
 
-use hashbrown::HashMap;
-
-use crate::io::traits::{Balance, BalanceAccess, CurrencyAccessPath};
 use anyhow::Error;
+use hashbrown::HashMap;
+use serde::{Deserialize, Serialize};
+
 use diem_types::account_config;
 use diem_types::account_config::CORE_CODE_ADDRESS;
 use diem_types::resources::currency_info::CurrencyInfoResource;
@@ -13,8 +13,9 @@ use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::{StructTag, TypeTag};
 use move_core_types::vm_status::known_locations::DIEM_MODULE_IDENTIFIER;
 use move_vm_runtime::data_cache::RemoteCache;
-use serde::{Deserialize, Serialize};
 use vm::errors::PartialVMResult;
+
+use crate::io::traits::{Balance, BalanceAccess, CurrencyAccessPath};
 
 pub const DIEM_COIN: &str = "Diem";
 pub const CURRENCY_INFO: &str = "CurrencyInfo";
@@ -55,7 +56,8 @@ impl<B: BalanceAccess> MasterOfCoin<B> {
             None => {
                 let addr = account_config::diem_root_address();
                 let mut currency = native_currency(coin);
-                let bridge = remote.get_resource(&addr, &currency).ok()?;
+                let bridge = remote.get_resource(&addr, &currency).ok()?
+                    .and_then(|buff| bcs::from_bytes(&buff).ok());
                 if let TypeTag::Struct(coin) = currency.type_params.remove(0) {
                     mapper.insert(coin, bridge.to_owned());
                 }
@@ -147,13 +149,13 @@ fn native_currency(coin: &StructTag) -> StructTag {
 
 #[derive(Debug, Serialize, Deserialize, Copy, Clone)]
 pub struct CurrencyInfo {
-    total_supply: u128,
+    pub total_value: u128,
 }
 
 impl CurrencyInfo {
     pub fn apply(&self, buff: &[u8]) -> Result<Vec<u8>, Error> {
         let mut info = CurrencyInfoResource::try_from_bytes(buff)?;
-        info.total_value = self.total_supply;
+        info.total_value = self.total_value;
         bcs::to_bytes(&info).map_err(Into::into)
     }
 }

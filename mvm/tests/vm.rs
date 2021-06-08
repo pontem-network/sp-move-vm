@@ -13,6 +13,7 @@ use mvm::io::context::ExecutionContext;
 use mvm::io::state::State;
 use mvm::types::Gas;
 use mvm::Vm;
+use mvm::io::balance::CurrencyInfo;
 
 mod common;
 
@@ -189,8 +190,18 @@ fn test_invalid_pac() {
     assert_eq!(res.status_code, StatusCode::LINKER_ERROR);
 }
 
-// #[test]
-// fn test_balance() {
+#[test]
+fn pont_info() {
+    let (vm, _, _, bank) = vm();
+    bank.set_currency_info("PONT".as_bytes(), CurrencyInfo {
+        total_value: 40
+    });
+
+    vm.exec(pont_info_script(CORE_CODE_ADDRESS, 40));
+}
+
+#[test]
+fn test_balance() {
 //     let (vm, _, _,  bank) = vm();
 //     vm.pub_mod(coins_module());
 //     vm.pub_mod(pont_module());
@@ -218,7 +229,7 @@ fn test_invalid_pac() {
 //     assert_eq!(bank.get_balance(&addr_2, "USDT"), Some(512));
 //     assert_eq!(bank.get_balance(&addr_2, "PONT"), Some(3));
 //     assert_eq!(bank.get_balance(&addr_2, "BTC"), None);
-// }
+}
 //
 // #[test]
 // fn test_transfer() {
