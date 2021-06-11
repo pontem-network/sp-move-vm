@@ -32,7 +32,8 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use anyhow::{bail, Error, Result};
 use core::{borrow::Borrow, fmt, ops::Deref};
-use parity_scale_codec::{Decode, Encode, Error as PsError, Input, Output};
+use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::{Error as PsError, Input, Output};
 #[cfg(any(test, feature = "fuzzing"))]
 use proptest::prelude::*;
 use ref_cast::RefCast;
@@ -160,7 +161,7 @@ impl Encode for Identifier {
         self.0.as_bytes().size_hint()
     }
 
-    fn encode_to<T: Output>(&self, dest: &mut T) {
+    fn encode_to<T: Output + ?Sized>(&self, dest: &mut T) {
         self.0.as_bytes().encode_to(dest)
     }
 
