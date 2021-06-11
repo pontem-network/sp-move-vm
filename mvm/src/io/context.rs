@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use move_core_types::language_storage::StructTag;
 
 pub const TIMESTAMP_MODULE: &str = "DiemTimestamp";

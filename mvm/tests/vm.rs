@@ -9,11 +9,12 @@ use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS};
 use move_core_types::vm_status::{AbortLocation, StatusCode, VMStatus};
 use move_vm_runtime::data_cache::RemoteCache;
+use mvm::io::balance::CurrencyInfo;
 use mvm::io::context::ExecutionContext;
 use mvm::io::state::State;
+use mvm::io::traits::BalanceAccess;
 use mvm::types::Gas;
 use mvm::Vm;
-use mvm::io::balance::CurrencyInfo;
 
 mod common;
 
@@ -147,7 +148,7 @@ fn test_error_event() {
             address: CORE_CODE_ADDRESS,
             module: Identifier::new("VMStatus").unwrap(),
             name: Identifier::new("VMStatus").unwrap(),
-            type_params: vec![]
+            type_params: vec![],
         }),
         tag
     );
@@ -157,9 +158,9 @@ fn test_error_event() {
         VMStatus::MoveAbort(
             AbortLocation::Module(ModuleId::new(
                 CORE_CODE_ADDRESS,
-                Identifier::new("Abort").unwrap()
+                Identifier::new("Abort").unwrap(),
             )),
-            13
+            13,
         )
     );
 }
@@ -193,101 +194,63 @@ fn test_invalid_pac() {
 #[test]
 fn pont_info() {
     let (vm, _, _, bank) = vm();
-    bank.set_currency_info("PONT".as_bytes(), CurrencyInfo {
-        total_value: 40
-    });
+    bank.set_currency_info("PONT".as_bytes(), CurrencyInfo { total_value: 42 });
 
-    vm.exec(pont_info_script(CORE_CODE_ADDRESS, 40));
+    vm.exec(pont_info_script(CORE_CODE_ADDRESS, 42));
 }
 
 #[test]
 fn test_balance() {
-//     let (vm, _, _,  bank) = vm();
-//     vm.pub_mod(coins_module());
-//     vm.pub_mod(pont_module());
-//     vm.pub_mod(event_module());
-//     vm.pub_mod(pontem_module());
-//
-//     let addr_1 = AccountAddress::random();
-//     let addr_2 = AccountAddress::random();
-//     let init_usdt = 1024;
-//     let init_pont = 64;
-//     let init_btc = 13;
-//
-//     bank.set_balance(&addr_1, "USDT", init_usdt);
-//     bank.set_balance(&addr_1, "PONT", init_pont);
-//     bank.set_balance(&addr_1, "BTC", init_btc);
-//
-//     vm.exec(test_balance_script(
-//         addr_1, addr_2, init_usdt, init_pont, init_btc,
-//     ));
-//
-//     assert_eq!(bank.get_balance(&addr_1, "USDT"), Some(512));
-//     assert_eq!(bank.get_balance(&addr_1, "PONT"), Some(61));
-//     assert_eq!(bank.get_balance(&addr_1, "BTC"), Some(13));
-//
-//     assert_eq!(bank.get_balance(&addr_2, "USDT"), Some(512));
-//     assert_eq!(bank.get_balance(&addr_2, "PONT"), Some(3));
-//     assert_eq!(bank.get_balance(&addr_2, "BTC"), None);
+    let (vm, _, _, bank) = vm();
+    bank.set_currency_info("PONT".as_bytes(), CurrencyInfo { total_value: 1001 });
+    let root = AccountAddress::random();
+    vm.exec(create_root_account_script(root));
+
+    let alice = AccountAddress::random();
+    let alice_balance = 1000;
+    vm.exec(create_account_script(root, alice));
+
+    let move_to_bob = 500;
+
+    let bob = AccountAddress::random();
+    let bob_balance = 1;
+    vm.exec(create_account_script(root, bob));
+
+    bank.set_balance(&alice, "PONT".as_bytes(), alice_balance);
+    bank.set_balance(&bob, "PONT".as_bytes(), bob_balance);
+
+    vm.exec(transfer_script(
+        alice,
+        alice_balance,
+        bob,
+        bob_balance,
+        move_to_bob,
+    ));
+
+    assert_eq!(
+        bank.get_balance(&alice, "PONT".as_bytes()),
+        Some(alice_balance - move_to_bob)
+    );
+    assert_eq!(
+        bank.get_balance(&bob, "PONT".as_bytes()),
+        Some(bob_balance + move_to_bob)
+    );
+
+    let move_to_alice = 42;
+    vm.exec(transfer_script(
+        bob,
+        bob_balance + move_to_bob,
+        alice,
+        alice_balance - move_to_bob,
+        move_to_alice,
+    ));
+
+    assert_eq!(
+        bank.get_balance(&alice, "PONT".as_bytes()),
+        Some(alice_balance - move_to_bob + move_to_alice)
+    );
+    assert_eq!(
+        bank.get_balance(&bob, "PONT".as_bytes()),
+        Some(bob_balance + move_to_bob - move_to_alice)
+    );
 }
-//
-// #[test]
-// fn test_transfer() {
-//     let (vm, store, _, bank) = vm();
-//     let state = State::new(store);
-//
-//     vm.pub_mod(coins_module());
-//     vm.pub_mod(pont_module());
-//     vm.pub_mod(event_module());
-//     vm.pub_mod(pontem_module());
-//
-//     vm.exec(reg_coin_script(
-//         TypeTag::Struct {
-//             0: StructTag {
-//                 address: CORE_CODE_ADDRESS,
-//                 module: Identifier::new("PONT").unwrap(),
-//                 name: Identifier::new("T").unwrap(),
-//                 type_params: vec![],
-//             },
-//         },
-//         "PONT",
-//         2,
-//     ));
-//
-//     let alice = AccountAddress::random();
-//     let bob = AccountAddress::random();
-//
-//     let alice_balance = 100;
-//     bank.set_balance(&alice, "PONT", alice_balance);
-//
-//     let send_to_bob = 4;
-//
-//     vm.exec(test_transfer_script(alice, bob, send_to_bob));
-//
-//     assert_eq!(
-//         bank.get_balance(&alice, "PONT"),
-//         Some(alice_balance - send_to_bob)
-//     );
-//
-//     let bob_account = state
-//         .get_resource(
-//             &bob,
-//             &StructTag {
-//                 address: CORE_CODE_ADDRESS,
-//                 module: Identifier::new("Pontem").unwrap(),
-//                 name: Identifier::new("T").unwrap(),
-//                 type_params: vec![TypeTag::Struct(StructTag {
-//                     address: CORE_CODE_ADDRESS,
-//                     module: Identifier::new("PONT").unwrap(),
-//                     name: Identifier::new("T").unwrap(),
-//                     type_params: vec![],
-//                 })],
-//             },
-//         )
-//         .unwrap()
-//         .unwrap();
-//
-//     let bob_account: u128 = bcs::from_bytes(&bob_account).unwrap();
-//
-//     assert_eq!(bob_account, send_to_bob);
-// }

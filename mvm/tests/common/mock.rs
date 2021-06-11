@@ -107,7 +107,7 @@ impl BalanceAccess for BankMock {
             .and_then(|acc| acc.get(path).cloned())
     }
 
-    fn deposit(&self, address: &AccountAddress, path: &CurrencyAccessPath, amount: Balance) {
+    fn sub(&self, address: &AccountAddress, path: &CurrencyAccessPath, amount: Balance) {
         let mut acc_map = self.balances.borrow_mut();
         let acc = acc_map.entry(*address).or_insert_with(HashMap::new);
         let val = acc.entry(Cow::Owned(path.to_vec())).or_insert(0);
@@ -120,7 +120,7 @@ impl BalanceAccess for BankMock {
         *val -= amount;
     }
 
-    fn withdraw(&self, address: &AccountAddress, path: &CurrencyAccessPath, amount: Balance) {
+    fn add(&self, address: &AccountAddress, path: &CurrencyAccessPath, amount: Balance) {
         let mut acc_map = self.balances.borrow_mut();
         let acc = acc_map.entry(*address).or_insert_with(HashMap::new);
         let val = acc.entry(Cow::Owned(path.to_vec())).or_insert(0);

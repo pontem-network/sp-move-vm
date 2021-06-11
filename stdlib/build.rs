@@ -2,9 +2,9 @@ use std::fs;
 use std::path::Path;
 use std::process::{Command, Stdio};
 
-const STDLIB_DIR_NAME: &'static str = "move-stdlib";
-const REPO: &'static str = "https://github.com/pontem-network/move-stdlib.git";
-const REV: &'static str = "f4b83829e9070bd489157e0a27350fd4c3d08d54";
+const STDLIB_DIR_NAME: &str = "move-stdlib";
+const REPO: &str = "https://github.com/pontem-network/move-stdlib.git";
+const REV: &str = "06d6ea648ae8ca2ececc0e0b960df78a49a1c75d";
 
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");

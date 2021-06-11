@@ -2,8 +2,10 @@ use std::convert::TryFrom;
 
 use serde::Deserialize;
 
+use diem_types::account_config::treasury_compliance_account_address;
 use move_core_types::account_address::AccountAddress;
-use move_core_types::language_storage::{CORE_CODE_ADDRESS};
+use move_core_types::language_storage::CORE_CODE_ADDRESS;
+use mvm::io::traits::Balance;
 use mvm::types::{Gas, ModulePackage, ModuleTx, ScriptArg, ScriptTx};
 
 pub fn gas() -> Gas {
@@ -77,9 +79,7 @@ pub fn store_u64_script(addr: AccountAddress, args: u64) -> ScriptTx {
 pub fn pont_info_script(address: AccountAddress, total: u128) -> ScriptTx {
     ScriptTx::new(
         include_bytes!("../assets/artifacts/scripts/pont_info.mv").to_vec(),
-        vec![
-            ScriptArg::U128(total),
-        ],
+        vec![ScriptArg::U128(total)],
         vec![],
         vec![address],
     )
@@ -96,25 +96,45 @@ pub fn error_script(addr: AccountAddress) -> ScriptTx {
     .unwrap()
 }
 
-// pub fn test_balance_script(
-//     addr: AccountAddress,
-//     addr_2: AccountAddress,
-//     init_usdt: u128,
-//     init_pont: u128,
-//     init_btc: u128,
-// ) -> ScriptTx {
-//     ScriptTx::new(
-//         include_bytes!("../assets/target/scripts/test_balance.mv").to_vec(),
-//         vec![
-//             ScriptArg::U128(init_usdt),
-//             ScriptArg::U128(init_pont),
-//             ScriptArg::U128(init_btc),
-//         ],
-//         vec![],
-//         vec![addr, addr_2],
-//     )
-//     .unwrap()
-// }
+pub fn create_root_account_script(addr: AccountAddress) -> ScriptTx {
+    ScriptTx::new(
+        include_bytes!("../assets/artifacts/scripts/make_root_account.mv").to_vec(),
+        vec![ScriptArg::Address(addr)],
+        vec![],
+        vec![treasury_compliance_account_address()],
+    )
+    .unwrap()
+}
+
+pub fn create_account_script(root: AccountAddress, addr: AccountAddress) -> ScriptTx {
+    ScriptTx::new(
+        include_bytes!("../assets/artifacts/scripts/make_account.mv").to_vec(),
+        vec![ScriptArg::Address(addr)],
+        vec![],
+        vec![root],
+    )
+    .unwrap()
+}
+
+pub fn transfer_script(
+    from: AccountAddress,
+    from_balance: Balance,
+    to: AccountAddress,
+    to_balance: Balance,
+    to_move: Balance,
+) -> ScriptTx {
+    ScriptTx::new(
+        include_bytes!("../assets/artifacts/scripts/transfer.mv").to_vec(),
+        vec![
+            ScriptArg::U64(from_balance),
+            ScriptArg::U64(to_balance),
+            ScriptArg::U64(to_move),
+        ],
+        vec![],
+        vec![from, to],
+    )
+    .unwrap()
+}
 
 pub fn valid_package() -> ModulePackage {
     ModulePackage::try_from(&include_bytes!("../assets/artifacts/bundles/valid_pack.pac")[..])

@@ -25,6 +25,7 @@ use smallvec::SmallVec;
 use vm::errors::PartialVMResult;
 
 use alloc::string::String;
+use alloc::vec::Vec;
 use move_core_types::language_storage::{ModuleId, TypeTag};
 
 pub use move_core_types::vm_status::StatusCode;

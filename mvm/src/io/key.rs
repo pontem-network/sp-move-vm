@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use diem_types::access_path::AccessPath;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::language_storage::{ModuleId, StructTag};

@@ -3,6 +3,7 @@ use crate::io::context::ExecutionContext;
 use crate::io::key::AccessKey;
 use crate::io::session::StateSession;
 use crate::io::traits::{BalanceAccess, Storage};
+use alloc::vec::Vec;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::language_storage::{ModuleId, StructTag};
 use move_vm_runtime::data_cache::RemoteCache;

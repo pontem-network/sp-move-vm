@@ -1,12 +1,13 @@
+use crate::io::balance::{BalanceOp, MasterOfCoinSession};
+use crate::io::context::ExecutionContext;
+use crate::io::traits::BalanceAccess;
+use alloc::vec::Vec;
 use diem_types::account_config;
 use move_core_types::account_address::AccountAddress;
+use move_core_types::effects::{ChangeSet, Event};
 use move_core_types::language_storage::{ModuleId, StructTag, CORE_CODE_ADDRESS};
 use move_vm_runtime::data_cache::RemoteCache;
 use vm::errors::{PartialVMResult, VMResult};
-
-use crate::io::balance::MasterOfCoinSession;
-use crate::io::context::ExecutionContext;
-use crate::io::traits::BalanceAccess;
 
 pub struct StateSession<'b, 'r, R: RemoteCache, B: BalanceAccess> {
     remote: &'r R,
@@ -25,6 +26,14 @@ impl<'b, 'r, R: RemoteCache, B: BalanceAccess> StateSession<'b, 'r, R, B> {
             context,
             coin_session,
         }
+    }
+
+    pub fn finish(
+        self,
+        (mut changes, events): (ChangeSet, Vec<Event>),
+    ) -> VMResult<(ChangeSet, Vec<Event>, Vec<BalanceOp>)> {
+        let balance_op = self.coin_session.finish(&mut changes)?;
+        Ok((changes, events, balance_op))
     }
 }
 

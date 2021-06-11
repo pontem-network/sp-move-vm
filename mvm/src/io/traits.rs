@@ -1,4 +1,5 @@
 use crate::io::balance::CurrencyInfo;
+use alloc::vec::Vec;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::language_storage::TypeTag;
 
@@ -16,11 +17,11 @@ pub trait Storage {
 }
 
 pub type CurrencyAccessPath = [u8];
-pub type Balance = u128;
+pub type Balance = u64;
 
 pub trait BalanceAccess {
     fn get_currency_info(&self, path: &CurrencyAccessPath) -> Option<CurrencyInfo>;
     fn get_balance(&self, address: &AccountAddress, path: &CurrencyAccessPath) -> Option<Balance>;
-    fn deposit(&self, address: &AccountAddress, path: &CurrencyAccessPath, amount: Balance);
-    fn withdraw(&self, address: &AccountAddress, path: &CurrencyAccessPath, amount: Balance);
+    fn add(&self, address: &AccountAddress, path: &CurrencyAccessPath, amount: Balance);
+    fn sub(&self, address: &AccountAddress, path: &CurrencyAccessPath, amount: Balance);
 }

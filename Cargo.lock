@@ -1298,6 +1298,7 @@ dependencies = [
  "alt_serde",
  "anyhow",
  "bcs",
+ "cell",
  "diem-crypto",
  "diem-types",
  "hashbrown",

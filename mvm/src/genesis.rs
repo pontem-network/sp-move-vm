@@ -1,10 +1,10 @@
 use alloc::borrow::Cow;
+use alloc::borrow::ToOwned;
 use alloc::vec::Vec;
-use core::cell::RefCell;
-use core::convert::TryFrom;
-
 use anyhow::Error;
 use anyhow::{anyhow, ensure};
+use core::cell::RefCell;
+use core::convert::TryFrom;
 use hashbrown::HashMap;
 
 use diem_crypto::HashValue;
@@ -134,11 +134,11 @@ impl BalanceAccess for NopeBalance {
         None
     }
 
-    fn deposit(&self, _: &AccountAddress, _: &CurrencyAccessPath, _: Balance) {
+    fn add(&self, _: &AccountAddress, _: &CurrencyAccessPath, _: Balance) {
         //no-op
     }
 
-    fn withdraw(&self, _: &AccountAddress, _: &CurrencyAccessPath, _: Balance) {
+    fn sub(&self, _: &AccountAddress, _: &CurrencyAccessPath, _: Balance) {
         //no-op
     }
 }
