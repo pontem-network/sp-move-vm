@@ -32,7 +32,7 @@ jobs:
           - "stable"
         cfg:
           - os: macos-latest
-            dove: mac-x86_64
+            dove: darwin-x86_64
           - os: ubuntu-latest
             dove: linux-x86_64
 
