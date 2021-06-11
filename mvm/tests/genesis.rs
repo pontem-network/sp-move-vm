@@ -29,8 +29,6 @@ fn test_genesis_success() {
     contains_core_module(&state, "RegisteredCurrencies");
     contains_core_module(&state, "Diem");
     contains_core_module(&state, "AccountLimits");
-    contains_core_module(&state, "XUS");
-    contains_core_module(&state, "XDX");
     contains_core_module(&state, "ValidatorOperatorConfig");
     contains_core_module(&state, "Option");
     contains_core_module(&state, "ValidatorConfig");
