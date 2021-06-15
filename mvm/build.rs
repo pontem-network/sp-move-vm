@@ -9,9 +9,7 @@ pub fn run(path: &str, cmd: &str, args: &[&str]) {
         .current_dir(path)
         .args(args)
         .stdout(Stdio::piped())
-        .spawn()
-        .unwrap()
-        .wait()
+        .status()
         .unwrap();
     if !status.success() {
         panic!("Failed to run {} {} {:?}", path, cmd, args);

@@ -6,7 +6,6 @@ extern crate sp_core;
 use crate::io::context::ExecutionContext;
 use crate::types::{Gas, ModuleTx, PublishPackageTx, ScriptTx, VmResult};
 
-//pub mod data;
 pub mod error;
 pub mod gas_schedule;
 pub mod genesis;
