@@ -1,3 +1,6 @@
+// Copyright (c) The Diem Core Contributors
+// SPDX-License-Identifier: Apache-2.0
+
 use crate::{
     access_path::AccessPath,
     account_config::constants::{diem_root_address, type_tag_for_currency_code, CORE_CODE_ADDRESS},
