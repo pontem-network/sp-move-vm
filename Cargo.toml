@@ -22,4 +22,6 @@ members = [
     "common/nibble",
     "common/proptest-helpers",
     "common/fallible",
+    "stdlib",
+    "types"
 ]

@@ -1,80 +1,114 @@
-use alloc::borrow::ToOwned;
 use alloc::vec::Vec;
 
-use anyhow::Error;
+use anyhow::{anyhow, Error};
 
+use diem_types::event::EventKey;
+use diem_types::on_chain_config::{OnChainConfig, VMConfig};
 use move_core_types::account_address::AccountAddress;
+use move_core_types::effects::{ChangeSet, Event};
 use move_core_types::gas_schedule::CostTable;
 use move_core_types::gas_schedule::InternalGasUnits;
 use move_core_types::gas_schedule::{AbstractMemorySize, GasAlgebra, GasUnits};
-use move_core_types::identifier::Identifier;
+use move_core_types::identifier::{IdentStr, Identifier};
 use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS};
-use move_core_types::vm_status::{AbortLocation, StatusCode, VMStatus};
+use move_core_types::vm_status::{StatusCode, VMStatus};
 use move_vm_runtime::data_cache::RemoteCache;
 use move_vm_runtime::logging::NoContextLog;
 use move_vm_runtime::move_vm::MoveVM;
 use move_vm_runtime::session::Session;
 use move_vm_types::gas_schedule::CostStrategy;
-use move_vm_types::natives::balance::{BalanceOperation, NativeBalance, WalletId};
 use vm::errors::{Location, VMError, VMResult};
 
-use crate::data::AccessKey;
-use crate::data::{
-    BalanceAccess, Bank, EventHandler, ExecutionContext, Oracle, State, StateSession, Storage,
-    WriteEffects,
-};
+use crate::io::balance::{BalanceOp, MasterOfCoin};
+use crate::io::config::ConfigStore;
+use crate::io::context::ExecutionContext;
+use crate::io::key::AccessKey;
+use crate::io::state::{State, WriteEffects};
+use crate::io::traits::{BalanceAccess, EventHandler, Storage};
 use crate::types::{Gas, ModuleTx, PublishPackageTx, ScriptTx, VmResult};
-use crate::vm_config::loader::load_vm_config;
 use crate::Vm;
-use hashbrown::HashMap;
-use move_core_types::effects::{ChangeSet, Event};
 
 /// MoveVM.
-pub struct Mvm<S, E, O, B>
+pub struct Mvm<S, E, B>
 where
     S: Storage,
     E: EventHandler,
-    O: Oracle,
     B: BalanceAccess,
 {
     vm: MoveVM,
     cost_table: CostTable,
-    state: State<S, O>,
+    state: State<S>,
     event_handler: E,
-    bank: Bank<B>,
+    master_of_coin: MasterOfCoin<B>,
 }
 
-impl<S, E, O, B> Mvm<S, E, O, B>
+impl<S, E, B> Mvm<S, E, B>
 where
     S: Storage,
     E: EventHandler,
-    O: Oracle,
     B: BalanceAccess,
 {
     /// Creates a new move vm with given store and event handler.
-    pub fn new(
+    pub fn new(store: S, event_handler: E, balance: B) -> Result<Mvm<S, E, B>, Error> {
+        let config = VMConfig::fetch_config(&ConfigStore::from(&store))
+            .ok_or_else(|| anyhow!("Failed to load VMConfig."))?;
+        Self::new_with_config(store, event_handler, balance, config)
+    }
+
+    pub(crate) fn new_with_config(
         store: S,
         event_handler: E,
-        oracle: O,
         balance: B,
-    ) -> Result<Mvm<S, E, O, B>, Error> {
-        let config = load_vm_config(&store)?;
-
+        config: VMConfig,
+    ) -> Result<Mvm<S, E, B>, Error> {
         Ok(Mvm {
             vm: MoveVM::new(),
             cost_table: config.gas_schedule,
-            state: State::new(store, oracle),
+            state: State::new(store),
             event_handler,
-            bank: Bank::new(balance),
+            master_of_coin: MasterOfCoin::new(balance),
         })
+    }
+
+    pub(crate) fn execute_function(
+        &self,
+        sender: AccountAddress,
+        gas: Gas,
+        module: &ModuleId,
+        function_name: &IdentStr,
+        ty_args: Vec<TypeTag>,
+        args: Vec<Vec<u8>>,
+        context: Option<ExecutionContext>,
+    ) -> VmResult {
+        let state_session = self.state.state_session(context, &self.master_of_coin);
+        let mut session = self.vm.new_session(&state_session);
+        let mut cost_strategy =
+            CostStrategy::transaction(&self.cost_table, GasUnits::new(gas.max_gas_amount()));
+
+        let result = session.execute_function(
+            module,
+            function_name,
+            ty_args,
+            args,
+            &mut cost_strategy,
+            &NoContextLog::new(),
+        );
+
+        self.handle_vm_result(
+            sender,
+            cost_strategy,
+            gas,
+            result.and_then(|_| session.finish().map(|(ws, e)| (ws, e, vec![]))),
+            false,
+        )
     }
 
     /// Stores write set into storage and handle events.
     fn handle_tx_effects(
         &self,
-        tx_effects: (ChangeSet, Vec<Event>, HashMap<WalletId, BalanceOperation>),
+        tx_effects: (ChangeSet, Vec<Event>, Vec<BalanceOp>),
     ) -> Result<(), VMError> {
-        let (change_set, events, wallet_ops) = tx_effects;
+        let (change_set, events, balance_op) = tx_effects;
 
         for (addr, acc) in change_set.accounts {
             for (ident, val) in acc.modules {
@@ -101,15 +135,12 @@ where
             }
         }
 
-        for (address, ty_tag, msg, caller) in events {
-            self.event_handler.on_event(address, ty_tag, msg, caller);
+        for (guid, seq_num, ty_tag, msg) in events {
+            self.event_handler.on_event(guid, seq_num, ty_tag, msg);
         }
 
-        for (id, op) in wallet_ops.into_iter() {
-            match op {
-                BalanceOperation::Deposit(amount) => self.bank.deposit(&id, amount)?,
-                BalanceOperation::Withdraw(amount) => self.bank.withdraw(&id, amount)?,
-            }
+        for op in balance_op.into_iter() {
+            self.master_of_coin.update_balance(op);
         }
 
         Ok(())
@@ -121,7 +152,7 @@ where
         sender: AccountAddress,
         cost_strategy: CostStrategy,
         gas_meta: Gas,
-        result: Result<(ChangeSet, Vec<Event>, HashMap<WalletId, BalanceOperation>), VMError>,
+        result: Result<(ChangeSet, Vec<Event>, Vec<BalanceOp>), VMError>,
         dry_run: bool,
     ) -> VmResult {
         let gas_used = GasUnits::new(gas_meta.max_gas_amount)
@@ -130,22 +161,26 @@ where
 
         if dry_run {
             return match result {
-                Ok(_) => VmResult::new(StatusCode::EXECUTED, None, gas_used),
-                Err(err) => VmResult::new(err.major_status(), err.sub_status(), gas_used),
+                Ok(_) => VmResult::new(StatusCode::EXECUTED, None, None, gas_used),
+                Err(err) => VmResult::new(
+                    err.major_status(),
+                    err.sub_status(),
+                    Some(err.location().clone()),
+                    gas_used,
+                ),
             };
         }
 
         match result.and_then(|e| self.handle_tx_effects(e)) {
-            Ok(_) => VmResult::new(StatusCode::EXECUTED, None, gas_used),
+            Ok(_) => VmResult::new(StatusCode::EXECUTED, None, None, gas_used),
             Err(err) => {
                 let status = err.major_status();
                 let sub_status = err.sub_status();
+                let loc = err.location().clone();
                 if let Err(err) = self.emit_vm_status_event(sender, err.into_vm_status()) {
-                    VmResult::new(status, sub_status, gas_used);
                     log::warn!("Failed to emit vm status event:{:?}", err);
                 }
-
-                VmResult::new(status, sub_status, gas_used)
+                VmResult::new(status, sub_status, Some(loc), gas_used)
             }
         }
     }
@@ -158,29 +193,17 @@ where
             type_params: vec![],
         });
 
-        let module = match &status {
-            VMStatus::Executed | VMStatus::Error(_) => None,
-            VMStatus::MoveAbort(loc, _)
-            | VMStatus::ExecutionFailure {
-                status_code: _,
-                location: loc,
-                function: _,
-                code_offset: _,
-            } => match loc {
-                AbortLocation::Module(module) => Some(module.to_owned()),
-                AbortLocation::Script => None,
-            },
-        };
         let msg = bcs::to_bytes(&status)
             .map_err(|err| Error::msg(format!("Failed to generate event message: {:?}", err)))?;
 
-        self.event_handler.on_event(sender, tag, msg, module);
+        let guid = EventKey::new_from_address(&sender, 0).to_vec();
+        self.event_handler.on_event(guid, 0, tag, msg);
         Ok(())
     }
 
-    fn _publish_module<R, NB: NativeBalance>(
+    fn _publish_module<R>(
         &self,
-        session: &mut Session<'_, '_, R, NB>,
+        session: &mut Session<'_, '_, R>,
         module: Vec<u8>,
         sender: AccountAddress,
         cost_strategy: &mut CostStrategy,
@@ -195,9 +218,9 @@ where
         result
     }
 
-    fn charge_global_write_gas_usage<R, NB: NativeBalance>(
+    fn charge_global_write_gas_usage<R>(
         cost_strategy: &mut CostStrategy,
-        session: &mut Session<'_, '_, R, NB>,
+        session: &mut Session<'_, '_, R>,
         sender: &AccountAddress,
     ) -> VMResult<()>
     where
@@ -221,22 +244,21 @@ where
     }
 }
 
-impl<S, E, O, B> Vm for Mvm<S, E, O, B>
+impl<S, E, B> Vm for Mvm<S, E, B>
 where
     S: Storage,
     E: EventHandler,
-    O: Oracle,
     B: BalanceAccess,
 {
     fn publish_module(&self, gas: Gas, module: ModuleTx, dry_run: bool) -> VmResult {
         let (module, sender) = module.into_inner();
         let mut cost_strategy =
             CostStrategy::transaction(&self.cost_table, GasUnits::new(gas.max_gas_amount()));
-        let mut session = self.vm.new_session(&self.state, &self.bank);
+        let mut session = self.vm.new_session(&self.state);
 
         let result = self
             ._publish_module(&mut session, module, sender, &mut cost_strategy)
-            .and_then(|_| session.finish());
+            .and_then(|_| session.finish().map(|(ws, e)| (ws, e, vec![])));
 
         self.handle_vm_result(sender, cost_strategy, gas, result, dry_run)
     }
@@ -255,7 +277,7 @@ where
         // Because during batch publishing, the cache mutates.
         // This is not the correct behavior for the dry_run case or for rolling back a transaction.
         let vm = MoveVM::new();
-        let mut session = vm.new_session(&self.state, &self.bank);
+        let mut session = vm.new_session(&self.state);
 
         for module in modules {
             if let Err(err) = self._publish_module(&mut session, module, sender, &mut cost_strategy)
@@ -263,7 +285,13 @@ where
                 return self.handle_vm_result(sender, cost_strategy, gas, Err(err), dry_run);
             }
         }
-        self.handle_vm_result(sender, cost_strategy, gas, session.finish(), dry_run)
+        self.handle_vm_result(
+            sender,
+            cost_strategy,
+            gas,
+            session.finish().map(|(ws, e)| (ws, e, vec![])),
+            dry_run,
+        )
     }
 
     fn execute_script(
@@ -273,8 +301,10 @@ where
         tx: ScriptTx,
         dry_run: bool,
     ) -> VmResult {
-        let state_session = StateSession::new(&self.state, context);
-        let mut session = self.vm.new_session(&state_session, &self.bank);
+        let state_session = self
+            .state
+            .state_session(Some(context), &self.master_of_coin);
+        let mut vm_session = self.vm.new_session(&state_session);
 
         let (script, args, type_args, senders) = tx.into_inner();
         let sender = senders.get(0).cloned().unwrap_or(AccountAddress::ZERO);
@@ -282,7 +312,7 @@ where
         let mut cost_strategy =
             CostStrategy::transaction(&self.cost_table, GasUnits::new(gas.max_gas_amount()));
 
-        let result = session
+        let exec_result = vm_session
             .execute_script(
                 script,
                 type_args,
@@ -292,19 +322,16 @@ where
                 &NoContextLog::new(),
             )
             .and_then(|_| {
-                Self::charge_global_write_gas_usage(&mut cost_strategy, &mut session, &sender)
-            });
+                Self::charge_global_write_gas_usage(&mut cost_strategy, &mut vm_session, &sender)
+            })
+            .and_then(|_| vm_session.finish())
+            .and_then(|vm_effects| state_session.finish(vm_effects));
 
-        self.handle_vm_result(
-            sender,
-            cost_strategy,
-            gas,
-            result.and_then(|_| session.finish()),
-            dry_run,
-        )
+        self.handle_vm_result(sender, cost_strategy, gas, exec_result, dry_run)
     }
 
     fn clear(&self) {
         self.vm.clear();
+        self.master_of_coin.clear();
     }
 }

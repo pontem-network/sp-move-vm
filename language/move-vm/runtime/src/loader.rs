@@ -3,7 +3,6 @@
 
 use crate::logging::{expect_no_verification_errors, LogContext};
 use crate::native_functions::NativeFunction;
-use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::string::ToString;

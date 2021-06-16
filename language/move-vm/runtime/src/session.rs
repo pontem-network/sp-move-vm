@@ -7,7 +7,6 @@ use crate::{
     runtime::VMRuntime,
 };
 use alloc::vec::Vec;
-use hashbrown::HashMap;
 use move_core_types::{
     account_address::AccountAddress,
     effects::{ChangeSet, Event},
@@ -15,15 +14,14 @@ use move_core_types::{
     language_storage::{ModuleId, TypeTag},
 };
 use move_vm_types::gas_schedule::CostStrategy;
-use move_vm_types::natives::balance::{BalanceOperation, NativeBalance, WalletId};
 use vm::errors::*;
 
-pub struct Session<'r, 'l, R, B: NativeBalance> {
+pub struct Session<'r, 'l, R> {
     pub(crate) runtime: &'l VMRuntime,
-    pub(crate) data_cache: TransactionDataCache<'r, 'l, R, B>,
+    pub(crate) data_cache: TransactionDataCache<'r, 'l, R>,
 }
 
-impl<'r, 'l, R: RemoteCache, B: NativeBalance> Session<'r, 'l, R, B> {
+impl<'r, 'l, R: RemoteCache> Session<'r, 'l, R> {
     /// Execute a Move function with the given arguments. This is mainly designed for an external
     /// environment to invoke system logic written in Move.
     ///
@@ -179,7 +177,7 @@ impl<'r, 'l, R: RemoteCache, B: NativeBalance> Session<'r, 'l, R, B> {
     /// This function should always succeed with no user errors returned, barring invariant violations.
     ///
     /// This MUST NOT be called if there is a previous invocation that failed with an invariant violation.
-    pub fn finish(self) -> VMResult<(ChangeSet, Vec<Event>, HashMap<WalletId, BalanceOperation>)> {
+    pub fn finish(self) -> VMResult<(ChangeSet, Vec<Event>)> {
         self.data_cache
             .into_effects()
             .map_err(|e| e.finish(Location::Undefined))

@@ -3,5 +3,5 @@ name = "assets"
 dialect = "pont"
 
 dependencies = [
-    { git = "https://github.com/pontem-network/move-stdlib.git", branch = "move-1.2" }
+    { git = "https://github.com/pontem-network/move-stdlib.git", rev = "06d6ea648ae8ca2ececc0e0b960df78a49a1c75d" }
 ]

@@ -8,7 +8,6 @@ use crate::{
         StructDefinition, StructFieldInformation, TypeParameterIndex, Visibility,
     },
 };
-use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
 use alloc::collections::BTreeMap;
 use alloc::vec::Vec;

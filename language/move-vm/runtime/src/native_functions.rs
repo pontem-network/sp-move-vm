@@ -11,10 +11,7 @@ use move_core_types::{
     account_address::AccountAddress, gas_schedule::CostTable, language_storage::CORE_CODE_ADDRESS,
     value::MoveTypeLayout, vm_status::StatusType,
 };
-use move_vm_natives::{
-    account, bcs, debug, event, event_dfi, hash, signature, signer, u256, vector,
-};
-use move_vm_types::natives::balance::{Balance, BalanceOperation, WalletId};
+use move_vm_natives::{account, bcs, debug, event, hash, signature, signer, u256, vector};
 use move_vm_types::{
     data_store::DataStore,
     gas_schedule::CostStrategy,
@@ -46,7 +43,6 @@ pub(crate) enum NativeFunction {
     VectorDestroyEmpty,
     VectorSwap,
     AccountWriteEvent,
-    AccountEmitEvent,
     DebugPrint,
     DebugPrintStackTrace,
     SignerBorrowAddress,
@@ -65,10 +61,6 @@ pub(crate) enum NativeFunction {
     U256Div,
     U256Sub,
     U256Add,
-
-    WithdrawToNative,
-    DepositFromNative,
-    GetNativeBalance,
 }
 
 impl NativeFunction {
@@ -95,7 +87,6 @@ impl NativeFunction {
             (&CORE_CODE_ADDRESS, "Vector", "destroy_empty") => VectorDestroyEmpty,
             (&CORE_CODE_ADDRESS, "Vector", "swap") => VectorSwap,
             (&CORE_CODE_ADDRESS, "Event", "write_to_event_store") => AccountWriteEvent,
-            (&CORE_CODE_ADDRESS, "Event", "emit") => AccountEmitEvent,
             (&CORE_CODE_ADDRESS, "DiemAccount", "create_signer") => CreateSigner,
             (&CORE_CODE_ADDRESS, "DiemAccount", "destroy_signer") => DestroySigner,
             (&CORE_CODE_ADDRESS, "Account", "create_signer") => CreateSigner,
@@ -119,10 +110,6 @@ impl NativeFunction {
             (&CORE_CODE_ADDRESS, "U256", "div") => U256Div,
             (&CORE_CODE_ADDRESS, "U256", "sub") => U256Sub,
             (&CORE_CODE_ADDRESS, "U256", "add") => U256Add,
-
-            (&CORE_CODE_ADDRESS, "Pontem", "deposit_native") => DepositFromNative,
-            (&CORE_CODE_ADDRESS, "Pontem", "withdraw_native") => WithdrawToNative,
-            (&CORE_CODE_ADDRESS, "Pontem", "get_native_balance") => GetNativeBalance,
             _ => return None,
         })
     }
@@ -149,7 +136,6 @@ impl NativeFunction {
             Self::VectorSwap => vector::native_swap(ctx, t, v),
             // natives that need the full API of `NativeContext`
             Self::AccountWriteEvent => event::native_emit_event(ctx, t, v),
-            Self::AccountEmitEvent => event_dfi::native_emit_event(ctx, t, v),
             Self::BCSToBytes => bcs::native_to_bytes(ctx, t, v),
             Self::DebugPrint => debug::native_print(ctx, t, v),
             Self::DebugPrintStackTrace => debug::native_print_stack_trace(ctx, t, v),
@@ -172,10 +158,6 @@ impl NativeFunction {
             Self::U256Div => u256::div(ctx, t, v),
             Self::U256Sub => u256::sub(ctx, t, v),
             Self::U256Add => u256::add(ctx, t, v),
-
-            Self::WithdrawToNative => account::native_withdraw(ctx, t, v),
-            Self::DepositFromNative => account::native_deposit(ctx, t, v),
-            Self::GetNativeBalance => account::get_balance(ctx, t, v),
         };
         result
     }
@@ -219,12 +201,12 @@ impl<'a, L: LogContext> NativeContext for FunctionContext<'a, L> {
 
     fn save_event(
         &mut self,
-        address: AccountAddress,
+        guid: Vec<u8>,
+        seq_num: u64,
         ty: Type,
         val: Value,
-        caller: Option<ModuleId>,
     ) -> PartialVMResult<bool> {
-        match self.data_store.emit_event(address, ty, val, caller) {
+        match self.data_store.emit_event(guid, seq_num, ty, val) {
             Ok(()) => Ok(true),
             Err(e) if e.major_status().status_type() == StatusType::InvariantViolation => Err(e),
             Err(_) => Ok(false),
@@ -245,14 +227,5 @@ impl<'a, L: LogContext> NativeContext for FunctionContext<'a, L> {
 
     fn caller(&self) -> Option<&ModuleId> {
         self.caller
-    }
-
-    fn get_balance(&self, wallet_id: &WalletId) -> Option<Balance> {
-        self.data_store.get_balance(wallet_id)
-    }
-
-    fn save_balance_operation(&mut self, wallet_id: WalletId, balance_op: BalanceOperation) {
-        self.data_store
-            .save_balance_operation(wallet_id, balance_op);
     }
 }

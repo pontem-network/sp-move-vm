@@ -227,7 +227,7 @@ impl IdentStr {
         self.0.as_bytes()
     }
 
-    fn to_owned(&self) -> Identifier {
+    pub fn to_owned(&self) -> Identifier {
         Identifier(self.0.into())
     }
 }
