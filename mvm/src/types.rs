@@ -3,7 +3,7 @@ use core::convert::TryFrom;
 use core::fmt;
 
 use anyhow::*;
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec_derive::{Decode, Encode};
 use serde::{Deserialize, Serialize};
 
 use move_core_types::account_address::AccountAddress;
