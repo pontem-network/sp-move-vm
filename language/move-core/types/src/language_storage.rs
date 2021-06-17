@@ -9,7 +9,7 @@ use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::fmt::{Display, Formatter};
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec_derive::{Decode, Encode};
 #[cfg(any(test, feature = "fuzzing"))]
 use proptest_derive::Arbitrary;
 use serde::{Deserialize, Serialize};

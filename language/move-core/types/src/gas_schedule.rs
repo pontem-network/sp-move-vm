@@ -12,7 +12,7 @@ use core::{
     u64,
 };
 use mirai_annotations::*;
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec_derive::{Decode, Encode};
 use serde::{Deserialize, Serialize};
 
 /// The underlying carrier for gas-related units and costs. Data with this type should not be
