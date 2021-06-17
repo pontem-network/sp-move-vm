@@ -37,5 +37,4 @@ proptest-derive = "0.2.0"
 default = ["std"]
 
 std = [
-#    "serde/std",
 ]

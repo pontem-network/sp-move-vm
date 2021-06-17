@@ -20,5 +20,4 @@ hex = "0.4.2"
 [features]
 default = ["std"]
 std = [
-#	"serde/std",
 ]
