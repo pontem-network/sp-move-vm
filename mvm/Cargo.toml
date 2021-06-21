@@ -24,7 +24,6 @@ move-lang = { path = "../language/move-lang", default-features = false }
 bcs = { path = "../bcs", default-features = false }
 stdlib = { path = "../stdlib", default-features = false }
 log = { version = "0.4.14", default-features = false }
-sp-core = { version = "3.0.0", default-features = false }
 diem-types = { path = "../types", default-features = false }
 
 [features]
@@ -38,5 +37,4 @@ std = [
     "parity-scale-codec/std",
     "move-lang/std",
     "log/std",
-    "sp-core/std"
 ]
