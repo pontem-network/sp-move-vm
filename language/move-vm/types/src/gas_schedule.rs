@@ -326,7 +326,4 @@ pub enum NativeCostIndex {
     U256_DIV = 25,
     U256_SUB = 26,
     U256_ADD = 27,
-    DEPOSIT = 28,
-    WITHDRAW = 29,
-    GET_BALANCE = 30,
 }
