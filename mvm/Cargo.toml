@@ -38,3 +38,5 @@ std = [
     "move-lang/std",
     "log/std",
 ]
+debug_module = ["move-vm-runtime/debug_module"]
+
