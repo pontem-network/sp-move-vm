@@ -48,8 +48,6 @@ pub(crate) enum NativeFunction {
     SignerBorrowAddress,
     CreateSigner,
     DestroySigner,
-    DfinanceCreateSigner,
-    DfinanceDestroySigner,
 
     U256FromU8,
     U256FromU64,
@@ -94,10 +92,6 @@ impl NativeFunction {
             (&CORE_CODE_ADDRESS, "Debug", "print") => DebugPrint,
             (&CORE_CODE_ADDRESS, "Debug", "print_stack_trace") => DebugPrintStackTrace,
             (&CORE_CODE_ADDRESS, "Signer", "borrow_address") => SignerBorrowAddress,
-            (&CORE_CODE_ADDRESS, "Dfinance", "create_signer") => DfinanceCreateSigner,
-            (&CORE_CODE_ADDRESS, "Dfinance", "destroy_signer") => DfinanceDestroySigner,
-            (&CORE_CODE_ADDRESS, "Pontem", "create_signer") => DfinanceCreateSigner,
-            (&CORE_CODE_ADDRESS, "Pontem", "destroy_signer") => DfinanceDestroySigner,
 
             (&CORE_CODE_ADDRESS, "U256", "from_u8") => U256FromU8,
             (&CORE_CODE_ADDRESS, "U256", "from_u64") => U256FromU64,
@@ -142,8 +136,6 @@ impl NativeFunction {
             Self::SignerBorrowAddress => signer::native_borrow_address(ctx, t, v),
             Self::CreateSigner => account::native_create_signer(ctx, t, v),
             Self::DestroySigner => account::native_destroy_signer(ctx, t, v),
-            Self::DfinanceCreateSigner => account::native_create_signer(ctx, t, v),
-            Self::DfinanceDestroySigner => account::native_destroy_signer(ctx, t, v),
 
             // u256
             Self::U256FromU8 => u256::from_u8(ctx, t, v),
