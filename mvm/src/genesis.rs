@@ -1,10 +1,10 @@
 use alloc::borrow::Cow;
 use alloc::borrow::ToOwned;
 use alloc::vec::Vec;
+use core::cell::RefCell;
+
 use anyhow::Error;
 use anyhow::{anyhow, ensure};
-use core::cell::RefCell;
-use core::convert::TryFrom;
 use hashbrown::HashMap;
 
 use diem_crypto::HashValue;
@@ -17,7 +17,6 @@ use move_core_types::identifier::{IdentStr, Identifier};
 use move_core_types::language_storage::{ModuleId, TypeTag, CORE_CODE_ADDRESS};
 use move_core_types::value::{serialize_values, MoveValue};
 use move_core_types::vm_status::StatusCode;
-use stdlib::stdlib_package;
 
 use crate::gas_schedule::cost_table;
 use crate::io::balance::CurrencyInfo;
@@ -97,10 +96,28 @@ pub struct GenesisConfig {
 }
 
 impl Default for GenesisConfig {
+    #[cfg(feature = "move_stdlib")]
     fn default() -> Self {
-        let stdlib = ModulePackage::try_from(stdlib_package())
+        use core::convert::TryFrom;
+        let stdlib = ModulePackage::try_from(stdlib::stdlib_package())
             .expect("Expected valid stdlib")
             .into_tx(CORE_CODE_ADDRESS);
+
+        GenesisConfig {
+            stdlib,
+            script_allow_list: vec![],
+            cost_table: cost_table(),
+            is_open_module: true,
+            chain_id: Default::default(),
+            diem_root_address: account_config::diem_root_address(),
+            treasury_compliance_account_address:
+                account_config::treasury_compliance_account_address(),
+        }
+    }
+
+    #[cfg(not(feature = "move_stdlib"))]
+    fn default() -> Self {
+        let stdlib = ModulePackage::default().into_tx(CORE_CODE_ADDRESS);
 
         GenesisConfig {
             stdlib,

@@ -22,12 +22,16 @@ vm = { path = "../language/vm", default-features = false }
 diem-crypto = { path = "../crypto/crypto", default-features = false }
 move-lang = { path = "../language/move-lang", default-features = false }
 bcs = { path = "../bcs", default-features = false }
-stdlib = { path = "../stdlib", default-features = false }
+stdlib = { path = "../stdlib", default-features = false, optional = true }
 log = { version = "0.4.14", default-features = false }
 diem-types = { path = "../types", default-features = false }
 
 [features]
-default = ["std"]
+default = ["std", "assets", "move_stdlib"]
+assets = []
+move_stdlib = [
+    "stdlib"
+]
 std = [
     "anyhow/std",
     "vm/std",

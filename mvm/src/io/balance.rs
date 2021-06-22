@@ -125,7 +125,7 @@ impl<'b, 'r, B: BalanceAccess, R: RemoteCache> MasterOfCoinSession<'b, 'r, B, R>
         let balance = self.master_of_coin.get_balance(address, &path)?;
         let mut balances = self.balances.borrow_mut();
         let acc = balances.entry(*address).or_insert_with(HashMap::new);
-        acc.insert(Cow::Owned(path), balance.clone());
+        acc.insert(Cow::Owned(path), balance);
         bcs::to_bytes(&DiemBalance { value: balance }).ok()
     }
 

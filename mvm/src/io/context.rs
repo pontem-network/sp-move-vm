@@ -26,7 +26,7 @@ impl ExecutionContext {
         {
             bcs::to_bytes(&self.timestamp).ok()
         } else if tag.module.as_str() == BLOCK_MODULE && tag.name.as_str() == BLOCK_METADATA {
-            return bcs::to_bytes(&self.block_height).ok();
+            bcs::to_bytes(&self.block_height).ok()
         } else {
             None
         }
