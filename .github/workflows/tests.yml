@@ -29,6 +29,7 @@ jobs:
           - "stable"
         dove:
           - "1.2.1"
+          - "1.2.2"
         os:
           - macos-latest
           - ubuntu-latest
