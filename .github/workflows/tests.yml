@@ -16,7 +16,7 @@ env:
 jobs:
   test:
     name: Tests
-    runs-on: ${{ matrix.cfg.os }}
+    runs-on: ${{ matrix.os }}
 
     defaults:
       run:
@@ -27,11 +27,11 @@ jobs:
       matrix:
         rust:
           - "stable"
-        cfg:
-          - os: macos-latest
-            dove: darwin-x86_64
-          - os: ubuntu-latest
-            dove: linux-x86_64
+        dove:
+          - "1.2.1"
+        os:
+          - macos-latest
+          - ubuntu-latest
 
     steps:
       - name: Checkout
@@ -48,16 +48,11 @@ jobs:
       - name: Code-style
         run: cargo fmt -- --check
 
-      - name: get Dove
-        run: |
-          curl -sL --fail \
-            -H "Accept: application/octet-stream" \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -o "dove" \
-            "https://github.com/pontem-network/move-tools/releases/download/1.2.1/dove-1.2.1-${{ matrix.cfg.dove }}"
-          sudo chown runner ./dove && chmod +x ./dove
-          mv ./dove ~/.cargo/bin/dove
-          dove -V
+      - name: Dove executable
+        uses: pontem-network/get-dove@main
+        with:
+          version: ${{ matrix.dove }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Tests
         run: cargo test --all --tests --no-fail-fast -- --test-threads=4 --nocapture
@@ -67,7 +62,7 @@ jobs:
 
   build:
     name: Build
-    runs-on: ${{ matrix.cfg.os }}
+    runs-on: ${{ matrix.os }}
 
     defaults:
       run:
@@ -77,12 +72,12 @@ jobs:
       fail-fast: false
       matrix:
         rust:
-          - "nightly-2021-04-24"
-        cfg:
-          - os: macos-latest
-            dove: darwin-x86_64
-          - os: ubuntu-latest
-            dove: linux-x86_64
+          - nightly-2021-04-24
+        dove:
+          - "1.2.1"
+        os:
+          - macos-latest
+          - ubuntu-latest
 
     steps:
       - name: Checkout
@@ -96,16 +91,11 @@ jobs:
           override: true
           target: wasm32-unknown-unknown
 
-      - name: get Dove
-        run: |
-          curl -sL --fail \
-            -H "Accept: application/octet-stream" \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -o "dove" \
-            "https://github.com/pontem-network/move-tools/releases/download/1.2.1/dove-1.2.1-${{ matrix.cfg.dove }}"
-          sudo chown runner ./dove && chmod +x ./dove
-          mv ./dove ~/.cargo/bin/dove
-          dove -V
+      - name: Dove executable
+        uses: pontem-network/get-dove@main
+        with:
+          version: ${{ matrix.dove }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build WASM -std
         run: |
