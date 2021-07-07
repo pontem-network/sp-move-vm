@@ -182,7 +182,7 @@ impl VmResult {
     ) -> VmResult {
         VmResult {
             status_code,
-            sub_status: sub_status.map(|code| SubStatus::new(code)),
+            sub_status: sub_status.map(SubStatus::new),
             gas_used,
             location,
         }
@@ -352,7 +352,7 @@ impl TryFrom<&[u8]> for Transaction {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct ModulePackage {
     modules: Vec<Vec<u8>>,
 }
