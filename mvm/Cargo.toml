@@ -14,7 +14,7 @@ hex = { version = "0.4.2", default-features = false, features = ["alloc"] }
 serde = { version = "1", default-features = false, package = "alt_serde", features = ["derive", "alloc"] }
 parity-scale-codec = { version = "2", default-features = false }
 parity-scale-codec-derive = { version = "2", default-features = false }
-cell = { path = "../common/cell" }
+cell = { path = "../common/cell", default-features = false  }
 move-vm-runtime = { path = "../language/move-vm/runtime", default-features = false }
 move-vm-types = { path = "../language/move-vm/types", default-features = false }
 move-core-types = { path = "../language/move-core/types", default-features = false }
@@ -41,6 +41,7 @@ std = [
     "parity-scale-codec/std",
     "move-lang/std",
     "log/std",
+    "cell/std"
 ]
 debug_module = ["move-vm-runtime/debug_module"]
 
