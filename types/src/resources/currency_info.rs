@@ -91,16 +91,6 @@ impl CurrencyInfoResource {
         self.fractional_part
     }
 
-    pub fn exchange_rate(&self) -> f32 {
-        // Exchange rates are represented as 32|32 fixed-point numbers on-chain, so we divide by the scaling
-        // factor (2^32) of the number to arrive at the floating point representation of the number.
-        (self.to_xdx_exchange_rate as f32) / 2f32.powf(32f32)
-    }
-
-    pub fn convert_to_xdx(&self, amount: u64) -> u64 {
-        (self.exchange_rate() * (amount as f32)) as u64
-    }
-
     pub fn struct_tag_for(currency_code: Identifier) -> StructTag {
         StructTag {
             address: CORE_CODE_ADDRESS,
