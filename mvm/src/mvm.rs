@@ -1,9 +1,8 @@
 use alloc::vec::Vec;
 
-use anyhow::{anyhow, Error};
+use anyhow::Error;
 
 use diem_types::event::EventKey;
-use diem_types::on_chain_config::{OnChainConfig, VMConfig};
 use move_core_types::account_address::AccountAddress;
 use move_core_types::effects::{ChangeSet, Event};
 use move_core_types::gas_schedule::CostTable;
@@ -20,7 +19,6 @@ use move_vm_types::gas_schedule::CostStrategy;
 use vm::errors::{Location, VMError, VMResult};
 
 use crate::io::balance::{BalanceOp, MasterOfCoin};
-use crate::io::config::ConfigStore;
 use crate::io::context::ExecutionContext;
 use crate::io::key::AccessKey;
 use crate::io::state::{State, WriteEffects};
@@ -49,21 +47,26 @@ where
     B: BalanceAccess,
 {
     /// Creates a new move vm with given store and event handler.
-    pub fn new(store: S, event_handler: E, balance: B) -> Result<Mvm<S, E, B>, Error> {
-        let config = VMConfig::fetch_config(&ConfigStore::from(&store))
-            .ok_or_else(|| anyhow!("Failed to load VMConfig."))?;
-        Self::new_with_config(store, event_handler, balance, config)
+    pub fn new(
+        store: S,
+        event_handler: E,
+        balance: B,
+        cost_table: CostTable,
+    ) -> Result<Mvm<S, E, B>, Error> {
+        // let config = VMConfig::fetch_config(&ConfigStore::from(&store))
+        //     .ok_or_else(|| anyhow!("Failed to load VMConfig."))?;
+        Self::new_with_config(store, event_handler, balance, cost_table)
     }
 
     pub(crate) fn new_with_config(
         store: S,
         event_handler: E,
         balance: B,
-        config: VMConfig,
+        cost_table: CostTable,
     ) -> Result<Mvm<S, E, B>, Error> {
         Ok(Mvm {
             vm: MoveVM::new(),
-            cost_table: config.gas_schedule,
+            cost_table,
             state: State::new(store),
             event_handler,
             master_of_coin: MasterOfCoin::new(balance),

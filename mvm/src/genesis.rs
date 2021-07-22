@@ -10,7 +10,6 @@ use hashbrown::HashMap;
 use diem_crypto::HashValue;
 use diem_types::account_config;
 use diem_types::chain_id::ChainId;
-use diem_types::on_chain_config::VMConfig;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::gas_schedule::CostTable;
 use move_core_types::identifier::{IdentStr, Identifier};
@@ -33,29 +32,18 @@ where
     S: Storage,
 {
     let fork = StorageFork::new(storage);
-    let vm_config = VMConfig {
-        gas_schedule: config.cost_table.clone(),
-    };
-    let vm = Mvm::new_with_config(&fork, NopeEventHandler, NopeBalance, vm_config)?;
+    let vm = Mvm::new_with_config(
+        &fork,
+        NopeEventHandler,
+        NopeBalance,
+        config.cost_table.clone(),
+    )?;
     let result = vm.publish_module_package(Gas::infinite(), config.stdlib, false);
     ensure!(
         result.status_code == StatusCode::EXECUTED,
         "Failed to publish stdlib:{:?}",
         result
     );
-
-    let initial_allow_list = MoveValue::Vector(
-        config
-            .script_allow_list
-            .into_iter()
-            .map(|hash| MoveValue::vector_u8(hash.to_vec().into_iter().collect()))
-            .collect(),
-    );
-
-    let instr_gas_costs = bcs::to_bytes(&config.cost_table.instruction_table)
-        .map_err(|err| anyhow!("Failure serializing genesis instr gas costs. {:?}", err))?;
-    let native_gas_costs = bcs::to_bytes(&config.cost_table.native_table)
-        .map_err(|err| anyhow!("Failure serializing genesis native gas costs. {:?}", err))?;
 
     let res = vm.execute_function(
         CORE_CODE_ADDRESS,
@@ -68,10 +56,6 @@ where
             MoveValue::Signer(config.treasury_compliance_account_address),
             MoveValue::vector_u8(config.diem_root_address.to_vec()),
             MoveValue::vector_u8(config.treasury_compliance_account_address.to_vec()),
-            initial_allow_list,
-            MoveValue::Bool(config.is_open_module),
-            MoveValue::vector_u8(instr_gas_costs),
-            MoveValue::vector_u8(native_gas_costs),
             MoveValue::U8(config.chain_id.id()),
         ]),
         None,

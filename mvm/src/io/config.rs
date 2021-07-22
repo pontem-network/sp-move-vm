@@ -1,8 +1,10 @@
-use crate::io::key::{AccessKey, KeyType};
-use crate::io::traits::Storage;
 use alloc::vec::Vec;
+
 use diem_types::access_path::AccessPath;
 use diem_types::on_chain_config::ConfigStorage;
+
+use crate::io::key::{AccessKey, KeyType};
+use crate::io::traits::Storage;
 
 pub struct ConfigStore<'a, S: Storage> {
     store: &'a S,

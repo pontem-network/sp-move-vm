@@ -4,7 +4,7 @@ use diem_types::account_config::CORE_CODE_ADDRESS;
 use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::ModuleId;
 use move_vm_runtime::data_cache::RemoteCache;
-use mvm::genesis::init_storage;
+use mvm::genesis::{init_storage, GenesisConfig};
 use mvm::io::state::State;
 use mvm::mvm::Mvm;
 
@@ -22,9 +22,12 @@ pub fn vm() -> (
     let store = StorageMock::new();
     let event = EventHandlerMock::default();
     let bank = BankMock::default();
-    init_storage(store.clone(), Default::default()).unwrap();
+    let genesis_config = GenesisConfig::default();
+    let cost_table = genesis_config.cost_table.clone();
 
-    let vm = Mvm::new(store.clone(), event.clone(), bank.clone()).unwrap();
+    init_storage(store.clone(), genesis_config).unwrap();
+
+    let vm = Mvm::new(store.clone(), event.clone(), bank.clone(), cost_table).unwrap();
     (vm, store, event, bank)
 }
 
