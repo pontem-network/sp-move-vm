@@ -95,6 +95,19 @@ pub struct GenesisConfig {
     pub treasury_compliance_account_address: AccountAddress,
 }
 
+pub fn build_genesis_config(stdlib: PublishPackageTx) -> GenesisConfig {
+    GenesisConfig {
+        stdlib,
+        script_allow_list: vec![],
+        cost_table: cost_table(),
+        is_open_module: true,
+        chain_id: Default::default(),
+        diem_root_address: account_config::diem_root_address(),
+        treasury_compliance_account_address:
+            account_config::treasury_compliance_account_address(),
+    }
+} 
+
 impl Default for GenesisConfig {
     #[cfg(feature = "move_stdlib")]
     fn default() -> Self {
