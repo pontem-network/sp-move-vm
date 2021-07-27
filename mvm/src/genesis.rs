@@ -7,14 +7,11 @@ use anyhow::Error;
 use anyhow::{anyhow, ensure};
 use hashbrown::HashMap;
 
-use diem_types::account_config;
-use diem_types::chain_id::ChainId;
 use diem_types::on_chain_config::VMConfig;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::gas_schedule::CostTable;
 use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::{ModuleId, TypeTag, CORE_CODE_ADDRESS};
-use move_core_types::value::{serialize_values, MoveValue};
 use move_core_types::vm_status::StatusCode;
 
 use crate::gas_schedule::cost_table;
