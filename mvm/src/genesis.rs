@@ -7,15 +7,18 @@ use anyhow::Error;
 use anyhow::{anyhow, ensure};
 use hashbrown::HashMap;
 
-use diem_crypto::HashValue;
-use diem_types::account_config;
-use diem_types::chain_id::ChainId;
+#[cfg(feature = "move_stdlib")]
+use {
+    diem_types::account_config,
+    diem_types::chain_id::ChainId,
+    move_core_types::value::{serialize_values, MoveValue},
+};
+
 use diem_types::on_chain_config::VMConfig;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::gas_schedule::CostTable;
-use move_core_types::identifier::{IdentStr, Identifier};
+use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::{ModuleId, TypeTag, CORE_CODE_ADDRESS};
-use move_core_types::value::{serialize_values, MoveValue};
 use move_core_types::vm_status::StatusCode;
 
 use crate::gas_schedule::cost_table;
@@ -24,9 +27,6 @@ use crate::io::traits::{Balance, BalanceAccess, CurrencyAccessPath, EventHandler
 use crate::mvm::Mvm;
 use crate::types::{Gas, ModulePackage, PublishPackageTx};
 use crate::Vm;
-
-const GENESIS_MODULE_NAME: &str = "Genesis";
-const INIT_FUN_NAME: &str = "initialize";
 
 pub fn init_storage<S>(storage: S, config: GenesisConfig) -> Result<(), Error>
 where
@@ -44,55 +44,34 @@ where
         result
     );
 
-    let initial_allow_list = MoveValue::Vector(
-        config
-            .script_allow_list
-            .into_iter()
-            .map(|hash| MoveValue::vector_u8(hash.to_vec().into_iter().collect()))
-            .collect(),
-    );
+    if let Some(init_func_config) = config.init_func_config {
+        let res = vm.execute_function(
+            CORE_CODE_ADDRESS,
+            Gas::infinite(),
+            &ModuleId::new(
+                CORE_CODE_ADDRESS,
+                Identifier::from_utf8(init_func_config.module)?,
+            ),
+            Identifier::from_utf8(init_func_config.func)?.as_ident_str(),
+            vec![],
+            init_func_config.args,
+            None,
+        );
 
-    let instr_gas_costs = bcs::to_bytes(&config.cost_table.instruction_table)
-        .map_err(|err| anyhow!("Failure serializing genesis instr gas costs. {:?}", err))?;
-    let native_gas_costs = bcs::to_bytes(&config.cost_table.native_table)
-        .map_err(|err| anyhow!("Failure serializing genesis native gas costs. {:?}", err))?;
-
-    let res = vm.execute_function(
-        CORE_CODE_ADDRESS,
-        Gas::infinite(),
-        &ModuleId::new(CORE_CODE_ADDRESS, Identifier::new(GENESIS_MODULE_NAME)?),
-        IdentStr::new(INIT_FUN_NAME)?,
-        vec![],
-        serialize_values(&vec![
-            MoveValue::Signer(config.diem_root_address),
-            MoveValue::Signer(config.treasury_compliance_account_address),
-            MoveValue::vector_u8(config.diem_root_address.to_vec()),
-            MoveValue::vector_u8(config.treasury_compliance_account_address.to_vec()),
-            initial_allow_list,
-            MoveValue::Bool(config.is_open_module),
-            MoveValue::vector_u8(instr_gas_costs),
-            MoveValue::vector_u8(native_gas_costs),
-            MoveValue::U8(config.chain_id.id()),
-        ]),
-        None,
-    );
-
-    if res.status_code != StatusCode::EXECUTED {
-        return Err(anyhow!("Failed to execution genesis function:{:?}", res));
+        if res.status_code != StatusCode::EXECUTED {
+            return Err(anyhow!("Failed to execution genesis function:{:?}", res));
+        }
     }
 
     fork.merge();
     Ok(())
 }
 
+// Genesis configuration.
 pub struct GenesisConfig {
-    pub stdlib: PublishPackageTx,
-    pub script_allow_list: Vec<HashValue>,
-    pub cost_table: CostTable,
-    pub is_open_module: bool,
-    pub chain_id: ChainId,
-    diem_root_address: AccountAddress,
-    pub treasury_compliance_account_address: AccountAddress,
+    pub stdlib: PublishPackageTx,                 // Standard library.
+    pub init_func_config: Option<InitFuncConfig>, // Initialize function config.
+    cost_table: CostTable,                        // Cost table.
 }
 
 impl Default for GenesisConfig {
@@ -103,15 +82,33 @@ impl Default for GenesisConfig {
             .expect("Expected valid stdlib")
             .into_tx(CORE_CODE_ADDRESS);
 
+        let cost_table = cost_table();
+        let instr_gas_costs = bcs::to_bytes(&cost_table.instruction_table)
+            .expect("Expected to convert instr gas costs to bsc bytes");
+        let native_gas_costs = bcs::to_bytes(&cost_table.native_table)
+            .expect("Expected to convert genesis native gas costs to bsc bytes");
+        let chain_id: ChainId = Default::default();
+
         GenesisConfig {
             stdlib,
-            script_allow_list: vec![],
-            cost_table: cost_table(),
-            is_open_module: true,
-            chain_id: Default::default(),
-            diem_root_address: account_config::diem_root_address(),
-            treasury_compliance_account_address:
-                account_config::treasury_compliance_account_address(),
+            cost_table,
+            init_func_config: Some(InitFuncConfig {
+                module: "Genesis".as_bytes().to_vec(),
+                func: "initialize".as_bytes().to_vec(),
+                args: serialize_values(&vec![
+                    MoveValue::Signer(account_config::diem_root_address()), // dr_signer
+                    MoveValue::Signer(account_config::treasury_compliance_account_address()), // tr_signer
+                    MoveValue::vector_u8(account_config::diem_root_address().to_vec()), // dr_address
+                    MoveValue::vector_u8(
+                        account_config::treasury_compliance_account_address().to_vec(),
+                    ), // tr_address
+                    MoveValue::Vector(vec![]), // Initial allow list.
+                    MoveValue::Bool(true),
+                    MoveValue::vector_u8(instr_gas_costs),
+                    MoveValue::vector_u8(native_gas_costs),
+                    MoveValue::U8(chain_id.id()),
+                ]),
+            }),
         }
     }
 
@@ -121,14 +118,28 @@ impl Default for GenesisConfig {
 
         GenesisConfig {
             stdlib,
-            script_allow_list: vec![],
             cost_table: cost_table(),
-            is_open_module: true,
-            chain_id: Default::default(),
-            diem_root_address: account_config::diem_root_address(),
-            treasury_compliance_account_address:
-                account_config::treasury_compliance_account_address(),
+            init_func_config: Default::default(),
         }
+    }
+}
+
+/// Passing arguments to init function, so it configurable.
+#[derive(Default)]
+pub struct InitFuncConfig {
+    pub module: Vec<u8>,
+    pub func: Vec<u8>,
+    pub args: Vec<Vec<u8>>,
+}
+
+pub fn build_genesis_config(
+    stdlib: PublishPackageTx,
+    init_func_config: Option<InitFuncConfig>,
+) -> GenesisConfig {
+    GenesisConfig {
+        stdlib,
+        cost_table: cost_table(),
+        init_func_config,
     }
 }
 
