@@ -28,8 +28,8 @@ jobs:
         rust:
           - "stable"
         dove:
-          - "1.2.1"
-          - "1.2.2"
+          - "1.2.8"
+          - "1.2.8"
         os:
           - macos-latest
           - ubuntu-latest
