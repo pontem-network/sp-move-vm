@@ -148,7 +148,6 @@ impl ScriptTx {
         &self.signers
     }
 
-
     /// Convert into internal data.
     pub fn into_inner(self) -> (Vec<u8>, Vec<Vec<u8>>, Vec<TypeTag>, Vec<AccountAddress>) {
         (self.code, self.args, self.type_args, self.signers)
@@ -323,7 +322,6 @@ fn unwrap_spanned_ty_(ty: Type, this: Option<AccountAddress>) -> Result<TypeTag,
     Ok(st)
 }
 
-
 /// Signer type.
 #[derive(Serialize, Deserialize, Debug, Ord, PartialOrd, Eq, PartialEq)]
 pub enum Signer {
@@ -350,14 +348,12 @@ pub struct Transaction {
 
 impl Transaction {
     pub fn into_script(self, mut signers: Vec<AccountAddress>) -> Result<ScriptTx> {
-        let signers = self.signers.iter()
+        let signers = self
+            .signers
+            .iter()
             .map(|s| match *s {
-                Signer::Root => {
-                    Ok(*DIEM_ROOT_ADDRESS)
-                }
-                Signer::Treasury => {
-                    Ok(*TREASURY_COMPLIANCE_ACCOUNT_ADDRESS)
-                }
+                Signer::Root => Ok(*DIEM_ROOT_ADDRESS),
+                Signer::Treasury => Ok(*TREASURY_COMPLIANCE_ACCOUNT_ADDRESS),
                 Signer::Placeholder => {
                     if let Some(signer) = signers.pop() {
                         Ok(signer)
@@ -365,28 +361,28 @@ impl Transaction {
                         Err(anyhow!("Invalid signers count."))
                     }
                 }
-            }).collect::<Result<Vec<_>, _>>()?;
+            })
+            .collect::<Result<Vec<_>, _>>()?;
 
         Ok(ScriptTx {
             code: self.code,
             args: self.args,
             type_args: self.type_args,
-            signers: signers,
+            signers,
         })
     }
 
     pub fn has_root_signer(&self) -> bool {
-        self.signers.iter()
-            .any(|s| *s == Signer::Root)
+        self.signers.iter().any(|s| *s == Signer::Root)
     }
 
     pub fn has_treasury_signer(&self) -> bool {
-        self.signers.iter()
-            .any(|s| *s == Signer::Treasury)
+        self.signers.iter().any(|s| *s == Signer::Treasury)
     }
 
     pub fn signers_count(&self) -> usize {
-        self.signers.iter()
+        self.signers
+            .iter()
             .filter(|s| **s == Signer::Placeholder)
             .count()
     }
