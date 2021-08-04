@@ -14,9 +14,10 @@ use move_core_types::vm_status::StatusCode;
 use move_lang::parser::ast::{ModuleAccess_, Type, Type_};
 use move_lang::parser::lexer::{Lexer, Tok};
 use move_lang::parser::syntax::parse_type;
+use vm::errors::Location;
 
 use crate::error::SubStatus;
-use vm::errors::Location;
+use diem_types::account_config::{DIEM_ROOT_ADDRESS, TREASURY_COMPLIANCE_ACCOUNT_ADDRESS};
 
 const GAS_AMOUNT_MAX_VALUE: u64 = u64::MAX / 1000;
 
@@ -101,7 +102,7 @@ pub struct ScriptTx {
     code: Vec<u8>,
     args: Vec<Vec<u8>>,
     type_args: Vec<TypeTag>,
-    senders: Vec<AccountAddress>,
+    signers: Vec<AccountAddress>,
 }
 
 /// Script transaction.
@@ -111,7 +112,7 @@ impl ScriptTx {
         code: Vec<u8>,
         args: Vec<ScriptArg>,
         type_args: Vec<TypeTag>,
-        senders: Vec<AccountAddress>,
+        signers: Vec<AccountAddress>,
     ) -> Result<ScriptTx> {
         let args = args
             .into_iter()
@@ -123,7 +124,7 @@ impl ScriptTx {
             code,
             args,
             type_args,
-            senders,
+            signers,
         })
     }
 
@@ -142,9 +143,14 @@ impl ScriptTx {
         &self.type_args
     }
 
+    /// Returns script signers.
+    pub fn signers(&self) -> &[AccountAddress] {
+        &self.signers
+    }
+
     /// Convert into internal data.
     pub fn into_inner(self) -> (Vec<u8>, Vec<Vec<u8>>, Vec<TypeTag>, Vec<AccountAddress>) {
-        (self.code, self.args, self.type_args, self.senders)
+        (self.code, self.args, self.type_args, self.signers)
     }
 }
 
@@ -154,7 +160,7 @@ impl fmt::Debug for ScriptTx {
             .field("code", &hex::encode(&self.code))
             .field("args", &self.args)
             .field("type_args", &self.type_args)
-            .field("senders", &self.senders)
+            .field("signers", &self.signers)
             .finish()
     }
 }
@@ -316,31 +322,69 @@ fn unwrap_spanned_ty_(ty: Type, this: Option<AccountAddress>) -> Result<TypeTag,
     Ok(st)
 }
 
+/// Signer type.
+#[derive(Serialize, Deserialize, Debug, Ord, PartialOrd, Eq, PartialEq)]
+pub enum Signer {
+    /// Root signer.
+    Root,
+    /// Treasury signer.
+    Treasury,
+    /// Template to replace.
+    Placeholder,
+}
+
 /// Transaction model.
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Transaction {
-    signers_count: u8,
-    code: Vec<u8>,
-    args: Vec<Vec<u8>>,
-    type_args: Vec<TypeTag>,
+    /// Signers.
+    pub signers: Vec<Signer>,
+    /// Move bytecode.
+    pub code: Vec<u8>,
+    /// Script args.
+    pub args: Vec<Vec<u8>>,
+    /// Script type arguments.
+    pub type_args: Vec<TypeTag>,
 }
 
 impl Transaction {
-    pub fn into_script(self, signers: Vec<AccountAddress>) -> Result<ScriptTx> {
-        ensure!(
-            signers.len() == self.signers_count as usize,
-            "Invalid signers count."
-        );
+    pub fn into_script(self, mut signers: Vec<AccountAddress>) -> Result<ScriptTx> {
+        let signers = self
+            .signers
+            .iter()
+            .map(|s| match *s {
+                Signer::Root => Ok(*DIEM_ROOT_ADDRESS),
+                Signer::Treasury => Ok(*TREASURY_COMPLIANCE_ACCOUNT_ADDRESS),
+                Signer::Placeholder => {
+                    if let Some(signer) = signers.pop() {
+                        Ok(signer)
+                    } else {
+                        Err(anyhow!("Invalid signers count."))
+                    }
+                }
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
         Ok(ScriptTx {
             code: self.code,
             args: self.args,
             type_args: self.type_args,
-            senders: signers,
+            signers,
         })
     }
 
-    pub fn signers_count(&self) -> u8 {
-        self.signers_count
+    pub fn has_root_signer(&self) -> bool {
+        self.signers.iter().any(|s| *s == Signer::Root)
+    }
+
+    pub fn has_treasury_signer(&self) -> bool {
+        self.signers.iter().any(|s| *s == Signer::Treasury)
+    }
+
+    pub fn signers_count(&self) -> usize {
+        self.signers
+            .iter()
+            .filter(|s| **s == Signer::Placeholder)
+            .count()
     }
 }
 

@@ -1,4 +1,6 @@
 use core::convert::TryFrom;
+use diem_types::account_config::{DIEM_ROOT_ADDRESS, TREASURY_COMPLIANCE_ACCOUNT_ADDRESS};
+use move_core_types::account_address::AccountAddress;
 use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::{StructTag, TypeTag, CORE_CODE_ADDRESS};
 use move_core_types::value::MoveValue;
@@ -68,6 +70,9 @@ fn test_parse_transaction() {
         Transaction::try_from(&include_bytes!("assets/artifacts/transactions/tx_test.mvt")[..])
             .unwrap();
     assert_eq!(tx.signers_count(), 0);
+    assert!(!tx.has_root_signer());
+    assert!(!tx.has_treasury_signer());
+
     let script = tx.into_script(vec![]).unwrap();
     CompiledScript::deserialize(script.code()).unwrap();
     assert_eq!(
@@ -83,6 +88,77 @@ fn test_parse_transaction() {
             type_params: vec![],
         })][..]
     )
+}
+
+#[test]
+fn test_transaction_with_sys_signers() {
+    let tx =
+        Transaction::try_from(&include_bytes!("assets/artifacts/transactions/rt_signers.mvt")[..])
+            .unwrap();
+    assert_eq!(tx.signers_count(), 0);
+    assert!(tx.has_root_signer());
+    assert!(!tx.has_treasury_signer());
+
+    let script = tx.into_script(vec![]).unwrap();
+    CompiledScript::deserialize(script.code()).unwrap();
+    assert!(script.args().is_empty());
+    assert!(script.type_parameters().is_empty());
+    assert_eq!(script.signers(), &[*DIEM_ROOT_ADDRESS][..]);
+
+    let tx =
+        Transaction::try_from(&include_bytes!("assets/artifacts/transactions/tr_signers.mvt")[..])
+            .unwrap();
+    assert_eq!(tx.signers_count(), 0);
+    assert!(!tx.has_root_signer());
+    assert!(tx.has_treasury_signer());
+
+    let script = tx.into_script(vec![]).unwrap();
+    CompiledScript::deserialize(script.code()).unwrap();
+    assert!(script.args().is_empty());
+    assert!(script.type_parameters().is_empty());
+    assert_eq!(
+        script.signers(),
+        &[*TREASURY_COMPLIANCE_ACCOUNT_ADDRESS][..]
+    );
+
+    let tx = Transaction::try_from(
+        &include_bytes!("assets/artifacts/transactions/tr_and_rt_signers.mvt")[..],
+    )
+    .unwrap();
+    assert_eq!(tx.signers_count(), 0);
+    assert!(tx.has_root_signer());
+    assert!(tx.has_treasury_signer());
+
+    let script = tx.into_script(vec![]).unwrap();
+    CompiledScript::deserialize(script.code()).unwrap();
+    assert!(script.args().is_empty());
+    assert!(script.type_parameters().is_empty());
+    assert_eq!(
+        script.signers(),
+        &[*DIEM_ROOT_ADDRESS, *TREASURY_COMPLIANCE_ACCOUNT_ADDRESS][..]
+    );
+
+    let tx = Transaction::try_from(
+        &include_bytes!("assets/artifacts/transactions/signers_tr_and_rt_with_user.mvt")[..],
+    )
+    .unwrap();
+    assert_eq!(tx.signers_count(), 1);
+    assert!(tx.has_root_signer());
+    assert!(tx.has_treasury_signer());
+
+    let addr = AccountAddress::random();
+    let script = tx.into_script(vec![addr]).unwrap();
+    CompiledScript::deserialize(script.code()).unwrap();
+    assert!(script.args().is_empty());
+    assert!(script.type_parameters().is_empty());
+    assert_eq!(
+        script.signers(),
+        &[
+            *DIEM_ROOT_ADDRESS,
+            *TREASURY_COMPLIANCE_ACCOUNT_ADDRESS,
+            addr
+        ][..]
+    );
 }
 
 #[test]
