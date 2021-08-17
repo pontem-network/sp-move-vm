@@ -5,7 +5,7 @@
 use alloc::boxed::Box;
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::vec::Vec;
-use vm::file_format::{Bytecode, CodeOffset};
+use move_binary_format::file_format::{Bytecode, CodeOffset};
 
 // BTree/Hash agnostic type wrappers
 type Map<K, V> = BTreeMap<K, V>;

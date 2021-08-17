@@ -1,4 +1,4 @@
-module EventProxy {
+module 0x1::EventProxy {
     use 0x1::Event;
 
     struct U64 has copy, key, store, drop { val: u64 }

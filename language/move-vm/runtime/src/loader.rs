@@ -1,8 +1,10 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::logging::{expect_no_verification_errors, LogContext};
-use crate::native_functions::NativeFunction;
+use crate::{
+    logging::{expect_no_verification_errors, LogContext},
+    native_functions::NativeFunction,
+};
 use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::string::ToString;
@@ -13,17 +15,7 @@ use core::cell::RefCell;
 use core::{fmt::Debug, hash::Hash};
 use diem_crypto::HashValue;
 use hashbrown::HashMap;
-use move_core_types::{
-    identifier::{IdentStr, Identifier},
-    language_storage::{ModuleId, StructTag, TypeTag},
-    value::{MoveStructLayout, MoveTypeLayout},
-    vm_status::StatusCode,
-};
-use move_vm_types::{
-    data_store::DataStore,
-    loaded_data::runtime_types::{StructType, Type},
-};
-use vm::{
+use move_binary_format::{
     access::{ModuleAccess, ScriptAccess},
     errors::{verification_error, Location, PartialVMError, PartialVMResult, VMResult},
     file_format::{
@@ -35,10 +27,20 @@ use vm::{
     },
     IndexKind,
 };
+use move_core_types::{
+    identifier::{IdentStr, Identifier},
+    language_storage::{ModuleId, StructTag, TypeTag},
+    value::{MoveStructLayout, MoveTypeLayout},
+    vm_status::StatusCode,
+};
+use move_vm_types::{
+    data_store::DataStore,
+    loaded_data::runtime_types::{StructType, Type},
+};
 
 // A simple cache that offers both a HashMap and a Vector lookup.
 // Values are forced into a `Arc` so they can be used from multiple thread.
-// Access to this cache is always under a `Mutex`.
+// Access to this cache is always under a `RwLock`.
 struct BinaryCache<K, V> {
     id_map: HashMap<K, usize>,
     binaries: Vec<Arc<V>>,
@@ -411,7 +413,7 @@ impl ModuleCache {
 //
 
 // A Loader is responsible to load scripts and modules and holds the cache of all loaded
-// entities. Each cache is protected by a `Mutex`. Operation in the Loader must be thread safe
+// entities. Each cache is protected by a `RwLock`. Operation in the Loader must be thread safe
 // (operating on values on the stack) and when cache needs updating the mutex must be taken.
 // The `pub(crate)` API is what a Loader offers to the runtime.
 pub struct Loader {
@@ -430,7 +432,7 @@ impl Loader {
     }
 
     /// Clears loader cache.
-    pub(crate) fn clear(&self) {
+    pub fn clear(&self) {
         *self.scripts.borrow_mut() = ScriptCache::new();
         *self.module_cache.borrow_mut() = ModuleCache::new();
         *self.type_cache.borrow_mut() = TypeCache::new();
@@ -1143,10 +1145,6 @@ impl<'a> Resolver<'a> {
         self.loader.type_to_type_layout(ty)
     }
 
-    pub(crate) fn type_to_type_tag(&self, ty: &Type) -> PartialVMResult<TypeTag> {
-        self.loader.type_to_type_tag(ty)
-    }
-
     pub(crate) fn loader(&self) -> &Loader {
         &self.loader
     }
@@ -1334,8 +1332,8 @@ impl Module {
                 module,
                 struct_refs,
                 structs,
-                function_refs,
                 struct_instantiations,
+                function_refs,
                 function_instantiations,
                 field_handles,
                 field_instantiations,
@@ -1740,7 +1738,7 @@ pub struct TypeCache {
 }
 
 impl TypeCache {
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
             structs: HashMap::new(),
         }

@@ -98,6 +98,24 @@ fn hex_encode(src: &[u8], dst: &mut [u8]) {
     }
 }
 
+pub trait AsShortHexStr {
+    fn short_str(&self) -> ShortHexStr;
+}
+
+impl AsShortHexStr for [u8; 16] {
+    fn short_str(&self) -> ShortHexStr {
+        ShortHexStr::try_from_bytes(self)
+            .expect("This can never fail since 16 >= ShortHexStr::SOURCE_LENGTH")
+    }
+}
+
+impl AsShortHexStr for [u8; 32] {
+    fn short_str(&self) -> ShortHexStr {
+        ShortHexStr::try_from_bytes(self)
+            .expect("This can never fail since 32 >= ShortHexStr::SOURCE_LENGTH")
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;

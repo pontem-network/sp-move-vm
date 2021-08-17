@@ -3,6 +3,7 @@
 
 use alloc::collections::VecDeque;
 use alloc::vec::Vec;
+use move_binary_format::errors::PartialVMResult;
 use move_core_types::gas_schedule::GasAlgebra;
 use move_vm_types::{
     gas_schedule::NativeCostIndex,
@@ -11,7 +12,6 @@ use move_vm_types::{
     values::Value,
 };
 use smallvec::smallvec;
-use vm::errors::PartialVMResult;
 
 pub fn native_emit_event(
     context: &mut impl NativeContext,

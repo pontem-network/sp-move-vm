@@ -9,11 +9,11 @@
 use alloc::vec::Vec;
 use core::convert::TryInto;
 use hashbrown::HashSet;
-use move_core_types::vm_status::StatusCode;
-use vm::{
+use move_binary_format::{
     errors::{PartialVMError, PartialVMResult},
     file_format::{Bytecode, CodeOffset, CodeUnit, FunctionDefinitionIndex},
 };
+use move_core_types::vm_status::StatusCode;
 
 pub fn verify(
     current_function_opt: Option<FunctionDefinitionIndex>,

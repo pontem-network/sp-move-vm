@@ -5,8 +5,7 @@ use crate::{interpreter::Interpreter, loader::Resolver, logging::LogContext};
 use alloc::collections::VecDeque;
 use alloc::string::String;
 use alloc::vec::Vec;
-use move_core_types::language_storage::ModuleId;
-use move_core_types::language_storage::TypeTag;
+use move_binary_format::errors::PartialVMResult;
 use move_core_types::{
     account_address::AccountAddress, gas_schedule::CostTable, language_storage::CORE_CODE_ADDRESS,
     value::MoveTypeLayout, vm_status::StatusType,
@@ -14,12 +13,11 @@ use move_core_types::{
 use move_vm_natives::{account, bcs, debug, event, hash, signature, signer, u256, vector};
 use move_vm_types::{
     data_store::DataStore,
-    gas_schedule::CostStrategy,
+    gas_schedule::GasStatus,
     loaded_data::runtime_types::Type,
     natives::function::{NativeContext, NativeResult},
     values::Value,
 };
-use vm::errors::PartialVMResult;
 
 // The set of native functions the VM supports.
 // The functions can line in any crate linked in but the VM declares them here.
@@ -47,6 +45,7 @@ pub(crate) enum NativeFunction {
     DebugPrintStackTrace,
     SignerBorrowAddress,
     CreateSigner,
+    // functions below this line are deprecated and remain only for replaying old transactions
     DestroySigner,
 
     U256FromU8,
@@ -86,12 +85,11 @@ impl NativeFunction {
             (&CORE_CODE_ADDRESS, "Vector", "swap") => VectorSwap,
             (&CORE_CODE_ADDRESS, "Event", "write_to_event_store") => AccountWriteEvent,
             (&CORE_CODE_ADDRESS, "DiemAccount", "create_signer") => CreateSigner,
-            (&CORE_CODE_ADDRESS, "DiemAccount", "destroy_signer") => DestroySigner,
-            (&CORE_CODE_ADDRESS, "Account", "create_signer") => CreateSigner,
-            (&CORE_CODE_ADDRESS, "Account", "destroy_signer") => DestroySigner,
             (&CORE_CODE_ADDRESS, "Debug", "print") => DebugPrint,
             (&CORE_CODE_ADDRESS, "Debug", "print_stack_trace") => DebugPrintStackTrace,
             (&CORE_CODE_ADDRESS, "Signer", "borrow_address") => SignerBorrowAddress,
+            // functions below this line are deprecated and remain only for replaying old transactions
+            (&CORE_CODE_ADDRESS, "DiemAccount", "destroy_signer") => DestroySigner,
 
             (&CORE_CODE_ADDRESS, "U256", "from_u8") => U256FromU8,
             (&CORE_CODE_ADDRESS, "U256", "from_u64") => U256FromU64,
@@ -135,6 +133,7 @@ impl NativeFunction {
             Self::DebugPrintStackTrace => debug::native_print_stack_trace(ctx, t, v),
             Self::SignerBorrowAddress => signer::native_borrow_address(ctx, t, v),
             Self::CreateSigner => account::native_create_signer(ctx, t, v),
+            // functions below this line are deprecated and remain only for replaying old transactions
             Self::DestroySigner => account::native_destroy_signer(ctx, t, v),
 
             // u256
@@ -158,25 +157,22 @@ impl NativeFunction {
 pub(crate) struct FunctionContext<'a, L: LogContext> {
     interpreter: &'a mut Interpreter<L>,
     data_store: &'a mut dyn DataStore,
-    cost_strategy: &'a CostStrategy<'a>,
+    gas_status: &'a GasStatus<'a>,
     resolver: &'a Resolver<'a>,
-    caller: Option<&'a ModuleId>,
 }
 
 impl<'a, L: LogContext> FunctionContext<'a, L> {
     pub(crate) fn new(
         interpreter: &'a mut Interpreter<L>,
         data_store: &'a mut dyn DataStore,
-        cost_strategy: &'a mut CostStrategy,
+        gas_status: &'a mut GasStatus,
         resolver: &'a Resolver<'a>,
-        caller: Option<&'a ModuleId>,
     ) -> FunctionContext<'a, L> {
         FunctionContext {
             interpreter,
             data_store,
-            cost_strategy,
+            gas_status,
             resolver,
-            caller,
         }
     }
 }
@@ -188,7 +184,7 @@ impl<'a, L: LogContext> NativeContext for FunctionContext<'a, L> {
     }
 
     fn cost_table(&self) -> &CostTable {
-        self.cost_strategy.cost_table()
+        self.gas_status.cost_table()
     }
 
     fn save_event(
@@ -205,19 +201,11 @@ impl<'a, L: LogContext> NativeContext for FunctionContext<'a, L> {
         }
     }
 
-    fn type_to_type_tag(&self, ty: &Type) -> PartialVMResult<TypeTag> {
-        self.resolver.type_to_type_tag(ty)
-    }
-
     fn type_to_type_layout(&self, ty: &Type) -> PartialVMResult<Option<MoveTypeLayout>> {
         match self.resolver.type_to_type_layout(ty) {
             Ok(ty_layout) => Ok(Some(ty_layout)),
             Err(e) if e.major_status().status_type() == StatusType::InvariantViolation => Err(e),
             Err(_) => Ok(None),
         }
-    }
-
-    fn caller(&self) -> Option<&ModuleId> {
-        self.caller
     }
 }

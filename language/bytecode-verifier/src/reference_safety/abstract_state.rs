@@ -10,14 +10,14 @@ use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::vec::Vec;
 use borrow_graph::references::RefID;
 use mirai_annotations::{checked_postcondition, checked_precondition, checked_verify};
-use move_core_types::vm_status::StatusCode;
-use vm::{
+use move_binary_format::{
     errors::{PartialVMError, PartialVMResult},
     file_format::{
         CodeOffset, FieldHandleIndex, FunctionDefinitionIndex, LocalIndex, Signature,
         SignatureToken, StructDefinitionIndex,
     },
 };
+use move_core_types::vm_status::StatusCode;
 
 type BorrowGraph = borrow_graph::graph::BorrowGraph<(), Label>;
 
@@ -646,8 +646,8 @@ impl AbstractState {
             current_function,
             locals,
             borrow_graph,
-            next_id,
             num_locals,
+            next_id,
         }
     }
 }

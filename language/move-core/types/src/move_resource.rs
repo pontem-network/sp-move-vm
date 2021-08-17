@@ -2,21 +2,22 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    identifier::Identifier,
+    identifier::{IdentStr, Identifier},
     language_storage::{StructTag, TypeTag},
 };
 use alloc::vec::Vec;
+use serde::de::DeserializeOwned;
 
-pub trait MoveResource {
-    const MODULE_NAME: &'static str;
-    const STRUCT_NAME: &'static str;
+pub trait MoveStructType {
+    const MODULE_NAME: &'static IdentStr;
+    const STRUCT_NAME: &'static IdentStr;
 
     fn module_identifier() -> Identifier {
-        Identifier::new(Self::MODULE_NAME).expect("failed to get IdentStr for Move module")
+        Self::MODULE_NAME.to_owned()
     }
 
     fn struct_identifier() -> Identifier {
-        Identifier::new(Self::STRUCT_NAME).expect("failed to get IdentStr for Move struct")
+        Self::STRUCT_NAME.to_owned()
     }
 
     fn type_params() -> Vec<TypeTag> {
@@ -31,7 +32,9 @@ pub trait MoveResource {
             type_params: Self::type_params(),
         }
     }
+}
 
+pub trait MoveResource: MoveStructType + DeserializeOwned {
     fn resource_path() -> Vec<u8> {
         Self::struct_tag().access_vector()
     }

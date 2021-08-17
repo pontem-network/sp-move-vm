@@ -3,6 +3,7 @@
 
 use alloc::collections::VecDeque;
 use alloc::vec::Vec;
+use move_binary_format::errors::PartialVMResult;
 use move_vm_types::{
     gas_schedule::NativeCostIndex,
     loaded_data::runtime_types::Type,
@@ -10,7 +11,6 @@ use move_vm_types::{
     values::{values_impl::SignerRef, Value},
 };
 use smallvec::smallvec;
-use vm::errors::PartialVMResult;
 
 pub fn native_borrow_address(
     context: &impl NativeContext,

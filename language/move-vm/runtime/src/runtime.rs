@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    data_cache::{RemoteCache, TransactionDataCache},
+    data_cache::{MoveStorage, TransactionDataCache},
     interpreter::Interpreter,
     loader::Loader,
     logging::LogContext,
@@ -10,6 +10,13 @@ use crate::{
 };
 use alloc::string::ToString;
 use alloc::vec::Vec;
+use move_binary_format::{
+    access::ModuleAccess,
+    compatibility::Compatibility,
+    errors::{verification_error, Location, PartialVMError, PartialVMResult, VMResult},
+    file_format_common::VERSION_1,
+    normalized, CompiledModule, IndexKind,
+};
 use move_core_types::{
     account_address::AccountAddress,
     identifier::IdentStr,
@@ -18,15 +25,7 @@ use move_core_types::{
     vm_status::StatusCode,
 };
 use move_vm_types::{
-    data_store::DataStore, gas_schedule::CostStrategy, loaded_data::runtime_types::Type,
-    values::Value,
-};
-use vm::{
-    access::ModuleAccess,
-    compatibility::Compatibility,
-    errors::{verification_error, Location, PartialVMError, PartialVMResult, VMResult},
-    file_format_common::VERSION_1,
-    normalized, CompiledModule, IndexKind,
+    data_store::DataStore, gas_schedule::GasStatus, loaded_data::runtime_types::Type, values::Value,
 };
 
 /// An instantiation of the MoveVM.
@@ -49,7 +48,7 @@ impl VMRuntime {
         }
     }
 
-    pub fn new_session<'r, R: RemoteCache>(&self, remote: &'r R) -> Session<'r, '_, R> {
+    pub fn new_session<'r, S: MoveStorage>(&self, remote: &'r S) -> Session<'r, '_, S> {
         Session {
             runtime: self,
             data_cache: TransactionDataCache::new(remote, &self.loader),
@@ -67,7 +66,7 @@ impl VMRuntime {
         module: Vec<u8>,
         sender: AccountAddress,
         data_store: &mut impl DataStore,
-        _cost_strategy: &mut CostStrategy,
+        _gas_status: &mut GasStatus,
         log_context: &impl LogContext,
     ) -> VMResult<()> {
         // deserialize the module. Perform bounds check. After this indexes can be
@@ -243,7 +242,7 @@ impl VMRuntime {
         args: Vec<Vec<u8>>,
         senders: Vec<AccountAddress>,
         data_store: &mut impl DataStore,
-        cost_strategy: &mut CostStrategy,
+        gas_status: &mut GasStatus,
         log_context: &impl LogContext,
     ) -> VMResult<()> {
         // load the script, perform verification
@@ -260,7 +259,7 @@ impl VMRuntime {
             ty_args,
             signers_and_args,
             data_store,
-            cost_strategy,
+            gas_status,
             &self.loader,
             log_context,
         )?;
@@ -286,7 +285,7 @@ impl VMRuntime {
         make_args: F,
         is_script_execution: bool,
         data_store: &mut impl DataStore,
-        cost_strategy: &mut CostStrategy,
+        gas_status: &mut GasStatus,
         log_context: &impl LogContext,
     ) -> VMResult<Vec<Vec<u8>>>
     where
@@ -328,7 +327,7 @@ impl VMRuntime {
             ty_args,
             args,
             data_store,
-            cost_strategy,
+            gas_status,
             &self.loader,
             log_context,
         )?;
@@ -366,7 +365,7 @@ impl VMRuntime {
         args: Vec<Vec<u8>>,
         senders: Vec<AccountAddress>,
         data_store: &mut impl DataStore,
-        cost_strategy: &mut CostStrategy,
+        gas_status: &mut GasStatus,
         log_context: &impl LogContext,
     ) -> VMResult<()> {
         let return_vals = self.execute_function_impl(
@@ -378,7 +377,7 @@ impl VMRuntime {
             },
             true,
             data_store,
-            cost_strategy,
+            gas_status,
             log_context,
         )?;
 
@@ -408,7 +407,7 @@ impl VMRuntime {
         ty_args: Vec<TypeTag>,
         args: Vec<Vec<u8>>,
         data_store: &mut impl DataStore,
-        cost_strategy: &mut CostStrategy,
+        gas_status: &mut GasStatus,
         log_context: &impl LogContext,
     ) -> VMResult<Vec<Vec<u8>>> {
         self.execute_function_impl(
@@ -418,7 +417,7 @@ impl VMRuntime {
             move |runtime, version, params| runtime.deserialize_args(version, params, args),
             false,
             data_store,
-            cost_strategy,
+            gas_status,
             log_context,
         )
     }

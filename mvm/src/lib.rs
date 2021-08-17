@@ -2,6 +2,12 @@
 
 #[macro_use]
 extern crate alloc;
+
+#[cfg(feature = "sp_check")]
+extern crate sp_io;
+#[cfg(feature = "sp_check")]
+use sp_io::EcdsaVerifyError;
+
 use crate::io::context::ExecutionContext;
 use crate::types::{Gas, ModuleTx, PublishPackageTx, ScriptTx, VmResult};
 

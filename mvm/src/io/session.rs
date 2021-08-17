@@ -3,19 +3,19 @@ use crate::io::context::ExecutionContext;
 use crate::io::traits::BalanceAccess;
 use alloc::vec::Vec;
 use diem_types::account_config;
+use move_binary_format::errors::{PartialVMResult, VMResult};
 use move_core_types::account_address::AccountAddress;
 use move_core_types::effects::{ChangeSet, Event};
 use move_core_types::language_storage::{ModuleId, StructTag, CORE_CODE_ADDRESS};
-use move_vm_runtime::data_cache::RemoteCache;
-use vm::errors::{PartialVMResult, VMResult};
+use move_vm_runtime::data_cache::MoveStorage;
 
-pub struct StateSession<'b, 'r, R: RemoteCache, B: BalanceAccess> {
+pub struct StateSession<'b, 'r, R: MoveStorage, B: BalanceAccess> {
     remote: &'r R,
     context: Option<ExecutionContext>,
     coin_session: MasterOfCoinSession<'b, 'r, B, R>,
 }
 
-impl<'b, 'r, R: RemoteCache, B: BalanceAccess> StateSession<'b, 'r, R, B> {
+impl<'b, 'r, R: MoveStorage, B: BalanceAccess> StateSession<'b, 'r, R, B> {
     pub(crate) fn new(
         remote: &'r R,
         context: Option<ExecutionContext>,
@@ -37,7 +37,7 @@ impl<'b, 'r, R: RemoteCache, B: BalanceAccess> StateSession<'b, 'r, R, B> {
     }
 }
 
-impl<'b, 'r, R: RemoteCache, B: BalanceAccess> RemoteCache for StateSession<'b, 'r, R, B> {
+impl<'b, 'r, R: MoveStorage, B: BalanceAccess> MoveStorage for StateSession<'b, 'r, R, B> {
     fn get_module(&self, module_id: &ModuleId) -> VMResult<Option<Vec<u8>>> {
         self.remote.get_module(module_id)
     }

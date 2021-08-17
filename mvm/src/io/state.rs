@@ -4,10 +4,10 @@ use crate::io::key::AccessKey;
 use crate::io::session::StateSession;
 use crate::io::traits::{BalanceAccess, Storage};
 use alloc::vec::Vec;
+use move_binary_format::errors::{PartialVMResult, VMResult};
 use move_core_types::account_address::AccountAddress;
 use move_core_types::language_storage::{ModuleId, StructTag};
-use move_vm_runtime::data_cache::RemoteCache;
-use vm::errors::{PartialVMResult, VMResult};
+use move_vm_runtime::data_cache::MoveStorage;
 
 pub struct State<S: Storage> {
     store: S,
@@ -27,7 +27,7 @@ impl<S: Storage> State<S> {
     }
 }
 
-impl<S: Storage> RemoteCache for State<S> {
+impl<S: Storage> MoveStorage for State<S> {
     fn get_module(&self, module_id: &ModuleId) -> VMResult<Option<Vec<u8>>> {
         Ok(self.store.get(AccessKey::from(module_id).as_ref()))
     }

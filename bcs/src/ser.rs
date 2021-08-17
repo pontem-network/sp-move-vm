@@ -78,7 +78,7 @@ struct Serializer<'a> {
 }
 
 impl<'a> Serializer<'a> {
-    /// Creates a new `Serializer` which will emit LCS.
+    /// Creates a new `Serializer` which will emit BCS.
     fn new(output: &'a mut Vec<u8>, max_remaining_depth: usize) -> Self {
         Self {
             output,

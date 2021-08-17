@@ -1,4 +1,4 @@
-module Store {
+module 0x1::Store {
     struct U64 has copy, key, store, drop { val: u64 }
 
     struct U128 has copy, key, store, drop { val: u128 }

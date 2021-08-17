@@ -1,14 +1,9 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use cell::Lazy;
-use move_core_types::account_address::AccountAddress;
+use crate::account_address::AccountAddress;
+
 pub use move_core_types::language_storage::CORE_CODE_ADDRESS;
-
-pub static DIEM_ROOT_ADDRESS: Lazy<AccountAddress> = Lazy::new(|| diem_root_address());
-
-pub static TREASURY_COMPLIANCE_ACCOUNT_ADDRESS: Lazy<AccountAddress> =
-    Lazy::new(|| treasury_compliance_account_address());
 
 pub fn diem_root_address() -> AccountAddress {
     AccountAddress::from_hex_literal("0xA550C18")

@@ -102,9 +102,9 @@ jobs:
       - name: Build WASM -std
         run: |
           cd mvm
-          cargo build --package mvm --target wasm32-unknown-unknown --no-default-features
+          cargo build --package mvm --target wasm32-unknown-unknown --no-default-features --features="sp_check"
 
       - name: Build with +std
         run: |
           cd mvm
-          cargo build --package mvm --no-default-features --features="std"
+          cargo build --package mvm --no-default-features --features="std,sp_check"

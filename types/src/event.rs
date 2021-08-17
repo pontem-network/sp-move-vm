@@ -1,6 +1,7 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::account_address::AccountAddress;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::{
@@ -9,7 +10,6 @@ use core::{
     str::FromStr,
 };
 use hex::FromHex;
-use move_core_types::account_address::AccountAddress;
 use serde::{de, ser, Deserialize, Serialize};
 
 /// A struct that represents a globally unique id for an Event stream that a user can listen to.
@@ -145,6 +145,9 @@ impl fmt::Display for EventKeyParseError {
     }
 }
 
+#[cfg(feature = "std")]
+impl std::error::Error for EventKeyParseError {}
+
 /// A Rust representation of an Event Handle Resource.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EventHandle {
@@ -157,7 +160,7 @@ pub struct EventHandle {
 impl EventHandle {
     /// Constructs a new Event Handle
     pub fn new(key: EventKey, count: u64) -> Self {
-        EventHandle { key, count }
+        EventHandle { count, key }
     }
 
     /// Return the key to where this event is stored in EventStore.
@@ -168,6 +171,20 @@ impl EventHandle {
     /// Return the counter for the handle
     pub fn count(&self) -> u64 {
         self.count
+    }
+
+    #[cfg(any(test, feature = "fuzzing"))]
+    pub fn count_mut(&mut self) -> &mut u64 {
+        &mut self.count
+    }
+
+    #[cfg(any(test, feature = "fuzzing"))]
+    /// Derive a unique handle by using an AccountAddress and a counter.
+    pub fn new_from_address(addr: &AccountAddress, salt: u64) -> Self {
+        Self {
+            key: EventKey::new_from_address(addr, salt),
+            count: 0,
+        }
     }
 }
 

@@ -3,6 +3,33 @@
 
 //! This module provides an API for the PureEdDSA signature scheme over the ed25519 twisted
 //! Edwards curve as defined in [RFC8032](https://tools.ietf.org/html/rfc8032).
+//!
+//! Signature verification also checks and rejects non-canonical signatures.
+//!
+//! # Examples
+//!
+//! ```
+//! use diem_crypto_derive::{CryptoHasher, BCSCryptoHash};
+//! use diem_crypto::{
+//!     ed25519::*,
+//!     traits::{Signature, SigningKey, Uniform},
+//! };
+//! use rand::{rngs::StdRng, SeedableRng};
+//! use serde::{Serialize, Deserialize};
+//!
+//! #[derive(Serialize, Deserialize, CryptoHasher, BCSCryptoHash)]
+//! pub struct TestCryptoDocTest(String);
+//! let message = TestCryptoDocTest("Test message".to_string());
+//!
+//! let mut rng: StdRng = SeedableRng::from_seed([0; 32]);
+//! let private_key = Ed25519PrivateKey::generate(&mut rng);
+//! let public_key: Ed25519PublicKey = (&private_key).into();
+//! let signature = private_key.sign(&message);
+//! assert!(signature.verify(&message, &public_key).is_ok());
+//! ```
+//! **Note**: The above example generates a private key using a private function intended only for
+//! testing purposes. Production code should find an alternate means for secure key generation.
+#![allow(clippy::integer_arithmetic)]
 
 use crate::{
     hash::{CryptoHash, CryptoHasher},

@@ -1,31 +1,37 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::account_config::CORE_CODE_ADDRESS;
-use alloc::fmt;
+use crate::{
+    access_path::AccessPath,
+    account_address::AccountAddress,
+    account_config::CORE_CODE_ADDRESS,
+    event::{EventHandle, EventKey},
+};
 use alloc::sync::Arc;
 use anyhow::{format_err, Result};
+use core::fmt;
 use hashbrown::HashMap;
 use move_core_types::{
-    identifier::Identifier,
+    ident_str,
+    identifier::{IdentStr, Identifier},
     language_storage::{StructTag, TypeTag},
+    move_resource::{MoveResource, MoveStructType},
 };
-use serde::de::DeserializeOwned;
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
+
 mod diem_version;
 mod registered_currencies;
 mod vm_config;
 mod vm_publishing_option;
 
 pub use self::{
-    diem_version::{DiemVersion, DIEM_MAX_KNOWN_VERSION, DIEM_VERSION_2},
+    diem_version::{DiemVersion, DIEM_MAX_KNOWN_VERSION, DIEM_VERSION_2, DIEM_VERSION_3},
     registered_currencies::RegisteredCurrencies,
     vm_config::VMConfig,
     vm_publishing_option::VMPublishingOption,
 };
-use crate::access_path::AccessPath;
 use alloc::string::ToString;
 use alloc::vec::Vec;
-use move_core_types::account_address::AccountAddress;
 
 /// To register an on-chain config in Rust:
 /// 1. Implement the `OnChainConfig` trait for the Rust representation of the config
@@ -152,13 +158,17 @@ pub trait OnChainConfig: Send + Sync + DeserializeOwned {
     }
 }
 
+pub fn new_epoch_event_key() -> EventKey {
+    EventKey::new_from_address(&config_address(), 4)
+}
+
 pub fn access_path_for_config(address: AccountAddress, config_name: Identifier) -> AccessPath {
     AccessPath::new(
         address,
         AccessPath::resource_access_vec(StructTag {
             address: CORE_CODE_ADDRESS,
-            module: Identifier::new("DiemConfig").unwrap(),
-            name: Identifier::new("DiemConfig").unwrap(),
+            module: ConfigurationResource::MODULE_NAME.to_owned(),
+            name: ConfigurationResource::MODULE_NAME.to_owned(),
             type_params: vec![TypeTag::Struct(StructTag {
                 address: CORE_CODE_ADDRESS,
                 module: config_name.clone(),
@@ -168,3 +178,56 @@ pub fn access_path_for_config(address: AccountAddress, config_name: Identifier) 
         }),
     )
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ConfigurationResource {
+    epoch: u64,
+    last_reconfiguration_time: u64,
+    events: EventHandle,
+}
+
+impl ConfigurationResource {
+    pub fn epoch(&self) -> u64 {
+        self.epoch
+    }
+
+    pub fn last_reconfiguration_time(&self) -> u64 {
+        self.last_reconfiguration_time
+    }
+
+    pub fn events(&self) -> &EventHandle {
+        &self.events
+    }
+
+    #[cfg(feature = "fuzzing")]
+    pub fn bump_epoch_for_test(&self) -> Self {
+        let epoch = self.epoch + 1;
+        let last_reconfiguration_time = self.last_reconfiguration_time + 1;
+        let mut events = self.events.clone();
+        *events.count_mut() += 1;
+
+        Self {
+            epoch,
+            last_reconfiguration_time,
+            events,
+        }
+    }
+}
+
+#[cfg(feature = "fuzzing")]
+impl Default for ConfigurationResource {
+    fn default() -> Self {
+        Self {
+            epoch: 0,
+            last_reconfiguration_time: 0,
+            events: EventHandle::new_from_address(&crate::account_config::diem_root_address(), 16),
+        }
+    }
+}
+
+impl MoveStructType for ConfigurationResource {
+    const MODULE_NAME: &'static IdentStr = ident_str!("DiemConfig");
+    const STRUCT_NAME: &'static IdentStr = ident_str!("Configuration");
+}
+
+impl MoveResource for ConfigurationResource {}

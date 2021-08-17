@@ -1,68 +1,13 @@
 use core::convert::TryFrom;
-use diem_types::account_config::{DIEM_ROOT_ADDRESS, TREASURY_COMPLIANCE_ACCOUNT_ADDRESS};
+use diem_types::account_config::{diem_root_address, treasury_compliance_account_address};
+use move_binary_format::access::ModuleAccess;
+use move_binary_format::file_format::CompiledScript;
+use move_binary_format::CompiledModule;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::{StructTag, TypeTag, CORE_CODE_ADDRESS};
 use move_core_types::value::MoveValue;
-use mvm::types::{parse_type_params, ModulePackage, Transaction};
-use vm::access::ModuleAccess;
-use vm::file_format::CompiledScript;
-use vm::CompiledModule;
-
-#[test]
-fn test_parse_type_params() {
-    test(
-        "0x01::Token::BTC",
-        vec![TypeTag::Struct(StructTag {
-            address: CORE_CODE_ADDRESS,
-            module: Identifier::new("Token").unwrap(),
-            name: Identifier::new("BTC").unwrap(),
-            type_params: vec![],
-        })],
-    );
-
-    test(
-        "0x01::Token::BTC,u8",
-        vec![
-            TypeTag::Struct(StructTag {
-                address: CORE_CODE_ADDRESS,
-                module: Identifier::new("Token").unwrap(),
-                name: Identifier::new("BTC").unwrap(),
-                type_params: vec![],
-            }),
-            TypeTag::U8,
-        ],
-    );
-
-    test(
-        "0x01::Token::BTC;0x01::Balance::Acc<0x01::Foo::Bar>",
-        vec![
-            TypeTag::Struct(StructTag {
-                address: CORE_CODE_ADDRESS,
-                module: Identifier::new("Token").unwrap(),
-                name: Identifier::new("BTC").unwrap(),
-                type_params: vec![],
-            }),
-            TypeTag::Struct(StructTag {
-                address: CORE_CODE_ADDRESS,
-                module: Identifier::new("Balance").unwrap(),
-                name: Identifier::new("Acc").unwrap(),
-                type_params: vec![TypeTag::Struct(StructTag {
-                    address: CORE_CODE_ADDRESS,
-                    module: Identifier::new("Foo").unwrap(),
-                    name: Identifier::new("Bar").unwrap(),
-                    type_params: vec![],
-                })],
-            }),
-        ],
-    );
-
-    test("", vec![]);
-
-    fn test(tp: &str, expected: Vec<TypeTag>) {
-        assert_eq!(parse_type_params(tp).unwrap(), expected);
-    }
-}
+use mvm::types::{ModulePackage, Transaction};
 
 #[test]
 fn test_parse_transaction() {
@@ -103,7 +48,7 @@ fn test_transaction_with_sys_signers() {
     CompiledScript::deserialize(script.code()).unwrap();
     assert!(script.args().is_empty());
     assert!(script.type_parameters().is_empty());
-    assert_eq!(script.signers(), &[*DIEM_ROOT_ADDRESS][..]);
+    assert_eq!(script.signers(), &[diem_root_address()][..]);
 
     let tx =
         Transaction::try_from(&include_bytes!("assets/artifacts/transactions/tr_signers.mvt")[..])
@@ -118,7 +63,7 @@ fn test_transaction_with_sys_signers() {
     assert!(script.type_parameters().is_empty());
     assert_eq!(
         script.signers(),
-        &[*TREASURY_COMPLIANCE_ACCOUNT_ADDRESS][..]
+        &[treasury_compliance_account_address()][..]
     );
 
     let tx = Transaction::try_from(
@@ -135,7 +80,7 @@ fn test_transaction_with_sys_signers() {
     assert!(script.type_parameters().is_empty());
     assert_eq!(
         script.signers(),
-        &[*DIEM_ROOT_ADDRESS, *TREASURY_COMPLIANCE_ACCOUNT_ADDRESS][..]
+        &[diem_root_address(), treasury_compliance_account_address()][..]
     );
 
     let tx = Transaction::try_from(
@@ -154,8 +99,8 @@ fn test_transaction_with_sys_signers() {
     assert_eq!(
         script.signers(),
         &[
-            *DIEM_ROOT_ADDRESS,
-            *TREASURY_COMPLIANCE_ACCOUNT_ADDRESS,
+            diem_root_address(),
+            treasury_compliance_account_address(),
             addr
         ][..]
     );
