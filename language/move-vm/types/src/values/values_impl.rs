@@ -1648,7 +1648,7 @@ impl VectorRef {
 
         macro_rules! err_pop_empty_vec {
             () => {
-                return Ok(NativeResult::err(cost, POP_EMPTY_VEC));
+                return Ok(NativeResult::err(cost, POP_EMPTY_VEC))
             };
         }
 

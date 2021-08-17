@@ -6,6 +6,7 @@ extern crate alloc;
 #[cfg(feature = "sp_check")]
 extern crate sp_io;
 #[cfg(feature = "sp_check")]
+#[allow(unused_imports)]
 use sp_io::EcdsaVerifyError;
 
 use crate::io::context::ExecutionContext;
