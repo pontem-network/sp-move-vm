@@ -14,7 +14,9 @@ use mvm::io::context::ExecutionContext;
 use mvm::io::state::State;
 use mvm::io::traits::BalanceAccess;
 use mvm::types::Gas;
+use mvm::types::Transaction;
 use mvm::Vm;
+use std::convert::TryFrom;
 
 mod common;
 
@@ -39,6 +41,21 @@ fn test_module_republication() {
     let (vm, _, _, _) = vm();
     vm.pub_mod(store_module());
     vm.pub_mod(store_module());
+}
+
+#[test]
+fn test_run_module_function() {
+    let tx = Transaction::try_from(
+        &include_bytes!("assets/artifacts/transactions/ScriptBook_test.mvt")[..],
+    )
+    .unwrap();
+    let script = tx.into_script(vec![]).unwrap();
+    let (vm, _, _, _) = vm();
+    vm.pub_mod(script_book_module());
+    let status = vm
+        .execute_script(gas(), ExecutionContext::new(0, 0), script, false)
+        .status_code;
+    assert_eq!(status, StatusCode::EXECUTED);
 }
 
 #[test]
@@ -88,7 +105,7 @@ fn test_store_event() {
         guid,
         vec![
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
         ]
     );
     assert_eq!(seq, 0);

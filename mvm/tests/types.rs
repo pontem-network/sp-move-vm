@@ -7,7 +7,7 @@ use move_core_types::account_address::AccountAddress;
 use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::{StructTag, TypeTag, CORE_CODE_ADDRESS};
 use move_core_types::value::MoveValue;
-use mvm::types::{ModulePackage, Transaction};
+use mvm::types::{Call, ModulePackage, Transaction};
 
 #[test]
 fn test_parse_transaction() {
@@ -19,7 +19,12 @@ fn test_parse_transaction() {
     assert!(!tx.has_treasury_signer());
 
     let script = tx.into_script(vec![]).unwrap();
-    CompiledScript::deserialize(script.code()).unwrap();
+    match script.call() {
+        Call::Script { code } => {
+            CompiledScript::deserialize(code).unwrap();
+        }
+        Call::ScriptFunction { .. } => unreachable!(),
+    };
     assert_eq!(
         script.args(),
         &[MoveValue::U64(100).simple_serialize().unwrap()][..]
@@ -36,6 +41,30 @@ fn test_parse_transaction() {
 }
 
 #[test]
+fn test_module_function() {
+    let tx = Transaction::try_from(
+        &include_bytes!("assets/artifacts/transactions/ScriptBook_test.mvt")[..],
+    )
+    .unwrap();
+    assert_eq!(tx.signers_count(), 0);
+    assert!(!tx.has_root_signer());
+    assert!(!tx.has_treasury_signer());
+    let script = tx.into_script(vec![]).unwrap();
+    match script.call() {
+        Call::Script { .. } => unreachable!(),
+        Call::ScriptFunction {
+            mod_address,
+            mod_name,
+            func_name,
+        } => {
+            assert_eq!(*mod_address, CORE_CODE_ADDRESS);
+            assert_eq!(mod_name.as_str(), "ScriptBook");
+            assert_eq!(func_name.as_str(), "test");
+        }
+    };
+}
+
+#[test]
 fn test_transaction_with_sys_signers() {
     let tx =
         Transaction::try_from(&include_bytes!("assets/artifacts/transactions/rt_signers.mvt")[..])
@@ -45,7 +74,12 @@ fn test_transaction_with_sys_signers() {
     assert!(!tx.has_treasury_signer());
 
     let script = tx.into_script(vec![]).unwrap();
-    CompiledScript::deserialize(script.code()).unwrap();
+    match script.call() {
+        Call::Script { code } => {
+            CompiledScript::deserialize(code).unwrap();
+        }
+        Call::ScriptFunction { .. } => unreachable!(),
+    };
     assert!(script.args().is_empty());
     assert!(script.type_parameters().is_empty());
     assert_eq!(script.signers(), &[diem_root_address()][..]);
@@ -58,7 +92,12 @@ fn test_transaction_with_sys_signers() {
     assert!(tx.has_treasury_signer());
 
     let script = tx.into_script(vec![]).unwrap();
-    CompiledScript::deserialize(script.code()).unwrap();
+    match script.call() {
+        Call::Script { code } => {
+            CompiledScript::deserialize(code).unwrap();
+        }
+        Call::ScriptFunction { .. } => unreachable!(),
+    };
     assert!(script.args().is_empty());
     assert!(script.type_parameters().is_empty());
     assert_eq!(
@@ -75,7 +114,12 @@ fn test_transaction_with_sys_signers() {
     assert!(tx.has_treasury_signer());
 
     let script = tx.into_script(vec![]).unwrap();
-    CompiledScript::deserialize(script.code()).unwrap();
+    match script.call() {
+        Call::Script { code } => {
+            CompiledScript::deserialize(code).unwrap();
+        }
+        Call::ScriptFunction { .. } => unreachable!(),
+    };
     assert!(script.args().is_empty());
     assert!(script.type_parameters().is_empty());
     assert_eq!(
@@ -93,7 +137,12 @@ fn test_transaction_with_sys_signers() {
 
     let addr = AccountAddress::random();
     let script = tx.into_script(vec![addr]).unwrap();
-    CompiledScript::deserialize(script.code()).unwrap();
+    match script.call() {
+        Call::Script { code } => {
+            CompiledScript::deserialize(code).unwrap();
+        }
+        Call::ScriptFunction { .. } => unreachable!(),
+    };
     assert!(script.args().is_empty());
     assert!(script.type_parameters().is_empty());
     assert_eq!(
@@ -113,7 +162,12 @@ fn test_parse_mvt() {
             .unwrap();
     assert_eq!(tx.signers_count(), 1);
     let script = tx.into_script(vec![CORE_CODE_ADDRESS]).unwrap();
-    CompiledScript::deserialize(script.code()).unwrap();
+    match script.call() {
+        Call::Script { code } => {
+            CompiledScript::deserialize(code).unwrap();
+        }
+        Call::ScriptFunction { .. } => unreachable!(),
+    };
     assert_eq!(
         script.args(),
         &[MoveValue::U64(13).simple_serialize().unwrap()][..]

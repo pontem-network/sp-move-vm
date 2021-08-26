@@ -14,6 +14,7 @@ use move_core_types::vm_status::StatusCode;
 use crate::error::SubStatus;
 use diem_types::account_config::{diem_root_address, treasury_compliance_account_address};
 use move_binary_format::errors::Location;
+use move_core_types::identifier::Identifier;
 
 const GAS_AMOUNT_MAX_VALUE: u64 = u64::MAX / 1000;
 
@@ -95,7 +96,7 @@ impl fmt::Debug for ModuleTx {
 
 /// Script bytecode + passed arguments and type parameters.
 pub struct ScriptTx {
-    code: Vec<u8>,
+    call: Call,
     args: Vec<Vec<u8>>,
     type_args: Vec<TypeTag>,
     signers: Vec<AccountAddress>,
@@ -104,7 +105,7 @@ pub struct ScriptTx {
 /// Script transaction.
 impl ScriptTx {
     /// Constructor.
-    pub fn new(
+    pub fn with_script(
         code: Vec<u8>,
         args: Vec<ScriptArg>,
         type_args: Vec<TypeTag>,
@@ -117,7 +118,7 @@ impl ScriptTx {
             .collect::<Result<_, _>>()
             .map_err(Error::msg)?;
         Ok(ScriptTx {
-            code,
+            call: Call::Script { code },
             args,
             type_args,
             signers,
@@ -125,8 +126,8 @@ impl ScriptTx {
     }
 
     /// Script bytecode.
-    pub fn code(&self) -> &[u8] {
-        &self.code
+    pub fn call(&self) -> &Call {
+        &self.call
     }
 
     /// Parameters passed to the main function.
@@ -145,19 +146,8 @@ impl ScriptTx {
     }
 
     /// Convert into internal data.
-    pub fn into_inner(self) -> (Vec<u8>, Vec<Vec<u8>>, Vec<TypeTag>, Vec<AccountAddress>) {
-        (self.code, self.args, self.type_args, self.signers)
-    }
-}
-
-impl fmt::Debug for ScriptTx {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Script")
-            .field("code", &hex::encode(&self.code))
-            .field("args", &self.args)
-            .field("type_args", &self.type_args)
-            .field("signers", &self.signers)
-            .finish()
+    pub fn into_inner(self) -> (Call, Vec<Vec<u8>>, Vec<TypeTag>, Vec<AccountAddress>) {
+        (self.call, self.args, self.type_args, self.signers)
     }
 }
 
@@ -243,20 +233,47 @@ pub enum Signer {
 
 /// Transaction model.
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Transaction {
+pub enum Transaction {
+    /// Version 1.
+    V1(TxV1),
+}
+
+/// Transaction model.
+#[derive(Serialize, Deserialize, Debug)]
+pub struct TxV1 {
     /// Signers.
     pub signers: Vec<Signer>,
-    /// Move bytecode.
-    pub code: Vec<u8>,
+    /// Call declaration.
+    pub call: Call,
     /// Script args.
     pub args: Vec<Vec<u8>>,
     /// Script type arguments.
     pub type_args: Vec<TypeTag>,
 }
 
+/// Call declaration.
+#[derive(Serialize, Deserialize, Debug)]
+pub enum Call {
+    /// Script
+    Script {
+        /// Script bytecode.
+        code: Vec<u8>,
+    },
+    /// Function in module with script viability.
+    ScriptFunction {
+        /// Module address.
+        mod_address: AccountAddress,
+        /// Module name.
+        mod_name: Identifier,
+        /// Function name.
+        func_name: Identifier,
+    },
+}
+
 impl Transaction {
     pub fn into_script(self, mut signers: Vec<AccountAddress>) -> Result<ScriptTx> {
-        let signers = self
+        let tx = self.inner();
+        let signers = tx
             .signers
             .iter()
             .map(|s| match *s {
@@ -273,26 +290,41 @@ impl Transaction {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(ScriptTx {
-            code: self.code,
-            args: self.args,
-            type_args: self.type_args,
+            call: tx.call,
+            args: tx.args,
+            type_args: tx.type_args,
             signers,
         })
     }
 
+    fn inner(self) -> TxV1 {
+        match self {
+            Transaction::V1(val) => val,
+        }
+    }
+
     pub fn has_root_signer(&self) -> bool {
-        self.signers.iter().any(|s| *s == Signer::Root)
+        self.as_ref().signers.iter().any(|s| *s == Signer::Root)
     }
 
     pub fn has_treasury_signer(&self) -> bool {
-        self.signers.iter().any(|s| *s == Signer::Treasury)
+        self.as_ref().signers.iter().any(|s| *s == Signer::Treasury)
     }
 
     pub fn signers_count(&self) -> usize {
-        self.signers
+        self.as_ref()
+            .signers
             .iter()
             .filter(|s| **s == Signer::Placeholder)
             .count()
+    }
+}
+
+impl AsRef<TxV1> for Transaction {
+    fn as_ref(&self) -> &TxV1 {
+        match self {
+            Transaction::V1(val) => val,
+        }
     }
 }
 
