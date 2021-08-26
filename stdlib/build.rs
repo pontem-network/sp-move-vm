@@ -4,7 +4,7 @@ use std::process::{Command, Stdio};
 
 const STDLIB_DIR_NAME: &str = "move-stdlib";
 const REPO: &str = "https://github.com/pontem-network/move-stdlib.git";
-const REV: &str = "1cd9ae4ed1abcaf9ff15dc15cbbd65f6a4221933";
+const REV: &str = "e0fa415da72b5b27f651f82a8b8a3619c5a674aa";
 
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
