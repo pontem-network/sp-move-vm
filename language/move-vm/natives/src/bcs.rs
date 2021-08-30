@@ -3,6 +3,7 @@
 
 use alloc::collections::VecDeque;
 use alloc::vec::Vec;
+use move_binary_format::errors::PartialVMResult;
 use move_core_types::vm_status::sub_status::NFE_BCS_SERIALIZATION_FAILURE;
 use move_vm_types::{
     gas_schedule::NativeCostIndex,
@@ -11,7 +12,6 @@ use move_vm_types::{
     values::{values_impl::Reference, Value},
 };
 use smallvec::smallvec;
-use vm::errors::PartialVMResult;
 
 /// Rust implementation of Move's `native public fun to_bytes<T>(&T): vector<u8>`
 pub fn native_to_bytes(

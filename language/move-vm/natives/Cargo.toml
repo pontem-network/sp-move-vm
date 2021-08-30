@@ -10,15 +10,17 @@ publish = false
 edition = "2018"
 
 [dependencies]
+cell = { path = "../../../common/cell", version = "0.1.0", default-features = false }
 mirai-annotations = { path = "../../../mirai-annotations", default-features = false }
 sha2 = { version = "0.9.2", default-features = false }
-cell = { path = "../../../common/cell", version = "0.1.0", default-features = false }
+smallvec = "1.6.1"
+uint = { version = "0.8.5", default-features = false }
+byteorder = {version = "=1.4.3", default-features = false }
+
 diem-crypto = { path = "../../../crypto/crypto", default-features = false }
 move-core-types = { path = "../../move-core/types", default-features = false }
 move-vm-types = { path = "../types", default-features = false }
-vm = { path = "../../vm", default-features = false }
-uint = { version = "0.8.5", default-features = false }
-smallvec = "1.6.1"
+move-binary-format = { path = "../../move-binary-format", default-features = false }
 
 [features]
 default = ["std"]
@@ -29,6 +31,6 @@ std = [
     "diem-crypto/std",
     "move-core-types/std",
     "move-vm-types/std",
-    "vm/std",
+    "move-binary-format/std",
     "uint/std",
 ]

@@ -12,8 +12,7 @@
 
 use alloc::collections::BTreeSet;
 use hashbrown::HashMap;
-use move_core_types::vm_status::StatusCode;
-use vm::{
+use move_binary_format::{
     access::ModuleAccess,
     errors::{PartialVMError, PartialVMResult},
     file_format::{
@@ -21,6 +20,7 @@ use vm::{
         FunctionHandle, FunctionHandleIndex, StructDefinitionIndex,
     },
 };
+use move_core_types::vm_status::StatusCode;
 
 pub(crate) struct AcquiresVerifier<'a> {
     module: &'a CompiledModule,

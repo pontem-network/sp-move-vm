@@ -15,20 +15,20 @@
 use alloc::string::String;
 use alloc::vec::Vec;
 use hashbrown::{hash_map, HashMap, HashSet};
-use move_core_types::vm_status::StatusCode;
-use petgraph::{
-    algo::tarjan_scc,
-    graph::{EdgeIndex, NodeIndex},
-    visit::EdgeRef,
-    Graph,
-};
-use vm::{
+use move_binary_format::{
     access::ModuleAccess,
     errors::{Location, PartialVMError, PartialVMResult, VMResult},
     file_format::{
         Bytecode, CompiledModule, FunctionDefinition, FunctionDefinitionIndex, FunctionHandleIndex,
         SignatureIndex, SignatureToken, TypeParameterIndex,
     },
+};
+use move_core_types::vm_status::StatusCode;
+use petgraph::{
+    algo::tarjan_scc,
+    graph::{EdgeIndex, NodeIndex},
+    visit::EdgeRef,
+    Graph,
 };
 
 /// Data attached to each node.

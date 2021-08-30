@@ -8,7 +8,7 @@ use move_core_types::account_address::AccountAddress;
 use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS};
 use move_core_types::vm_status::{AbortLocation, StatusCode, VMStatus};
-use move_vm_runtime::data_cache::RemoteCache;
+use move_vm_runtime::data_cache::MoveStorage;
 use mvm::io::balance::CurrencyInfo;
 use mvm::io::context::ExecutionContext;
 use mvm::io::state::State;
@@ -31,6 +31,14 @@ fn test_public_module() {
         &state.get_module(&store_module_id).unwrap().unwrap(),
         store_module().code()
     );
+}
+
+#[test]
+#[should_panic]
+fn test_module_republication() {
+    let (vm, _, _, _) = vm();
+    vm.pub_mod(store_module());
+    vm.pub_mod(store_module());
 }
 
 #[test]

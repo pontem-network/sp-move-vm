@@ -7,17 +7,13 @@ use parity_scale_codec_derive::{Decode, Encode};
 use serde::{Deserialize, Serialize};
 
 use move_core_types::account_address::AccountAddress;
-use move_core_types::identifier::Identifier;
-use move_core_types::language_storage::{StructTag, TypeTag};
+use move_core_types::language_storage::TypeTag;
 use move_core_types::value::MoveValue;
 use move_core_types::vm_status::StatusCode;
-use move_lang::parser::ast::{ModuleAccess_, Type, Type_};
-use move_lang::parser::lexer::{Lexer, Tok};
-use move_lang::parser::syntax::parse_type;
-use vm::errors::Location;
 
 use crate::error::SubStatus;
-use diem_types::account_config::{DIEM_ROOT_ADDRESS, TREASURY_COMPLIANCE_ACCOUNT_ADDRESS};
+use diem_types::account_config::{diem_root_address, treasury_compliance_account_address};
+use move_binary_format::errors::Location;
 
 const GAS_AMOUNT_MAX_VALUE: u64 = u64::MAX / 1000;
 
@@ -234,94 +230,6 @@ impl From<ScriptArg> for MoveValue {
     }
 }
 
-pub fn parse_type_params(tkn: &str) -> Result<Vec<TypeTag>> {
-    let map_err = |err| Error::msg(format!("{:?}", err));
-
-    let mut lexer = Lexer::new(tkn, "query", Default::default());
-    lexer.advance().map_err(map_err)?;
-
-    let mut types = Vec::new();
-    while lexer.peek() != Tok::EOF {
-        let ty = parse_type(&mut lexer).map_err(map_err)?;
-        types.push(unwrap_spanned_ty_(ty, None)?);
-        let tkn = lexer.peek();
-
-        if tkn != Tok::Semicolon && tkn != Tok::Comma && tkn != Tok::EOF {
-            return Err(Error::msg("Invalid separator. Expected [;,]"));
-        }
-        lexer.advance().map_err(map_err)?;
-    }
-    Ok(types)
-}
-
-fn unwrap_spanned_ty_(ty: Type, this: Option<AccountAddress>) -> Result<TypeTag, Error> {
-    let st = match ty.value {
-        Type_::Apply(ma, mut ty_params) => {
-            match (ma.value, this) {
-                // N
-                (ModuleAccess_::Name(name), this) => match name.value.as_ref() {
-                    "bool" => TypeTag::Bool,
-                    "u8" => TypeTag::U8,
-                    "u64" => TypeTag::U64,
-                    "u128" => TypeTag::U128,
-                    "address" => TypeTag::Address,
-                    "signer" => TypeTag::Signer,
-                    "Vec" if ty_params.len() == 1 => TypeTag::Vector(
-                        unwrap_spanned_ty_(ty_params.pop().unwrap(), this)
-                            .unwrap()
-                            .into(),
-                    ),
-                    _ => bail!("Could not parse input: type without struct name & module address"),
-                },
-                // M.S
-                (ModuleAccess_::ModuleAccess(_module, _struct_name), None) => {
-                    bail!("Could not parse input: type without module address");
-                }
-                // M.S + parent address
-                (ModuleAccess_::ModuleAccess(name, struct_name), Some(this)) => {
-                    TypeTag::Struct(StructTag {
-                        address: this,
-                        module: Identifier::new(name.0.value)?,
-                        name: Identifier::new(struct_name.value)?,
-                        type_params: ty_params
-                            .into_iter()
-                            .map(|ty| unwrap_spanned_ty_(ty, Some(this)))
-                            .map(|res| match res {
-                                Ok(st) => st,
-                                Err(err) => panic!("{:?}", err),
-                            })
-                            .collect(),
-                    })
-                }
-
-                // OxADDR.M.S
-                (ModuleAccess_::QualifiedModuleAccess(module_id, struct_name), _) => {
-                    let (address, name) = module_id.value;
-                    let address = AccountAddress::new(address.to_u8());
-                    TypeTag::Struct(StructTag {
-                        address,
-                        module: Identifier::new(name)?,
-                        name: Identifier::new(struct_name.value)?,
-                        type_params: ty_params
-                            .into_iter()
-                            .map(|ty| unwrap_spanned_ty_(ty, Some(address)))
-                            .map(|res| match res {
-                                Ok(st) => st,
-                                Err(err) => panic!("{:?}", err),
-                            })
-                            .collect(),
-                    })
-                }
-            }
-        }
-        _ => {
-            bail!("Could not parse input: unsupported type");
-        }
-    };
-
-    Ok(st)
-}
-
 /// Signer type.
 #[derive(Serialize, Deserialize, Debug, Ord, PartialOrd, Eq, PartialEq)]
 pub enum Signer {
@@ -352,8 +260,8 @@ impl Transaction {
             .signers
             .iter()
             .map(|s| match *s {
-                Signer::Root => Ok(*DIEM_ROOT_ADDRESS),
-                Signer::Treasury => Ok(*TREASURY_COMPLIANCE_ACCOUNT_ADDRESS),
+                Signer::Root => Ok(diem_root_address()),
+                Signer::Treasury => Ok(treasury_compliance_account_address()),
                 Signer::Placeholder => {
                     if let Some(signer) = signers.pop() {
                         Ok(signer)
@@ -392,7 +300,7 @@ impl TryFrom<&[u8]> for Transaction {
     type Error = Error;
 
     fn try_from(blob: &[u8]) -> Result<Self, Self::Error> {
-        bcs::from_bytes(&blob).map_err(Error::msg)
+        bcs::from_bytes(blob).map_err(Error::msg)
     }
 }
 
@@ -414,7 +322,7 @@ impl TryFrom<&[u8]> for ModulePackage {
     type Error = Error;
 
     fn try_from(blob: &[u8]) -> Result<Self, Self::Error> {
-        bcs::from_bytes(&blob).map_err(Error::msg)
+        bcs::from_bytes(blob).map_err(Error::msg)
     }
 }
 

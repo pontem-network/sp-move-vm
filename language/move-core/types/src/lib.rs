@@ -11,6 +11,7 @@ extern crate alloc;
 
 pub mod account_address;
 pub mod effects;
+pub mod errmap;
 pub mod gas_schedule;
 pub mod identifier;
 pub mod language_storage;

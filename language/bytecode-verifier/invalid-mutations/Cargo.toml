@@ -10,11 +10,10 @@ license = "Apache-2.0"
 publish = false
 
 [dependencies]
-vm = { path = "../../vm", version = "0.1.0", default-features = false }
-move-core-types = { path = "../../move-core/types", default-features = false }
+move-core-types = { path = "../../move-core/types" }
+move-binary-format = { path = "../../move-binary-format" }
 proptest = "1.0.0"
-diem-proptest-helpers = { path = "../../../common/proptest-helpers", version = "0.1.0" }
+diem-proptest-helpers = { path = "../../../common/proptest-helpers" }
 
 [features]
 default = []
-fuzzing = []

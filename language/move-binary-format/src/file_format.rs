@@ -1917,8 +1917,10 @@ impl Arbitrary for CompiledScriptMut {
 
 #[cfg(any(test, feature = "fuzzing"))]
 impl Arbitrary for CompiledModuleMut {
+    type Strategy = BoxedStrategy<Self>;
     /// The size of the compiled module.
     type Parameters = usize;
+
     fn arbitrary_with(size: Self::Parameters) -> Self::Strategy {
         (
             (
@@ -1970,8 +1972,6 @@ impl Arbitrary for CompiledModuleMut {
             )
             .boxed()
     }
-
-    type Strategy = BoxedStrategy<Self>;
 }
 
 impl CompiledModuleMut {

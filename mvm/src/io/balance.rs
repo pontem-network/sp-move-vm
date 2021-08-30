@@ -9,29 +9,27 @@ use diem_types::account_config;
 use diem_types::account_config::{ACCOUNT_MODULE_IDENTIFIER, CORE_CODE_ADDRESS};
 use diem_types::resources::currency_info::CurrencyInfoResource;
 use hashbrown::HashMap;
+use move_binary_format::errors::{Location, PartialVMResult, VMResult};
 use move_core_types::account_address::AccountAddress;
 use move_core_types::effects::ChangeSet;
-use move_core_types::identifier::Identifier;
+use move_core_types::ident_str;
+use move_core_types::identifier::{IdentStr, Identifier};
 use move_core_types::language_storage::{StructTag, TypeTag};
 use move_core_types::vm_status::StatusCode;
-use move_vm_runtime::data_cache::RemoteCache;
+use move_vm_runtime::data_cache::MoveStorage;
 use move_vm_types::natives::function::PartialVMError;
 use serde::{Deserialize, Serialize};
-use vm::errors::{Location, PartialVMResult, VMResult};
 
 use crate::io::traits::{Balance, BalanceAccess, CurrencyAccessPath};
 use move_core_types::vm_status::known_locations::DIEM_MODULE_IDENTIFIER;
 
-pub const DIEM_BALANCE: &str = "Balance";
+pub const DIEM_COIN_IDENTIFIER: &IdentStr = ident_str!("Balance");
 pub const CURRENCY_INFO: &str = "CurrencyInfo";
-
-pub static DIEM_COIN_IDENTIFIER: Lazy<Identifier> =
-    Lazy::new(|| Identifier::new(DIEM_BALANCE).unwrap());
 
 pub static BALANCE_TEMPLATE: Lazy<StructTag> = Lazy::new(|| StructTag {
     address: CORE_CODE_ADDRESS,
-    module: ACCOUNT_MODULE_IDENTIFIER.clone(),
-    name: DIEM_COIN_IDENTIFIER.clone(),
+    module: ACCOUNT_MODULE_IDENTIFIER.to_owned(),
+    name: DIEM_COIN_IDENTIFIER.to_owned(),
     type_params: vec![TypeTag::U8],
 });
 
@@ -48,7 +46,7 @@ impl<B: BalanceAccess> MasterOfCoin<B> {
         }
     }
 
-    pub fn session<'b, 'r, R: RemoteCache>(
+    pub fn session<'b, 'r, R: MoveStorage>(
         &'b self,
         remote: &'r R,
     ) -> MasterOfCoinSession<'b, 'r, B, R> {
@@ -70,7 +68,7 @@ impl<B: BalanceAccess> MasterOfCoin<B> {
         }
     }
 
-    fn get_bridge<R: RemoteCache>(&self, remote: &R, coin: &StructTag) -> Option<Vec<u8>> {
+    fn get_bridge<R: MoveStorage>(&self, remote: &R, coin: &StructTag) -> Option<Vec<u8>> {
         let mut mapper = self.native_mapper.borrow_mut();
 
         match mapper.get(coin) {
@@ -110,13 +108,13 @@ impl<B: BalanceAccess> MasterOfCoin<B> {
     }
 }
 
-pub struct MasterOfCoinSession<'b, 'r, B: BalanceAccess, R: RemoteCache> {
+pub struct MasterOfCoinSession<'b, 'r, B: BalanceAccess, R: MoveStorage> {
     master_of_coin: &'b MasterOfCoin<B>,
     balances: RefCell<HashMap<AccountAddress, HashMap<Cow<'static, CurrencyAccessPath>, Balance>>>,
     remote: &'r R,
 }
 
-impl<'b, 'r, B: BalanceAccess, R: RemoteCache> MasterOfCoinSession<'b, 'r, B, R> {
+impl<'b, 'r, B: BalanceAccess, R: MoveStorage> MasterOfCoinSession<'b, 'r, B, R> {
     fn get_bridge(&self, coin: &StructTag) -> Option<Vec<u8>> {
         self.master_of_coin.get_bridge(self.remote, coin)
     }
@@ -134,27 +132,27 @@ impl<'b, 'r, B: BalanceAccess, R: RemoteCache> MasterOfCoinSession<'b, 'r, B, R>
         address: &AccountAddress,
         tag: &StructTag,
     ) -> PartialVMResult<Option<Vec<u8>>> {
-        if tag.module.as_ref() == ACCOUNT_MODULE_IDENTIFIER.as_ref() {
-            if tag.name.as_str() == DIEM_BALANCE {
+        if tag.module.as_ref() == ACCOUNT_MODULE_IDENTIFIER {
+            if tag.name.as_ref() == DIEM_COIN_IDENTIFIER {
                 let bridge = coin_type(&tag.type_params).and_then(|coin| self.get_bridge(coin));
                 if let Some(bridge) = bridge {
                     return Ok(self.get_balance(address, bridge));
                 }
             }
-        } else if tag.module.as_ref() == DIEM_MODULE_IDENTIFIER.as_ref() {
-            if tag.name.as_str() == CURRENCY_INFO {
-                let bridge = coin_type(&tag.type_params).and_then(|coin| self.get_bridge(coin));
-                if let Some(bridge) = bridge {
-                    return Ok(self
-                        .remote
-                        .get_resource(address, tag)?
-                        .and_then(|val| {
-                            self.master_of_coin
-                                .get_currency_info(&bridge)
-                                .map(|info| (val, info))
-                        })
-                        .map(|(info, path)| path.apply(&info).unwrap()));
-                }
+        } else if tag.module.as_ref() == DIEM_MODULE_IDENTIFIER
+            && tag.name.as_str() == CURRENCY_INFO
+        {
+            let bridge = coin_type(&tag.type_params).and_then(|coin| self.get_bridge(coin));
+            if let Some(bridge) = bridge {
+                return Ok(self
+                    .remote
+                    .get_resource(address, tag)?
+                    .and_then(|val| {
+                        self.master_of_coin
+                            .get_currency_info(&bridge)
+                            .map(|info| (val, info))
+                    })
+                    .map(|(info, path)| path.apply(&info).unwrap()));
             }
         }
 
@@ -196,7 +194,7 @@ impl<'b, 'r, B: BalanceAccess, R: RemoteCache> MasterOfCoinSession<'b, 'r, B, R>
             };
             balance_tag.type_params[0] = tag;
 
-            match resources.remove(&balance_tag) {
+            match resources.remove(balance_tag) {
                 None => {
                     //There is no diff. Nothing to do.
                 }

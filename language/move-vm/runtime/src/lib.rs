@@ -25,6 +25,5 @@ pub mod move_vm;
 mod native_functions;
 mod runtime;
 pub mod session;
-
 #[cfg(test)]
 mod unit_tests;

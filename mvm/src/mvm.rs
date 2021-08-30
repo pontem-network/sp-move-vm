@@ -4,6 +4,7 @@ use anyhow::{anyhow, Error};
 
 use diem_types::event::EventKey;
 use diem_types::on_chain_config::{OnChainConfig, VMConfig};
+use move_binary_format::errors::{Location, VMError, VMResult};
 use move_core_types::account_address::AccountAddress;
 use move_core_types::effects::{ChangeSet, Event};
 use move_core_types::gas_schedule::CostTable;
@@ -12,12 +13,10 @@ use move_core_types::gas_schedule::{AbstractMemorySize, GasAlgebra, GasUnits};
 use move_core_types::identifier::{IdentStr, Identifier};
 use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS};
 use move_core_types::vm_status::{StatusCode, VMStatus};
-use move_vm_runtime::data_cache::RemoteCache;
+use move_vm_runtime::data_cache::MoveStorage;
 use move_vm_runtime::logging::NoContextLog;
 use move_vm_runtime::move_vm::MoveVM;
 use move_vm_runtime::session::Session;
-use move_vm_types::gas_schedule::CostStrategy;
-use vm::errors::{Location, VMError, VMResult};
 
 use crate::io::balance::{BalanceOp, MasterOfCoin};
 use crate::io::config::ConfigStore;
@@ -27,6 +26,7 @@ use crate::io::state::{State, WriteEffects};
 use crate::io::traits::{BalanceAccess, EventHandler, Storage};
 use crate::types::{Gas, ModuleTx, PublishPackageTx, ScriptTx, VmResult};
 use crate::Vm;
+use move_vm_types::gas_schedule::GasStatus;
 
 /// MoveVM.
 pub struct Mvm<S, E, B>
@@ -83,7 +83,7 @@ where
         let state_session = self.state.state_session(context, &self.master_of_coin);
         let mut session = self.vm.new_session(&state_session);
         let mut cost_strategy =
-            CostStrategy::transaction(&self.cost_table, GasUnits::new(gas.max_gas_amount()));
+            GasStatus::new(&self.cost_table, GasUnits::new(gas.max_gas_amount()));
 
         let result = session.execute_function(
             module,
@@ -150,7 +150,7 @@ where
     fn handle_vm_result(
         &self,
         sender: AccountAddress,
-        cost_strategy: CostStrategy,
+        cost_strategy: GasStatus,
         gas_meta: Gas,
         result: Result<(ChangeSet, Vec<Event>, Vec<BalanceOp>), VMError>,
         dry_run: bool,
@@ -206,10 +206,10 @@ where
         session: &mut Session<'_, '_, R>,
         module: Vec<u8>,
         sender: AccountAddress,
-        cost_strategy: &mut CostStrategy,
+        cost_strategy: &mut GasStatus,
     ) -> VMResult<()>
     where
-        R: RemoteCache,
+        R: MoveStorage,
     {
         cost_strategy.charge_intrinsic_gas(AbstractMemorySize::new(module.len() as u64))?;
 
@@ -219,12 +219,12 @@ where
     }
 
     fn charge_global_write_gas_usage<R>(
-        cost_strategy: &mut CostStrategy,
+        cost_strategy: &mut GasStatus,
         session: &mut Session<'_, '_, R>,
         sender: &AccountAddress,
     ) -> VMResult<()>
     where
-        R: RemoteCache,
+        R: MoveStorage,
     {
         let total_cost = session.num_mutated_accounts(sender)
             * cost_strategy
@@ -253,7 +253,7 @@ where
     fn publish_module(&self, gas: Gas, module: ModuleTx, dry_run: bool) -> VmResult {
         let (module, sender) = module.into_inner();
         let mut cost_strategy =
-            CostStrategy::transaction(&self.cost_table, GasUnits::new(gas.max_gas_amount()));
+            GasStatus::new(&self.cost_table, GasUnits::new(gas.max_gas_amount()));
         let mut session = self.vm.new_session(&self.state);
 
         let result = self
@@ -271,7 +271,7 @@ where
     ) -> VmResult {
         let (modules, sender) = package.into_inner();
         let mut cost_strategy =
-            CostStrategy::transaction(&self.cost_table, GasUnits::new(gas.max_gas_amount()));
+            GasStatus::new(&self.cost_table, GasUnits::new(gas.max_gas_amount()));
 
         // We need to create a new vm to publish module packages.
         // Because during batch publishing, the cache mutates.
@@ -310,7 +310,7 @@ where
         let sender = senders.get(0).cloned().unwrap_or(AccountAddress::ZERO);
 
         let mut cost_strategy =
-            CostStrategy::transaction(&self.cost_table, GasUnits::new(gas.max_gas_amount()));
+            GasStatus::new(&self.cost_table, GasUnits::new(gas.max_gas_amount()));
 
         let exec_result = vm_session
             .execute_script(

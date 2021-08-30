@@ -12,7 +12,7 @@ use crate::{
     type_safety,
 };
 use hashbrown::HashMap;
-use vm::{
+use move_binary_format::{
     access::ModuleAccess,
     errors::{Location, PartialVMResult, VMResult},
     file_format::{

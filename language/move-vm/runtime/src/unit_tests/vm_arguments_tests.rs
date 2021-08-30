@@ -3,17 +3,8 @@
 
 use hashbrown::HashMap;
 
-use crate::{data_cache::RemoteCache, logging::NoContextLog, move_vm::MoveVM};
-use move_core_types::{
-    account_address::AccountAddress,
-    gas_schedule::{GasAlgebra, GasUnits},
-    identifier::{IdentStr, Identifier},
-    language_storage::{ModuleId, StructTag, TypeTag},
-    value::{serialize_values, MoveValue},
-    vm_status::{StatusCode, StatusType},
-};
-use move_vm_types::gas_schedule::{zero_cost_schedule, CostStrategy};
-use vm::{
+use crate::{data_cache::MoveStorage, logging::NoContextLog, move_vm::MoveVM};
+use move_binary_format::{
     errors::{PartialVMResult, VMResult},
     file_format::{
         empty_module, AbilitySet, AddressIdentifierIndex, Bytecode, CodeUnit, CompiledModuleMut,
@@ -24,6 +15,14 @@ use vm::{
     },
     CompiledModule,
 };
+use move_core_types::{
+    account_address::AccountAddress,
+    identifier::{IdentStr, Identifier},
+    language_storage::{ModuleId, StructTag, TypeTag},
+    value::{serialize_values, MoveValue},
+    vm_status::{StatusCode, StatusType},
+};
+use move_vm_types::gas_schedule::GasStatus;
 
 // make a script with a given signature for main.
 fn make_script(parameters: Signature) -> Vec<u8> {
@@ -41,7 +40,7 @@ fn make_script(parameters: Signature) -> Vec<u8> {
         }
     };
     CompiledScriptMut {
-        version: vm::file_format_common::VERSION_MAX,
+        version: move_binary_format::file_format_common::VERSION_MAX,
         module_handles: vec![],
         struct_handles: vec![],
         function_handles: vec![],
@@ -86,7 +85,7 @@ fn make_script_with_non_linking_structs(parameters: Signature) -> Vec<u8> {
         }
     };
     CompiledScriptMut {
-        version: vm::file_format_common::VERSION_MAX,
+        version: move_binary_format::file_format_common::VERSION_MAX,
         module_handles: vec![ModuleHandle {
             address: AddressIdentifierIndex(0),
             name: IdentifierIndex(0),
@@ -156,7 +155,7 @@ fn make_module_with_function(
         }
     };
     let module = CompiledModuleMut {
-        version: vm::file_format_common::VERSION_MAX,
+        version: move_binary_format::file_format_common::VERSION_MAX,
         self_module_handle_idx: ModuleHandleIndex(0),
         module_handles: vec![ModuleHandle {
             address: AddressIdentifierIndex(0),
@@ -238,7 +237,7 @@ impl RemoteStore {
     }
 }
 
-impl RemoteCache for RemoteStore {
+impl MoveStorage for RemoteStore {
     fn get_module(&self, module_id: &ModuleId) -> VMResult<Option<Vec<u8>>> {
         Ok(self.modules.get(module_id).cloned())
     }
@@ -262,14 +261,13 @@ fn call_script_with_args_ty_args_signers(
     let remote_view = RemoteStore::new();
     let log_context = NoContextLog::new();
     let mut session = move_vm.new_session(&remote_view);
-    let cost_table = zero_cost_schedule();
-    let mut cost_strategy = CostStrategy::system(&cost_table, GasUnits::new(0));
+    let mut gas_status = GasStatus::new_unmetered();
     session.execute_script(
         script,
         ty_args,
         args,
         signers,
-        &mut cost_strategy,
+        &mut gas_status,
         &log_context,
     )
 }
@@ -291,15 +289,14 @@ fn call_script_function_with_args_ty_args_signers(
     remote_view.add_module(module);
     let log_context = NoContextLog::new();
     let mut session = move_vm.new_session(&remote_view);
-    let cost_table = zero_cost_schedule();
-    let mut cost_strategy = CostStrategy::system(&cost_table, GasUnits::new(0));
+    let mut gas_status = GasStatus::new_unmetered();
     session.execute_script_function(
         &id,
         function_name.as_ident_str(),
         ty_args,
         args,
         signers,
-        &mut cost_strategy,
+        &mut gas_status,
         &log_context,
     )?;
     Ok(())
@@ -766,8 +763,7 @@ fn call_missing_item() {
     let mut remote_view = RemoteStore::new();
     let log_context = NoContextLog::new();
     let mut session = move_vm.new_session(&remote_view);
-    let cost_table = zero_cost_schedule();
-    let mut cost_strategy = CostStrategy::system(&cost_table, GasUnits::new(0));
+    let mut gas_status = GasStatus::new_unmetered();
     let error = session
         .execute_script_function(
             id,
@@ -775,7 +771,7 @@ fn call_missing_item() {
             vec![],
             vec![],
             vec![],
-            &mut cost_strategy,
+            &mut gas_status,
             &log_context,
         )
         .err()
@@ -793,7 +789,7 @@ fn call_missing_item() {
             vec![],
             vec![],
             vec![],
-            &mut cost_strategy,
+            &mut gas_status,
             &log_context,
         )
         .err()

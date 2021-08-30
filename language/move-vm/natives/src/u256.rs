@@ -2,6 +2,7 @@ use alloc::borrow::ToOwned;
 use alloc::collections::VecDeque;
 use alloc::vec::Vec;
 use core::ops::Div;
+use move_binary_format::errors::{PartialVMError, PartialVMResult};
 use move_core_types::vm_status::StatusCode;
 use move_vm_types::{
     gas_schedule::NativeCostIndex,
@@ -11,7 +12,6 @@ use move_vm_types::{
 };
 use smallvec::smallvec;
 use uint::construct_uint;
-use vm::errors::{PartialVMError, PartialVMResult};
 
 construct_uint! {
     pub struct U256(4);

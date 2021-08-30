@@ -2,9 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use alloc::string::{String, ToString};
+use move_binary_format::errors::{PartialVMError, VMError};
 use move_core_types::vm_status::{StatusCode, StatusType};
-use move_vm_types::natives::function::PartialVMError;
-use vm::errors::VMError;
 
 // Trait used by the VM to log interesting data.
 // Clients are responsible for the implementation of alert.

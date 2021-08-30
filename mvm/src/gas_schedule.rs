@@ -1,10 +1,10 @@
 use alloc::vec::Vec;
+use move_binary_format::file_format::Bytecode::*;
+use move_binary_format::file_format::*;
+use move_binary_format::file_format_common::instruction_key;
 use move_core_types::gas_schedule::{CostTable, GasCost};
 use move_vm_types::gas_schedule::new_from_instructions;
 use move_vm_types::gas_schedule::NativeCostIndex as N;
-use vm::file_format::Bytecode::*;
-use vm::file_format::*;
-use vm::file_format_common::instruction_key;
 
 /// Specific gas per instruction configuration for dvm.
 /// INITIAL_GAS_SCHEDULE from libra with dfinance update.

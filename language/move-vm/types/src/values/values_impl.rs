@@ -13,6 +13,10 @@ use core::{
     mem::size_of,
     ops::Add,
 };
+use move_binary_format::{
+    errors::*,
+    file_format::{Constant, SignatureToken},
+};
 use move_core_types::{
     account_address::AccountAddress,
     gas_schedule::{
@@ -23,10 +27,6 @@ use move_core_types::{
     vm_status::{sub_status::NFE_VECTOR_ERROR_BASE, StatusCode},
 };
 use smallvec::smallvec;
-use vm::{
-    errors::*,
-    file_format::{Constant, SignatureToken},
-};
 
 /***************************************************************************************
  *
@@ -101,13 +101,13 @@ pub enum GlobalDataStatus {
 #[derive(Debug)]
 pub struct IndexedRef {
     idx: usize,
-    pub container_ref: ContainerRef,
+    container_ref: ContainerRef,
 }
 
 /// An umbrella enum for references. It is used to hide the internals of the public type
 /// Reference.
 #[derive(Debug)]
-enum ReferenceImpl {
+pub enum ReferenceImpl {
     IndexedRef(IndexedRef),
     ContainerRef(ContainerRef),
 }
@@ -115,7 +115,7 @@ enum ReferenceImpl {
 // A reference to a signer. Clients can attempt a cast to this struct if they are
 // expecting a Signer on the stavk or as an argument.
 #[derive(Debug)]
-pub struct SignerRef(pub ContainerRef);
+pub struct SignerRef(ContainerRef);
 
 // A reference to a vector. This is an alias for a ContainerRef for now but we may change
 // it once Containers are restructured.
@@ -158,7 +158,7 @@ pub struct Reference(ReferenceImpl);
 /// A Move value -- a wrapper around `ValueImpl` which can be created only through valid
 /// means.
 #[derive(Debug)]
-pub struct Value(pub ValueImpl);
+pub struct Value(ValueImpl);
 
 /// The locals for a function frame. It allows values to be read, written or taken
 /// reference from.
@@ -1648,7 +1648,7 @@ impl VectorRef {
 
         macro_rules! err_pop_empty_vec {
             () => {
-                return Ok(NativeResult::err(cost, POP_EMPTY_VEC));
+                return Ok(NativeResult::err(cost, POP_EMPTY_VEC))
             };
         }
 

@@ -6,9 +6,7 @@ use crate::binary_views::BinaryIndexedView;
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::string::ToString;
 use hashbrown::HashMap;
-use move_core_types::vm_status::StatusCode;
-use move_core_types::{identifier::Identifier, language_storage::ModuleId};
-use vm::{
+use move_binary_format::{
     access::{ModuleAccess, ScriptAccess},
     errors::{verification_error, Location, PartialVMError, PartialVMResult, VMResult},
     file_format::{
@@ -18,6 +16,7 @@ use vm::{
     },
     IndexKind,
 };
+use move_core_types::{identifier::Identifier, language_storage::ModuleId, vm_status::StatusCode};
 
 struct Context<'a, 'b> {
     resolver: BinaryIndexedView<'a>,

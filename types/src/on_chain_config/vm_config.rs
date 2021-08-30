@@ -3,8 +3,7 @@
 
 use crate::on_chain_config::OnChainConfig;
 use alloc::vec::Vec;
-use anyhow::anyhow;
-use anyhow::{format_err, Result};
+use anyhow::{anyhow, format_err, Result};
 use move_core_types::gas_schedule::{CostTable, GasConstants};
 use serde::{Deserialize, Serialize};
 

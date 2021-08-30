@@ -3,11 +3,11 @@
 
 use alloc::boxed::Box;
 use alloc::vec::Vec;
-use move_core_types::{identifier::Identifier, language_storage::ModuleId, vm_status::StatusCode};
-use vm::{
+use move_binary_format::{
     errors::{PartialVMError, PartialVMResult},
     file_format::{AbilitySet, StructDefinitionIndex},
 };
+use move_core_types::{identifier::Identifier, language_storage::ModuleId, vm_status::StatusCode};
 
 pub const TYPE_DEPTH_MAX: usize = 256;
 

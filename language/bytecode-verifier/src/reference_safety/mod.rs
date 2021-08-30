@@ -18,7 +18,7 @@ use alloc::collections::btree_set::BTreeSet;
 use alloc::vec::Vec;
 use hashbrown::HashMap;
 use mirai_annotations::*;
-use vm::{
+use move_binary_format::{
     errors::{PartialVMError, PartialVMResult},
     file_format::{
         Bytecode, CodeOffset, FunctionDefinitionIndex, FunctionHandle, IdentifierIndex,

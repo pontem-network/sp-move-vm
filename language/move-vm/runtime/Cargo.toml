@@ -22,7 +22,7 @@ diem-crypto = { path = "../../../crypto/crypto", default-features = false }
 move-core-types = { path = "../../move-core/types", default-features = false }
 move-vm-natives = { path = "../natives", default-features = false }
 move-vm-types = { path = "../types", default-features = false }
-vm = { path = "../../vm", default-features = false }
+move-binary-format = { path = "../../move-binary-format", default-features = false }
 
 [features]
 default = ["std"]
@@ -31,7 +31,7 @@ debug_module = ["move-vm-natives/debug_module"]
 std = [
 	"cell/std",
 	"anyhow/std",
-	"vm/std",
+	"move-binary-format/std",
 	"move-core-types/std",
 	"move-vm-types/std",
 	"move-vm-natives/std",

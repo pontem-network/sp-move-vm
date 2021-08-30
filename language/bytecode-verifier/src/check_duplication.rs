@@ -10,9 +10,7 @@
 //! - all struct and function handles pointing to the self module index have a definition
 use core::hash::Hash;
 use hashbrown::HashSet;
-use move_core_types::vm_status::StatusCode;
-use move_core_types::{account_address::AccountAddress, identifier::Identifier};
-use vm::{
+use move_binary_format::{
     access::{ModuleAccess, ScriptAccess},
     errors::{verification_error, Location, PartialVMResult, VMResult},
     file_format::{
@@ -21,6 +19,9 @@ use vm::{
         StructHandleIndex, TableIndex,
     },
     IndexKind,
+};
+use move_core_types::{
+    account_address::AccountAddress, identifier::Identifier, vm_status::StatusCode,
 };
 
 pub struct DuplicationChecker<'a> {
