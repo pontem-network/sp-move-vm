@@ -23,7 +23,7 @@ impl<S: Storage> State<S> {
         context: Option<ExecutionContext>,
         master_of_coin: &'c MasterOfCoin<B>,
     ) -> StateSession<'c, '_, State<S>, B> {
-        StateSession::new(&self, context, master_of_coin.session(&self))
+        StateSession::new(self, context, master_of_coin.session(self))
     }
 }
 
