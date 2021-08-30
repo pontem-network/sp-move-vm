@@ -139,7 +139,9 @@ impl<'b, 'r, B: BalanceAccess, R: MoveStorage> MasterOfCoinSession<'b, 'r, B, R>
                     return Ok(self.get_balance(address, bridge));
                 }
             }
-        } else if tag.module.as_ref() == DIEM_MODULE_IDENTIFIER && tag.name.as_str() == CURRENCY_INFO {
+        } else if tag.module.as_ref() == DIEM_MODULE_IDENTIFIER
+            && tag.name.as_str() == CURRENCY_INFO
+        {
             let bridge = coin_type(&tag.type_params).and_then(|coin| self.get_bridge(coin));
             if let Some(bridge) = bridge {
                 return Ok(self
@@ -153,7 +155,6 @@ impl<'b, 'r, B: BalanceAccess, R: MoveStorage> MasterOfCoinSession<'b, 'r, B, R>
                     .map(|(info, path)| path.apply(&info).unwrap()));
             }
         }
-
 
         Ok(None)
     }
