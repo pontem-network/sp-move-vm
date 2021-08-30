@@ -12,10 +12,9 @@ use alloc::string::ToString;
 use alloc::vec::Vec;
 use move_binary_format::{
     access::ModuleAccess,
-    compatibility::Compatibility,
     errors::{verification_error, Location, PartialVMError, PartialVMResult, VMResult},
     file_format_common::VERSION_1,
-    normalized, CompiledModule, IndexKind,
+    CompiledModule, IndexKind,
 };
 use move_core_types::{
     account_address::AccountAddress,
@@ -99,19 +98,9 @@ impl VMRuntime {
         // TODO: in the future, we may want to add restrictions on module republishing, possibly by
         // changing the bytecode format to include an `is_upgradable` flag in the CompiledModule.
         if data_store.exists_module(&module_id)? {
-            let old_module_ref =
-                self.loader
-                    .load_module_expect_not_missing(&module_id, data_store, log_context)?;
-            let old_module = old_module_ref.module();
-            let old_m = normalized::Module::new(old_module);
-            let new_m = normalized::Module::new(&compiled_module);
-            let compat = Compatibility::check(&old_m, &new_m);
-            if !compat.is_fully_compatible() {
-                return Err(
-                    PartialVMError::new(StatusCode::BACKWARD_INCOMPATIBLE_MODULE_UPDATE)
-                        .finish(Location::Undefined),
-                );
-            }
+            return Err(
+                PartialVMError::new(StatusCode::DUPLICATE_MODULE_NAME).finish(Location::Undefined)
+            );
         }
 
         // perform bytecode and loading verification

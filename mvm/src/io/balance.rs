@@ -139,20 +139,20 @@ impl<'b, 'r, B: BalanceAccess, R: MoveStorage> MasterOfCoinSession<'b, 'r, B, R>
                     return Ok(self.get_balance(address, bridge));
                 }
             }
-        } else if tag.module.as_ref() == DIEM_MODULE_IDENTIFIER {
-            if tag.name.as_str() == CURRENCY_INFO {
-                let bridge = coin_type(&tag.type_params).and_then(|coin| self.get_bridge(coin));
-                if let Some(bridge) = bridge {
-                    return Ok(self
-                        .remote
-                        .get_resource(address, tag)?
-                        .and_then(|val| {
-                            self.master_of_coin
-                                .get_currency_info(&bridge)
-                                .map(|info| (val, info))
-                        })
-                        .map(|(info, path)| path.apply(&info).unwrap()));
-                }
+        } else if tag.module.as_ref() == DIEM_MODULE_IDENTIFIER
+            && tag.name.as_str() == CURRENCY_INFO
+        {
+            let bridge = coin_type(&tag.type_params).and_then(|coin| self.get_bridge(coin));
+            if let Some(bridge) = bridge {
+                return Ok(self
+                    .remote
+                    .get_resource(address, tag)?
+                    .and_then(|val| {
+                        self.master_of_coin
+                            .get_currency_info(&bridge)
+                            .map(|info| (val, info))
+                    })
+                    .map(|(info, path)| path.apply(&info).unwrap()));
             }
         }
 
@@ -194,7 +194,7 @@ impl<'b, 'r, B: BalanceAccess, R: MoveStorage> MasterOfCoinSession<'b, 'r, B, R>
             };
             balance_tag.type_params[0] = tag;
 
-            match resources.remove(&balance_tag) {
+            match resources.remove(balance_tag) {
                 None => {
                     //There is no diff. Nothing to do.
                 }

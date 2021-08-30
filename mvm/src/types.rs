@@ -300,7 +300,7 @@ impl TryFrom<&[u8]> for Transaction {
     type Error = Error;
 
     fn try_from(blob: &[u8]) -> Result<Self, Self::Error> {
-        bcs::from_bytes(&blob).map_err(Error::msg)
+        bcs::from_bytes(blob).map_err(Error::msg)
     }
 }
 
@@ -322,7 +322,7 @@ impl TryFrom<&[u8]> for ModulePackage {
     type Error = Error;
 
     fn try_from(blob: &[u8]) -> Result<Self, Self::Error> {
-        bcs::from_bytes(&blob).map_err(Error::msg)
+        bcs::from_bytes(blob).map_err(Error::msg)
     }
 }
 
