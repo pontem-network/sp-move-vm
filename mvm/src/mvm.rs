@@ -25,7 +25,7 @@ use crate::io::key::AccessKey;
 use crate::io::state::{State, WriteEffects};
 use crate::io::traits::{BalanceAccess, EventHandler, Storage};
 use crate::types::{Gas, ModuleTx, PublishPackageTx, ScriptTx, VmResult};
-use crate::Vm;
+use crate::{StateAccess, Vm};
 use move_vm_types::gas_schedule::GasStatus;
 
 /// MoveVM.
@@ -333,5 +333,31 @@ where
     fn clear(&self) {
         self.vm.clear();
         self.master_of_coin.clear();
+    }
+}
+
+impl<S, E, B> StateAccess for Mvm<S, E, B>
+where
+    S: Storage,
+    E: EventHandler,
+    B: BalanceAccess,
+{
+    fn get_module(&self, module_id: &ModuleId) -> Result<Option<Vec<u8>>, Error> {
+        self.state.get_module(module_id).map_err(|err| {
+            let (code, _, msg, _, _, _) = err.all_data();
+            anyhow!("Error code:{:?}: msg: '{}'", code, msg.unwrap_or_default())
+        })
+    }
+
+    fn get_resource(
+        &self,
+        address: &AccountAddress,
+        tag: &StructTag,
+    ) -> Result<Option<Vec<u8>>, Error> {
+        let state_session = self.state.state_session(None, &self.master_of_coin);
+        state_session.get_resource(address, tag).map_err(|err| {
+            let (code, _, msg, _, _) = err.all_data();
+            anyhow!("Error code:{:?}: msg: '{}'", code, msg.unwrap_or_default())
+        })
     }
 }

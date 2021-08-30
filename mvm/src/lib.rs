@@ -11,6 +11,10 @@ use sp_io::EcdsaVerifyError;
 
 use crate::io::context::ExecutionContext;
 use crate::types::{Gas, ModuleTx, PublishPackageTx, ScriptTx, VmResult};
+use alloc::vec::Vec;
+use anyhow::Error;
+use diem_types::account_address::AccountAddress;
+use move_core_types::language_storage::{ModuleId, StructTag};
 
 pub mod error;
 pub mod gas_schedule;
@@ -42,4 +46,13 @@ pub trait Vm {
 
     /// Clear vm cache.
     fn clear(&self);
+}
+
+pub trait StateAccess {
+    fn get_module(&self, module_id: &ModuleId) -> Result<Option<Vec<u8>>, Error>;
+    fn get_resource(
+        &self,
+        address: &AccountAddress,
+        tag: &StructTag,
+    ) -> Result<Option<Vec<u8>>, Error>;
 }
