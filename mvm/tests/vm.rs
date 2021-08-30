@@ -34,6 +34,14 @@ fn test_public_module() {
 }
 
 #[test]
+#[should_panic]
+fn test_module_republication() {
+    let (vm, _, _, _) = vm();
+    vm.pub_mod(store_module());
+    vm.pub_mod(store_module());
+}
+
+#[test]
 fn test_public_module_without_gas() {
     let (vm, _, _, _) = vm();
     let gas = Gas::new(1, 1).unwrap();
