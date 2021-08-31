@@ -24,6 +24,7 @@ bcs = { path = "../bcs", default-features = false }
 stdlib = { path = "../stdlib", default-features = false, optional = true }
 log = { version = "0.4.14", default-features = false }
 diem-types = { path = "../types", default-features = false }
+spin = { version = "0.9.2", default-features = false, features = ["rwlock"] }
 
 [dependencies.sp-io]
 git = "https://github.com/paritytech/substrate"

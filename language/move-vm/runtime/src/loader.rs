@@ -11,7 +11,6 @@ use alloc::string::ToString;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use bytecode_verifier::{self, cyclic_dependencies, dependencies, script_signature};
-use core::cell::RefCell;
 use core::{fmt::Debug, hash::Hash};
 use diem_crypto::HashValue;
 use hashbrown::HashMap;
@@ -37,6 +36,7 @@ use move_vm_types::{
     data_store::DataStore,
     loaded_data::runtime_types::{StructType, Type},
 };
+use spin::RwLock;
 
 // A simple cache that offers both a HashMap and a Vector lookup.
 // Values are forced into a `Arc` so they can be used from multiple thread.
@@ -417,25 +417,25 @@ impl ModuleCache {
 // (operating on values on the stack) and when cache needs updating the mutex must be taken.
 // The `pub(crate)` API is what a Loader offers to the runtime.
 pub struct Loader {
-    pub scripts: RefCell<ScriptCache>,
-    pub module_cache: RefCell<ModuleCache>,
-    pub type_cache: RefCell<TypeCache>,
+    pub scripts: RwLock<ScriptCache>,
+    pub module_cache: RwLock<ModuleCache>,
+    pub type_cache: RwLock<TypeCache>,
 }
 
 impl Loader {
     pub fn new() -> Self {
         Self {
-            scripts: RefCell::new(ScriptCache::new()),
-            module_cache: RefCell::new(ModuleCache::new()),
-            type_cache: RefCell::new(TypeCache::new()),
+            scripts: RwLock::new(ScriptCache::new()),
+            module_cache: RwLock::new(ModuleCache::new()),
+            type_cache: RwLock::new(TypeCache::new()),
         }
     }
 
     /// Clears loader cache.
     pub fn clear(&self) {
-        *self.scripts.borrow_mut() = ScriptCache::new();
-        *self.module_cache.borrow_mut() = ModuleCache::new();
-        *self.type_cache.borrow_mut() = TypeCache::new();
+        *self.scripts.write() = ScriptCache::new();
+        *self.module_cache.write() = ModuleCache::new();
+        *self.type_cache.write() = TypeCache::new();
     }
 
     //
@@ -460,13 +460,13 @@ impl Loader {
         // retrieve or load the script
         let hash_value = HashValue::sha3_256_of(script_blob);
 
-        let mut scripts = self.scripts.borrow_mut();
+        let mut scripts = self.scripts.write();
         let (main, parameter_tys) = match scripts.get(&hash_value) {
             Some(main) => main,
             None => {
                 let ver_script =
                     self.deserialize_and_verify_script(script_blob, data_store, log_context)?;
-                let script = Script::new(ver_script, &hash_value, &self.module_cache.borrow())?;
+                let script = Script::new(ver_script, &hash_value, &self.module_cache.read())?;
                 scripts.insert(hash_value, script)
             }
         };
@@ -562,16 +562,16 @@ impl Loader {
         let module = self.load_module_verify_not_missing(module_id, data_store, log_context)?;
         let idx = self
             .module_cache
-            .borrow()
+            .read()
             .resolve_function_by_name(function_name, module_id)
             .map_err(|err| err.finish(Location::Undefined))?;
-        let func = self.module_cache.borrow().function_at(idx);
+        let func = self.module_cache.read().function_at(idx);
 
         let parameter_tys = func
             .parameters
             .0
             .iter()
-            .map(|tok| self.module_cache.borrow().make_type(module.module(), tok))
+            .map(|tok| self.module_cache.read().make_type(module.module(), tok))
             .collect::<PartialVMResult<Vec<_>>>()
             .map_err(|err| err.finish(Location::Undefined))?;
 
@@ -579,7 +579,7 @@ impl Loader {
             .return_
             .0
             .iter()
-            .map(|tok| self.module_cache.borrow().make_type(module.module(), tok))
+            .map(|tok| self.module_cache.read().make_type(module.module(), tok))
             .collect::<PartialVMResult<Vec<_>>>()
             .map_err(|err| err.finish(Location::Undefined))?;
 
@@ -695,7 +695,7 @@ impl Loader {
     }
 
     fn verify_module_cyclic_relations(&self, module: &CompiledModule) -> VMResult<()> {
-        let module_cache = self.module_cache.borrow();
+        let module_cache = self.module_cache.read();
         cyclic_dependencies::verify_module(
             module,
             |module_id| {
@@ -780,7 +780,7 @@ impl Loader {
                 self.load_module_verify_not_missing(&module_id, data_store, log_context)?;
                 let (idx, struct_type) = self
                     .module_cache
-                    .borrow()
+                    .read()
                     // GOOD module was loaded above
                     .resolve_struct_by_name(&struct_tag.name, &module_id)
                     .map_err(|e| e.finish(Location::Undefined))?;
@@ -839,7 +839,7 @@ impl Loader {
             Ok(module)
         }
 
-        if let Some(module) = self.module_cache.borrow().module_at(id) {
+        if let Some(module) = self.module_cache.read().module_at(id) {
             return Ok(module);
         }
 
@@ -856,7 +856,7 @@ impl Loader {
             .map_err(|err| expect_no_verification_errors(err, log_context))?;
         let module_ref = self
             .module_cache
-            .borrow_mut()
+            .write()
             .insert(id.clone(), module, log_context)?;
 
         // friendship is an upward edge in the dependencies DAG, so it has to be checked after the
@@ -934,13 +934,13 @@ impl Loader {
     //
 
     fn function_at(&self, idx: usize) -> Arc<Function> {
-        self.module_cache.borrow().function_at(idx)
+        self.module_cache.read().function_at(idx)
     }
 
     fn get_module(&self, idx: &ModuleId) -> Arc<Module> {
         Arc::clone(
             self.module_cache
-                .borrow()
+                .read()
                 .modules
                 .get(idx)
                 .expect("ModuleId on Function must exist"),
@@ -950,7 +950,7 @@ impl Loader {
     fn get_script(&self, hash: &HashValue) -> Arc<Script> {
         Arc::clone(
             self.scripts
-                .borrow()
+                .read()
                 .scripts
                 .get(hash)
                 .expect("Script hash on Function must exist"),
@@ -975,9 +975,9 @@ impl Loader {
                 AbilitySet::VECTOR,
                 vec![self.abilities(ty)?].into_iter(),
             )),
-            Type::Struct(idx) => Ok(self.module_cache.borrow().struct_at(*idx).abilities),
+            Type::Struct(idx) => Ok(self.module_cache.read().struct_at(*idx).abilities),
             Type::StructInstantiation(idx, type_args) => {
-                let declared_abilities = self.module_cache.borrow().struct_at(*idx).abilities;
+                let declared_abilities = self.module_cache.read().struct_at(*idx).abilities;
                 let type_argument_abilities = type_args
                     .iter()
                     .map(|ty| self.abilities(ty))
@@ -1753,7 +1753,7 @@ impl Loader {
         gidx: usize,
         ty_args: &[Type],
     ) -> PartialVMResult<StructTag> {
-        if let Some(struct_map) = self.type_cache.borrow().structs.get(&gidx) {
+        if let Some(struct_map) = self.type_cache.read().structs.get(&gidx) {
             if let Some(struct_info) = struct_map.get(ty_args) {
                 if let Some(struct_tag) = &struct_info.struct_tag {
                     return Ok(struct_tag.clone());
@@ -1765,7 +1765,7 @@ impl Loader {
             .iter()
             .map(|ty| self.type_to_type_tag(ty))
             .collect::<PartialVMResult<Vec<_>>>()?;
-        let struct_type = self.module_cache.borrow().struct_at(gidx);
+        let struct_type = self.module_cache.read().struct_at(gidx);
         let struct_tag = StructTag {
             address: *struct_type.module.address(),
             module: struct_type.module.name().to_owned(),
@@ -1774,7 +1774,7 @@ impl Loader {
         };
 
         self.type_cache
-            .borrow_mut()
+            .write()
             .structs
             .entry(gidx)
             .or_insert_with(HashMap::new)
@@ -1813,7 +1813,7 @@ impl Loader {
         ty_args: &[Type],
         depth: usize,
     ) -> PartialVMResult<MoveStructLayout> {
-        if let Some(struct_map) = self.type_cache.borrow().structs.get(&gidx) {
+        if let Some(struct_map) = self.type_cache.read().structs.get(&gidx) {
             if let Some(struct_info) = struct_map.get(ty_args) {
                 if let Some(layout) = &struct_info.struct_layout {
                     return Ok(layout.clone());
@@ -1821,7 +1821,7 @@ impl Loader {
             }
         }
 
-        let struct_type = self.module_cache.borrow().struct_at(gidx);
+        let struct_type = self.module_cache.read().struct_at(gidx);
         let field_tys = struct_type
             .fields
             .iter()
@@ -1834,7 +1834,7 @@ impl Loader {
         let struct_layout = MoveStructLayout::new(field_layouts);
 
         self.type_cache
-            .borrow_mut()
+            .write()
             .structs
             .entry(gidx)
             .or_insert_with(HashMap::new)

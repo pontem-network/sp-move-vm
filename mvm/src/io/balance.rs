@@ -19,6 +19,7 @@ use move_core_types::vm_status::StatusCode;
 use move_vm_runtime::data_cache::MoveStorage;
 use move_vm_types::natives::function::PartialVMError;
 use serde::{Deserialize, Serialize};
+use spin::RwLock;
 
 use crate::io::traits::{Balance, BalanceAccess, CurrencyAccessPath};
 use move_core_types::vm_status::known_locations::DIEM_MODULE_IDENTIFIER;
@@ -35,7 +36,7 @@ pub static BALANCE_TEMPLATE: Lazy<StructTag> = Lazy::new(|| StructTag {
 
 pub struct MasterOfCoin<B: BalanceAccess> {
     access: B,
-    native_mapper: RefCell<HashMap<StructTag, Option<Vec<u8>>>>,
+    native_mapper: RwLock<HashMap<StructTag, Option<Vec<u8>>>>,
 }
 
 impl<B: BalanceAccess> MasterOfCoin<B> {
@@ -58,7 +59,7 @@ impl<B: BalanceAccess> MasterOfCoin<B> {
     }
 
     pub fn clear(&self) {
-        self.native_mapper.borrow_mut().clear();
+        self.native_mapper.write().clear();
     }
 
     pub fn update_balance(&self, balance_op: BalanceOp) {
@@ -69,7 +70,7 @@ impl<B: BalanceAccess> MasterOfCoin<B> {
     }
 
     fn get_bridge<R: MoveStorage>(&self, remote: &R, coin: &StructTag) -> Option<Vec<u8>> {
-        let mut mapper = self.native_mapper.borrow_mut();
+        let mut mapper = self.native_mapper.write();
 
         match mapper.get(coin) {
             Some(path) => path.to_owned(),
@@ -97,7 +98,7 @@ impl<B: BalanceAccess> MasterOfCoin<B> {
     }
 
     fn make_coin_tag(&self, sample: &CurrencyAccessPath) -> Option<TypeTag> {
-        self.native_mapper.borrow().iter().find_map(|(key, path)| {
+        self.native_mapper.read().iter().find_map(|(key, path)| {
             if let Some(path) = path {
                 if path == sample {
                     return Some(TypeTag::Struct(key.to_owned()));
