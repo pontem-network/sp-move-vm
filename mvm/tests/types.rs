@@ -202,6 +202,6 @@ fn test_parse_pac() {
         .collect::<Vec<_>>();
     assert_eq!(
         modules.iter().map(|s| s.as_str()).collect::<Vec<_>>(),
-        vec!["Abort", "EventProxy", "Store", "Foo"]
+        vec!["Abort", "ScriptBook", "EventProxy", "Store", "Foo"]
     );
 }
