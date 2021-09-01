@@ -51,6 +51,7 @@ jobs:
       - name: Dove executable
         uses: pontem-network/get-dove@main
         with:
+          prerelease: true
           version: ${{ matrix.dove }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -94,6 +95,7 @@ jobs:
       - name: Dove executable
         uses: pontem-network/get-dove@main
         with:
+          prerelease: true
           version: ${{ matrix.dove }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
