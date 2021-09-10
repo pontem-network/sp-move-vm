@@ -25,7 +25,11 @@ stdlib = { path = "../stdlib", default-features = false, optional = true }
 log = { version = "0.4.14", default-features = false }
 diem-types = { path = "../types", default-features = false }
 
-sp-io = {version = "2", optional = true, default-features = false }
+[dependencies.sp-io]
+git = "https://github.com/paritytech/substrate"
+branch = "polkadot-v0.9.8"
+default-features = false
+optional = true
 
 [features]
 default = ["std", "assets", "move_stdlib", "sp_check"]

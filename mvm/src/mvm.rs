@@ -24,7 +24,7 @@ use crate::io::context::ExecutionContext;
 use crate::io::key::AccessKey;
 use crate::io::state::{State, WriteEffects};
 use crate::io::traits::{BalanceAccess, EventHandler, Storage};
-use crate::types::{Gas, ModuleTx, PublishPackageTx, ScriptTx, VmResult};
+use crate::types::{Call, Gas, ModuleTx, PublishPackageTx, ScriptTx, VmResult};
 use crate::{StateAccess, Vm};
 use move_vm_types::gas_schedule::GasStatus;
 
@@ -312,15 +312,31 @@ where
         let mut cost_strategy =
             GasStatus::new(&self.cost_table, GasUnits::new(gas.max_gas_amount()));
 
-        let exec_result = vm_session
-            .execute_script(
-                script,
+        let result = match script {
+            Call::Script { code } => vm_session.execute_script(
+                code,
                 type_args,
                 args,
                 senders,
                 &mut cost_strategy,
                 &NoContextLog::new(),
-            )
+            ),
+            Call::ScriptFunction {
+                mod_address,
+                mod_name,
+                func_name,
+            } => vm_session.execute_script_function(
+                &ModuleId::new(mod_address, mod_name),
+                &func_name,
+                type_args,
+                args,
+                senders,
+                &mut cost_strategy,
+                &NoContextLog::new(),
+            ),
+        };
+
+        let exec_result = result
             .and_then(|_| {
                 Self::charge_global_write_gas_usage(&mut cost_strategy, &mut vm_session, &sender)
             })

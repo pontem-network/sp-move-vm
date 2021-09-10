@@ -19,6 +19,13 @@ pub fn store_module() -> ModuleTx {
     )
 }
 
+pub fn script_book_module() -> ModuleTx {
+    ModuleTx::new(
+        include_bytes!("../assets/artifacts/modules/ScriptBook.mv").to_vec(),
+        CORE_CODE_ADDRESS,
+    )
+}
+
 pub fn event_proxy_module() -> ModuleTx {
     ModuleTx::new(
         include_bytes!("../assets/artifacts/modules/EventProxy.mv").to_vec(),
@@ -34,7 +41,7 @@ pub fn abort_module() -> ModuleTx {
 }
 
 pub fn emit_event_script(addr: AccountAddress, args: u64) -> ScriptTx {
-    ScriptTx::new(
+    ScriptTx::with_script(
         include_bytes!("../assets/artifacts/scripts/emit_event.mv").to_vec(),
         vec![ScriptArg::U64(args)],
         vec![],
@@ -47,7 +54,7 @@ pub fn store_sys_resources_script(
     addr_for_block: AccountAddress,
     addr_for_timestamp: AccountAddress,
 ) -> ScriptTx {
-    ScriptTx::new(
+    ScriptTx::with_script(
         include_bytes!("../assets/artifacts/scripts/store_system_resources.mv").to_vec(),
         vec![],
         vec![],
@@ -57,7 +64,7 @@ pub fn store_sys_resources_script(
 }
 
 pub fn store_u64_script(addr: AccountAddress, args: u64) -> ScriptTx {
-    ScriptTx::new(
+    ScriptTx::with_script(
         include_bytes!("../assets/artifacts/scripts/store_u64.mv").to_vec(),
         vec![ScriptArg::U64(args)],
         vec![],
@@ -77,7 +84,7 @@ pub fn store_u64_script(addr: AccountAddress, args: u64) -> ScriptTx {
 // }
 
 pub fn pont_info_script(address: AccountAddress, total: u128) -> ScriptTx {
-    ScriptTx::new(
+    ScriptTx::with_script(
         include_bytes!("../assets/artifacts/scripts/pont_info.mv").to_vec(),
         vec![ScriptArg::U128(total)],
         vec![],
@@ -87,7 +94,7 @@ pub fn pont_info_script(address: AccountAddress, total: u128) -> ScriptTx {
 }
 
 pub fn error_script(addr: AccountAddress) -> ScriptTx {
-    ScriptTx::new(
+    ScriptTx::with_script(
         include_bytes!("../assets/artifacts/scripts/error.mv").to_vec(),
         vec![],
         vec![],
@@ -97,7 +104,7 @@ pub fn error_script(addr: AccountAddress) -> ScriptTx {
 }
 
 pub fn create_root_account_script(addr: AccountAddress) -> ScriptTx {
-    ScriptTx::new(
+    ScriptTx::with_script(
         include_bytes!("../assets/artifacts/scripts/make_root_account.mv").to_vec(),
         vec![ScriptArg::Address(addr)],
         vec![],
@@ -107,7 +114,7 @@ pub fn create_root_account_script(addr: AccountAddress) -> ScriptTx {
 }
 
 pub fn create_account_script(root: AccountAddress, addr: AccountAddress) -> ScriptTx {
-    ScriptTx::new(
+    ScriptTx::with_script(
         include_bytes!("../assets/artifacts/scripts/make_account.mv").to_vec(),
         vec![ScriptArg::Address(addr)],
         vec![],
@@ -123,7 +130,7 @@ pub fn transfer_script(
     to_balance: Balance,
     to_move: Balance,
 ) -> ScriptTx {
-    ScriptTx::new(
+    ScriptTx::with_script(
         include_bytes!("../assets/artifacts/scripts/transfer.mv").to_vec(),
         vec![
             ScriptArg::U64(from_balance),
