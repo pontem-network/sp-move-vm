@@ -18,6 +18,7 @@ use move_vm_runtime::logging::NoContextLog;
 use move_vm_runtime::move_vm::MoveVM;
 use move_vm_runtime::session::Session;
 
+use crate::abi::ModuleAbi;
 use crate::io::balance::{BalanceOp, MasterOfCoin};
 use crate::io::config::ConfigStore;
 use crate::io::context::ExecutionContext;
@@ -26,6 +27,7 @@ use crate::io::state::{State, WriteEffects};
 use crate::io::traits::{BalanceAccess, EventHandler, Storage};
 use crate::types::{Call, Gas, ModuleTx, PublishPackageTx, ScriptTx, VmResult};
 use crate::{StateAccess, Vm};
+use move_binary_format::CompiledModule;
 use move_vm_types::gas_schedule::GasStatus;
 
 /// MoveVM.
@@ -363,6 +365,16 @@ where
             let (code, _, msg, _, _, _) = err.all_data();
             anyhow!("Error code:{:?}: msg: '{}'", code, msg.unwrap_or_default())
         })
+    }
+
+    fn get_module_abi(&self, module_id: &ModuleId) -> Result<Option<ModuleAbi>, Error> {
+        if let Some(bytecode) = self.get_module(module_id)? {
+            Ok(Some(ModuleAbi::from(
+                CompiledModule::deserialize(&bytecode).map_err(Error::msg)?,
+            )))
+        } else {
+            Ok(None)
+        }
     }
 
     fn get_resource(

@@ -9,6 +9,7 @@ extern crate sp_io;
 #[allow(unused_imports)]
 use sp_io::EcdsaVerifyError;
 
+use crate::abi::ModuleAbi;
 use crate::io::context::ExecutionContext;
 use crate::types::{Gas, ModuleTx, PublishPackageTx, ScriptTx, VmResult};
 use alloc::vec::Vec;
@@ -16,6 +17,7 @@ use anyhow::Error;
 use diem_types::account_address::AccountAddress;
 use move_core_types::language_storage::{ModuleId, StructTag};
 
+pub mod abi;
 pub mod error;
 pub mod gas_schedule;
 pub mod genesis;
@@ -50,6 +52,7 @@ pub trait Vm {
 
 pub trait StateAccess {
     fn get_module(&self, module_id: &ModuleId) -> Result<Option<Vec<u8>>, Error>;
+    fn get_module_abi(&self, module_id: &ModuleId) -> Result<Option<ModuleAbi>, Error>;
     fn get_resource(
         &self,
         address: &AccountAddress,

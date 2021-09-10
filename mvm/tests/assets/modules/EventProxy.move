@@ -13,4 +13,8 @@ module 0x1::EventProxy {
     public fun create_val(val: u64): U64 {
         U64 { val }
     }
+
+    public(script) fun test_only<T>(): (u64, U64) {
+        abort 1
+    }
 }
