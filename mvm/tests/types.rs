@@ -221,19 +221,19 @@ fn test_module_abi() {
             id: ModuleId::new(CORE_CODE_ADDRESS, Identifier::new("EventProxy").unwrap()),
             friends: vec![],
             structs: vec![mvm::abi::Struct {
-                name: "U64".to_string(),
+                name: Identifier::new("U64").unwrap(),
                 type_parameters: vec![],
                 abilities: TypeAbilities {
                     abilities: vec![Copy, Drop, Store, Key]
                 },
                 fields: vec![Field {
-                    name: "val".to_string(),
+                    name: Identifier::new("val").unwrap(),
                     tp: Type::U64
                 }]
             }],
             funcs: vec![
                 Func {
-                    name: "create_val".to_string(),
+                    name: Identifier::new("create_val").unwrap(),
                     visibility: Public,
                     type_parameters: vec![],
                     parameters: vec![U64],
@@ -242,19 +242,19 @@ fn test_module_abi() {
                             CORE_CODE_ADDRESS,
                             Identifier::new("EventProxy").unwrap()
                         ),
-                        name: "U64".to_string(),
+                        name: Identifier::new("U64").unwrap(),
                         type_parameters: vec![]
                     })]
                 },
                 Func {
-                    name: "emit_event".to_string(),
+                    name: Identifier::new("emit_event").unwrap(),
                     visibility: Public,
                     type_parameters: vec![],
                     parameters: vec![Reference(Box::new(Signer)), U64],
                     returns: vec![]
                 },
                 Func {
-                    name: "test_only".to_string(),
+                    name: Identifier::new("test_only").unwrap(),
                     visibility: Script,
                     type_parameters: vec![TypeAbilities { abilities: vec![] }],
                     parameters: vec![],
@@ -265,7 +265,7 @@ fn test_module_abi() {
                                 CORE_CODE_ADDRESS,
                                 Identifier::new("EventProxy").unwrap()
                             ),
-                            name: "U64".to_string(),
+                            name: Identifier::new("U64").unwrap(),
                             type_parameters: vec![]
                         })
                     ]

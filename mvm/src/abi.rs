@@ -1,9 +1,12 @@
+use alloc::prelude::v1::Box;
+use alloc::vec::Vec;
 use diem_types::account_address::AccountAddress;
 use move_binary_format::access::ModuleAccess;
 use move_binary_format::file_format::{
     Ability, AbilitySet, SignatureToken, StructFieldInformation, StructHandleIndex, Visibility,
 };
 use move_binary_format::CompiledModule;
+use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::ModuleId;
 use parity_scale_codec_derive::{Decode, Encode};
 use serde::{Deserialize, Serialize};
@@ -18,7 +21,7 @@ pub struct ModuleAbi {
 
 #[derive(Debug, Serialize, Deserialize, Decode, Encode, Ord, PartialOrd, Eq, PartialEq)]
 pub struct Struct {
-    pub name: String,
+    pub name: Identifier,
     pub type_parameters: Vec<TypeAbilities>,
     pub abilities: TypeAbilities,
     pub fields: Vec<Field>,
@@ -26,7 +29,7 @@ pub struct Struct {
 
 #[derive(Debug, Serialize, Deserialize, Decode, Encode, Ord, PartialOrd, Eq, PartialEq)]
 pub struct Field {
-    pub name: String,
+    pub name: Identifier,
     pub tp: Type,
 }
 
@@ -77,13 +80,13 @@ pub enum Type {
 #[derive(Debug, Serialize, Deserialize, Decode, Encode, Ord, PartialOrd, Eq, PartialEq)]
 pub struct StructDef {
     pub id: ModuleId,
-    pub name: String,
+    pub name: Identifier,
     pub type_parameters: Vec<Type>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Decode, Encode, Ord, PartialOrd, Eq, PartialEq)]
 pub struct Func {
-    pub name: String,
+    pub name: Identifier,
     pub visibility: FuncVisibility,
     pub type_parameters: Vec<TypeAbilities>,
     pub parameters: Vec<Type>,
@@ -114,7 +117,7 @@ impl From<&Visibility> for FuncVisibility {
 #[derive(Debug, Serialize, Deserialize, Decode, Encode, Ord, PartialOrd, Eq, PartialEq)]
 pub struct Friend {
     pub address: AccountAddress,
-    pub name: String,
+    pub name: Identifier,
 }
 
 impl From<CompiledModule> for ModuleAbi {
@@ -145,14 +148,14 @@ fn make_structs_abi(module: &CompiledModule) -> Vec<Struct> {
                 StructFieldInformation::Declared(defs) => defs
                     .iter()
                     .map(|field| Field {
-                        name: module.identifier_at(field.name).to_string(),
+                        name: module.identifier_at(field.name).to_owned(),
                         tp: make_type(&field.signature.0, module),
                     })
                     .collect(),
             };
 
             Struct {
-                name: module.identifier_at(handle.name).to_string(),
+                name: module.identifier_at(handle.name).to_owned(),
                 type_parameters,
                 abilities: TypeAbilities::from(&handle.abilities),
                 fields,
@@ -193,7 +196,7 @@ fn make_struct_def(
 
     StructDef {
         id,
-        name: module.identifier_at(struct_handle.name).to_string(),
+        name: module.identifier_at(struct_handle.name).to_owned(),
         type_parameters: tps.iter().map(|tok| make_type(tok, module)).collect(),
     }
 }
@@ -211,7 +214,7 @@ fn make_func_abi(module: &CompiledModule) -> Vec<Func> {
             let parameters = &module.signature_at(handle.parameters).0;
             let return_ = &module.signature_at(handle.return_).0;
             Func {
-                name: module.identifier_at(handle.name).to_string(),
+                name: module.identifier_at(handle.name).to_owned(),
                 visibility: FuncVisibility::from(&def.visibility),
                 type_parameters: handle
                     .type_parameters
@@ -231,7 +234,7 @@ fn make_friend_abi(module: &CompiledModule) -> Vec<Friend> {
         .iter()
         .map(|decl| Friend {
             address: *module.address_identifier_at(decl.address),
-            name: module.identifier_at(decl.name).to_string(),
+            name: module.identifier_at(decl.name).to_owned(),
         })
         .collect()
 }
