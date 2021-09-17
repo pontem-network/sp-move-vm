@@ -9,7 +9,6 @@ extern crate sp_io;
 #[allow(unused_imports)]
 use sp_io::EcdsaVerifyError;
 
-use crate::abi::ModuleAbi;
 use crate::io::context::ExecutionContext;
 use crate::types::{Gas, ModuleTx, PublishPackageTx, ScriptTx, VmResult};
 use alloc::vec::Vec;
@@ -52,7 +51,7 @@ pub trait Vm {
 
 pub trait StateAccess {
     fn get_module(&self, module_id: &ModuleId) -> Result<Option<Vec<u8>>, Error>;
-    fn get_module_abi(&self, module_id: &ModuleId) -> Result<Option<ModuleAbi>, Error>;
+    fn get_module_abi(&self, module_id: &ModuleId) -> Result<Option<Vec<u8>>, Error>;
     fn get_resource(
         &self,
         address: &AccountAddress,
