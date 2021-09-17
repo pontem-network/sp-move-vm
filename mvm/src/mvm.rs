@@ -369,9 +369,12 @@ where
 
     fn get_module_abi(&self, module_id: &ModuleId) -> Result<Option<Vec<u8>>, Error> {
         if let Some(bytecode) = self.get_module(module_id)? {
-            Ok(Some(bcs::to_bytes(&ModuleAbi::from(
-                CompiledModule::deserialize(&bytecode).map_err(Error::msg)?,
-            ))?))
+            Ok(Some(
+                bcs::to_bytes(&ModuleAbi::from(
+                    CompiledModule::deserialize(&bytecode).map_err(Error::msg)?,
+                ))
+                .map_err(Error::msg)?,
+            ))
         } else {
             Ok(None)
         }
