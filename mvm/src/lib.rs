@@ -50,11 +50,10 @@ pub trait Vm {
 }
 
 pub trait StateAccess {
-    fn get_module(&self, module_id: &ModuleId) -> Result<Option<Vec<u8>>, Error>;
-    fn get_module_abi(&self, module_id: &ModuleId) -> Result<Option<Vec<u8>>, Error>;
-    fn get_resource(
-        &self,
-        address: &AccountAddress,
-        tag: &StructTag,
-    ) -> Result<Option<Vec<u8>>, Error>;
+    /// Return module bytecode by its id. `module_id` is ModuleId encoded by bcs.
+    fn get_module(&self, module_id: &[u8]) -> Result<Option<Vec<u8>>, Error>;
+    /// Return module abi bytecode by its id. `module_id` is ModuleId encoded by bcs.
+    fn get_module_abi(&self, module_id: &[u8]) -> Result<Option<Vec<u8>>, Error>;
+    /// Return resource by its account address and  struct tag. `tag` is StructTag encoded by bcs.
+    fn get_resource(&self, address: &AccountAddress, tag: &[u8]) -> Result<Option<Vec<u8>>, Error>;
 }
