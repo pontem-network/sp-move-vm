@@ -14,7 +14,6 @@ use crate::types::{Gas, ModuleTx, PublishPackageTx, ScriptTx, VmResult};
 use alloc::vec::Vec;
 use anyhow::Error;
 use diem_types::account_address::AccountAddress;
-use move_core_types::language_storage::{ModuleId, StructTag};
 
 pub mod abi;
 pub mod error;

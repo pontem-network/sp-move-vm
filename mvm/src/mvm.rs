@@ -361,16 +361,15 @@ where
     B: BalanceAccess,
 {
     fn get_module(&self, module_id: &[u8]) -> Result<Option<Vec<u8>>, Error> {
-        self.state
-            .get_module(bcs::from_bytes(module_id)?)
-            .map_err(|err| {
-                let (code, _, msg, _, _, _) = err.all_data();
-                anyhow!("Error code:{:?}: msg: '{}'", code, msg.unwrap_or_default())
-            })
+        let module_id = bcs::from_bytes(module_id).map_err(Error::msg)?;
+        self.state.get_module(&module_id).map_err(|err| {
+            let (code, _, msg, _, _, _) = err.all_data();
+            anyhow!("Error code:{:?}: msg: '{}'", code, msg.unwrap_or_default())
+        })
     }
 
     fn get_module_abi(&self, module_id: &[u8]) -> Result<Option<Vec<u8>>, Error> {
-        if let Some(bytecode) = self.get_module(bcs::from_bytes(module_id)?)? {
+        if let Some(bytecode) = self.get_module(module_id)? {
             Ok(Some(
                 bcs::to_bytes(&ModuleAbi::from(
                     CompiledModule::deserialize(&bytecode).map_err(Error::msg)?,
@@ -383,12 +382,12 @@ where
     }
 
     fn get_resource(&self, address: &AccountAddress, tag: &[u8]) -> Result<Option<Vec<u8>>, Error> {
+        let tag = bcs::from_bytes(tag).map_err(Error::msg)?;
+
         let state_session = self.state.state_session(None, &self.master_of_coin);
-        state_session
-            .get_resource(address, bcs::from_bytes(tag)?)
-            .map_err(|err| {
-                let (code, _, msg, _, _) = err.all_data();
-                anyhow!("Error code:{:?}: msg: '{}'", code, msg.unwrap_or_default())
-            })
+        state_session.get_resource(address, &tag).map_err(|err| {
+            let (code, _, msg, _, _) = err.all_data();
+            anyhow!("Error code:{:?}: msg: '{}'", code, msg.unwrap_or_default())
+        })
     }
 }
