@@ -5,8 +5,9 @@ use move_binary_format::file_format::CompiledScript;
 use move_binary_format::CompiledModule;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::identifier::Identifier;
-use move_core_types::language_storage::{StructTag, TypeTag, CORE_CODE_ADDRESS};
+use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS};
 use move_core_types::value::MoveValue;
+use mvm::abi::{Field, Func, ModuleAbi, StructDef, Type, TypeAbilities};
 use mvm::types::{Call, ModulePackage, Transaction};
 
 #[test]
@@ -203,5 +204,73 @@ fn test_parse_pac() {
     assert_eq!(
         modules.iter().map(|s| s.as_str()).collect::<Vec<_>>(),
         vec!["Abort", "ScriptBook", "EventProxy", "Store", "Foo"]
+    );
+}
+
+#[test]
+fn test_module_abi() {
+    use mvm::abi::FuncVisibility::*;
+    use mvm::abi::Type::*;
+    use mvm::abi::TypeAbility::*;
+
+    let bytecode = include_bytes!("assets/artifacts/modules/EventProxy.mv");
+    let abi = ModuleAbi::from(CompiledModule::deserialize(bytecode).unwrap());
+    assert_eq!(
+        abi,
+        ModuleAbi {
+            id: ModuleId::new(CORE_CODE_ADDRESS, Identifier::new("EventProxy").unwrap()),
+            friends: vec![],
+            structs: vec![mvm::abi::Struct {
+                name: Identifier::new("U64").unwrap(),
+                type_parameters: vec![],
+                abilities: TypeAbilities {
+                    abilities: vec![Copy, Drop, Store, Key]
+                },
+                fields: vec![Field {
+                    name: Identifier::new("val").unwrap(),
+                    tp: Type::U64
+                }]
+            }],
+            funcs: vec![
+                Func {
+                    name: Identifier::new("create_val").unwrap(),
+                    visibility: Public,
+                    type_parameters: vec![],
+                    parameters: vec![U64],
+                    returns: vec![Struct(StructDef {
+                        id: ModuleId::new(
+                            CORE_CODE_ADDRESS,
+                            Identifier::new("EventProxy").unwrap()
+                        ),
+                        name: Identifier::new("U64").unwrap(),
+                        type_parameters: vec![]
+                    })]
+                },
+                Func {
+                    name: Identifier::new("emit_event").unwrap(),
+                    visibility: Public,
+                    type_parameters: vec![],
+                    parameters: vec![Reference(Box::new(Signer)), U64],
+                    returns: vec![]
+                },
+                Func {
+                    name: Identifier::new("test_only").unwrap(),
+                    visibility: Script,
+                    type_parameters: vec![TypeAbilities { abilities: vec![] }],
+                    parameters: vec![],
+                    returns: vec![
+                        U64,
+                        Struct(StructDef {
+                            id: ModuleId::new(
+                                CORE_CODE_ADDRESS,
+                                Identifier::new("EventProxy").unwrap()
+                            ),
+                            name: Identifier::new("U64").unwrap(),
+                            type_parameters: vec![]
+                        })
+                    ]
+                },
+            ],
+        }
     );
 }
