@@ -11,7 +11,11 @@ use sp_io::EcdsaVerifyError;
 
 use crate::io::context::ExecutionContext;
 use crate::types::{Gas, ModuleTx, PublishPackageTx, ScriptTx, VmResult};
+use alloc::vec::Vec;
+use anyhow::Error;
+use diem_types::account_address::AccountAddress;
 
+pub mod abi;
 pub mod error;
 pub mod gas_schedule;
 pub mod genesis;
@@ -42,4 +46,13 @@ pub trait Vm {
 
     /// Clear vm cache.
     fn clear(&self);
+}
+
+pub trait StateAccess {
+    /// Return module bytecode by its id. `module_id` is ModuleId encoded by bcs.
+    fn get_module(&self, module_id: &[u8]) -> Result<Option<Vec<u8>>, Error>;
+    /// Return module abi bytecode by its id. `module_id` is ModuleId encoded by bcs.
+    fn get_module_abi(&self, module_id: &[u8]) -> Result<Option<Vec<u8>>, Error>;
+    /// Return resource by its account address and  struct tag. `tag` is StructTag encoded by bcs.
+    fn get_resource(&self, address: &AccountAddress, tag: &[u8]) -> Result<Option<Vec<u8>>, Error>;
 }
