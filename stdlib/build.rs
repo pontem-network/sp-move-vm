@@ -7,7 +7,6 @@ const REPO: &str = "https://github.com/pontem-network/move-stdlib.git";
 const REV: &str = "34cedad7436f7dad6c9a521f3f6199324737d69f";
 
 fn main() {
-    println!("cargo:rerun-if-changed=build.rs");
     let path: &Path = STDLIB_DIR_NAME.as_ref();
     if path.exists() {
         fs::remove_dir_all(path).unwrap();

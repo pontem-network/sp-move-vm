@@ -18,6 +18,7 @@ use move_vm_runtime::logging::NoContextLog;
 use move_vm_runtime::move_vm::MoveVM;
 use move_vm_runtime::session::Session;
 
+use crate::abi::ModuleAbi;
 use crate::io::balance::{BalanceOp, MasterOfCoin};
 use crate::io::config::ConfigStore;
 use crate::io::context::ExecutionContext;
@@ -25,7 +26,8 @@ use crate::io::key::AccessKey;
 use crate::io::state::{State, WriteEffects};
 use crate::io::traits::{BalanceAccess, EventHandler, Storage};
 use crate::types::{Call, Gas, ModuleTx, PublishPackageTx, ScriptTx, VmResult};
-use crate::Vm;
+use crate::{StateAccess, Vm};
+use move_binary_format::CompiledModule;
 use move_vm_types::gas_schedule::GasStatus;
 
 /// MoveVM.
@@ -349,5 +351,43 @@ where
     fn clear(&self) {
         self.vm.clear();
         self.master_of_coin.clear();
+    }
+}
+
+impl<S, E, B> StateAccess for Mvm<S, E, B>
+where
+    S: Storage,
+    E: EventHandler,
+    B: BalanceAccess,
+{
+    fn get_module(&self, module_id: &[u8]) -> Result<Option<Vec<u8>>, Error> {
+        let module_id = bcs::from_bytes(module_id).map_err(Error::msg)?;
+        self.state.get_module(&module_id).map_err(|err| {
+            let (code, _, msg, _, _, _) = err.all_data();
+            anyhow!("Error code:{:?}: msg: '{}'", code, msg.unwrap_or_default())
+        })
+    }
+
+    fn get_module_abi(&self, module_id: &[u8]) -> Result<Option<Vec<u8>>, Error> {
+        if let Some(bytecode) = self.get_module(module_id)? {
+            Ok(Some(
+                bcs::to_bytes(&ModuleAbi::from(
+                    CompiledModule::deserialize(&bytecode).map_err(Error::msg)?,
+                ))
+                .map_err(Error::msg)?,
+            ))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn get_resource(&self, address: &AccountAddress, tag: &[u8]) -> Result<Option<Vec<u8>>, Error> {
+        let tag = bcs::from_bytes(tag).map_err(Error::msg)?;
+
+        let state_session = self.state.state_session(None, &self.master_of_coin);
+        state_session.get_resource(address, &tag).map_err(|err| {
+            let (code, _, msg, _, _) = err.all_data();
+            anyhow!("Error code:{:?}: msg: '{}'", code, msg.unwrap_or_default())
+        })
     }
 }
