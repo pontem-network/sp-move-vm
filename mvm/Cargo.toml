@@ -27,7 +27,7 @@ diem-types = { path = "../types", default-features = false }
 
 [dependencies.sp-io]
 git = "https://github.com/paritytech/substrate"
-branch = "polkadot-v0.9.8"
+branch = "polkadot-v0.9.11"
 default-features = false
 optional = true
 

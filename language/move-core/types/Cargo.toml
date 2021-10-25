@@ -21,8 +21,8 @@ rand = { version = "0.7.3", default-features = false, optional = true }
 ref-cast = "1.0.3"
 serde = { version = "1", default-features = false, package = "alt_serde", features = ["derive", "alloc"] }
 enum-iterator = "0.6.0"
-parity-scale-codec = { version = "2", default-features = false }
-parity-scale-codec-derive = { version = "2", default-features = false }
+parity-scale-codec = { version = "2.3.0", default-features = false }
+parity-scale-codec-derive = { version = "2.3.0", default-features = false }
 
 [dev-dependencies]
 proptest = "1.0.0"
