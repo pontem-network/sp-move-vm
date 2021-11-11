@@ -13,7 +13,7 @@ edition = "2018"
 hashbrown = "0.9"
 anyhow = {version ="1.0.34", default-features = false}
 mirai-annotations = { path = "../../mirai-annotations", default-features = false }
-petgraph = { git = "https://github.com/pontem-network/petgraph.git", default-features = false, features = ["graphmap", "stable_graph", "matrix_graph"]}
+petgraph = { git = "https://github.com/pontem-network/petgraph.git", package = "petgraph_core", branch = "petgraph_core", default-features = false, features = ["graphmap", "stable_graph", "matrix_graph"]}
 
 borrow-graph = { path = "../borrow-graph", default-features = false }
 move-binary-format = { path = "../move-binary-format", version = "0.1.0", default-features = false }

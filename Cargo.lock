@@ -331,7 +331,7 @@ dependencies = [
  "mirai-annotations",
  "move-binary-format",
  "move-core-types",
- "petgraph 0.5.1 (git+https://github.com/pontem-network/petgraph.git)",
+ "petgraph_core",
 ]
 
 [[package]]
@@ -342,7 +342,7 @@ dependencies = [
  "invalid-mutations",
  "move-binary-format",
  "move-core-types",
- "petgraph 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "petgraph",
  "proptest",
 ]
 
@@ -1735,9 +1735,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "petgraph"
+name = "petgraph_core"
 version = "0.5.1"
-source = "git+https://github.com/pontem-network/petgraph.git#17ae1eae1ee0a580e4f34ccefaf4d611d03eadcb"
+source = "git+https://github.com/pontem-network/petgraph.git?branch=petgraph_core#96e8c14d373dd722d8ad3ec643f9b1e02be30185"
 dependencies = [
  "fixedbitset 0.3.2",
  "hashbrown 0.9.1",
