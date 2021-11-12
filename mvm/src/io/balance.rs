@@ -176,7 +176,7 @@ impl<'b, 'r, B: BalanceAccess, R: MoveStorage> MasterOfCoinSession<'b, 'r, B, R>
                 }
             }
         }
-        
+
         ops.sort();
 
         Ok(ops)
