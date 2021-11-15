@@ -72,6 +72,7 @@ impl EventHandler for EventHandlerMock {
 
 #[derive(Clone, Debug, Default)]
 pub struct BankMock {
+    reserved_balance: Rc<RefCell<Balance>>,
     currency_info: Rc<RefCell<HashMap<Cow<'static, [u8]>, CurrencyInfo>>>,
     balances: Rc<RefCell<HashMap<AccountAddress, HashMap<Cow<'static, [u8]>, Balance>>>>,
 }
@@ -108,6 +109,8 @@ impl BalanceAccess for BankMock {
     }
 
     fn sub(&self, address: &AccountAddress, path: &CurrencyAccessPath, amount: Balance) {
+        *self.reserved_balance.borrow_mut() += amount;
+
         let mut acc_map = self.balances.borrow_mut();
         let acc = acc_map.entry(*address).or_insert_with(HashMap::new);
         let val = acc.entry(Cow::Owned(path.to_vec())).or_insert(0);
@@ -121,10 +124,19 @@ impl BalanceAccess for BankMock {
     }
 
     fn add(&self, address: &AccountAddress, path: &CurrencyAccessPath, amount: Balance) {
+        let mut reserved_balance = self.reserved_balance.borrow_mut();
+
+        if *reserved_balance < amount {
+            panic!(
+                "Not enough currency reserved in bank to withdraw to account {}::{:?}] You need {} reserved in bank, current balance {}",
+                address, path, amount, reserved_balance,
+            )
+        }
         let mut acc_map = self.balances.borrow_mut();
         let acc = acc_map.entry(*address).or_insert_with(HashMap::new);
         let val = acc.entry(Cow::Owned(path.to_vec())).or_insert(0);
         *val += amount;
+        *reserved_balance -= amount;
     }
 }
 
