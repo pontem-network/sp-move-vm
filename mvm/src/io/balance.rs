@@ -176,6 +176,9 @@ impl<'b, 'r, B: BalanceAccess, R: MoveStorage> MasterOfCoinSession<'b, 'r, B, R>
                 }
             }
         }
+
+        ops.sort();
+
         Ok(ops)
     }
 
@@ -256,9 +259,10 @@ impl CurrencyInfo {
     }
 }
 
+#[derive(Ord, PartialOrd, Eq, PartialEq)]
 pub enum BalanceOp {
-    Add(AccountAddress, Cow<'static, CurrencyAccessPath>, Balance),
     Sub(AccountAddress, Cow<'static, CurrencyAccessPath>, Balance),
+    Add(AccountAddress, Cow<'static, CurrencyAccessPath>, Balance),
 }
 
 #[derive(Debug, Serialize, Deserialize, Copy, Clone)]
