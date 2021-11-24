@@ -3,28 +3,27 @@
 
 //! This module defines the transfer functions for verifying reference safety of a procedure body.
 //! The checks include (but are not limited to)
-//! - verifying that there are no dangaling references,
+//! - verifying that there are no dangling references,
 //! - accesses to mutable references are safe
 //! - accesses to global storage references are safe
 
 mod abstract_state;
 
-use crate::{
-    absint::{AbstractInterpreter, BlockInvariant, BlockPostcondition, TransferFunctions},
-    binary_views::{BinaryIndexedView, FunctionView},
-};
+use crate::absint::{AbstractInterpreter, BlockInvariant, BlockPostcondition, TransferFunctions};
 use abstract_state::{AbstractState, AbstractValue};
 use alloc::collections::btree_set::BTreeSet;
 use alloc::vec::Vec;
 use hashbrown::HashMap;
 use mirai_annotations::*;
 use move_binary_format::{
+    binary_views::{BinaryIndexedView, FunctionView},
     errors::{PartialVMError, PartialVMResult},
     file_format::{
         Bytecode, CodeOffset, FunctionDefinitionIndex, FunctionHandle, IdentifierIndex,
-        SignatureToken, StructDefinition, StructFieldInformation,
+        SignatureIndex, SignatureToken, StructDefinition, StructFieldInformation,
     },
 };
+use move_core_types::vm_status::StatusCode;
 
 struct ReferenceSafetyAnalysis<'a> {
     resolver: &'a BinaryIndexedView<'a>,
@@ -122,6 +121,18 @@ fn unpack(verifier: &mut ReferenceSafetyAnalysis, struct_def: &StructDefinition)
     // TODO maybe call state.value_for
     for _ in 0..num_fields(struct_def) {
         verifier.stack.push(AbstractValue::NonReference)
+    }
+}
+
+fn vec_element_type(
+    verifier: &mut ReferenceSafetyAnalysis,
+    idx: SignatureIndex,
+) -> PartialVMResult<SignatureToken> {
+    match verifier.resolver.signature_at(idx).0.get(0) {
+        Some(ty) => Ok(ty.clone()),
+        None => Err(PartialVMError::new(
+            StatusCode::VERIFIER_INVARIANT_VIOLATION,
+        )),
     }
 }
 
@@ -325,6 +336,66 @@ fn execute_inner(
             let struct_inst = verifier.resolver.struct_instantiation_at(*idx)?;
             let struct_def = verifier.resolver.struct_def_at(struct_inst.def)?;
             unpack(verifier, struct_def)
+        }
+
+        Bytecode::VecPack(idx, num) => {
+            for _ in 0..*num {
+                checked_verify!(verifier.stack.pop().unwrap().is_value())
+            }
+
+            let element_type = vec_element_type(verifier, *idx)?;
+            verifier
+                .stack
+                .push(state.value_for(&SignatureToken::Vector(Box::new(element_type))));
+        }
+
+        Bytecode::VecLen(_) => {
+            let vec_ref = verifier.stack.pop().unwrap();
+            state.vector_op(offset, vec_ref, false)?;
+            verifier.stack.push(state.value_for(&SignatureToken::U64));
+        }
+
+        Bytecode::VecImmBorrow(_) => {
+            checked_verify!(verifier.stack.pop().unwrap().is_value());
+            let vec_ref = verifier.stack.pop().unwrap();
+            let elem_ref = state.vector_element_borrow(offset, vec_ref, false)?;
+            verifier.stack.push(elem_ref);
+        }
+        Bytecode::VecMutBorrow(_) => {
+            checked_verify!(verifier.stack.pop().unwrap().is_value());
+            let vec_ref = verifier.stack.pop().unwrap();
+            let elem_ref = state.vector_element_borrow(offset, vec_ref, true)?;
+            verifier.stack.push(elem_ref);
+        }
+
+        Bytecode::VecPushBack(_) => {
+            checked_verify!(verifier.stack.pop().unwrap().is_value());
+            let vec_ref = verifier.stack.pop().unwrap();
+            state.vector_op(offset, vec_ref, true)?;
+        }
+
+        Bytecode::VecPopBack(idx) => {
+            let vec_ref = verifier.stack.pop().unwrap();
+            state.vector_op(offset, vec_ref, true)?;
+
+            let element_type = vec_element_type(verifier, *idx)?;
+            verifier.stack.push(state.value_for(&element_type));
+        }
+
+        Bytecode::VecUnpack(idx, num) => {
+            checked_verify!(verifier.stack.pop().unwrap().is_value());
+
+            let element_type = vec_element_type(verifier, *idx)?;
+            for _ in 0..*num {
+                verifier.stack.push(state.value_for(&element_type));
+            }
+        }
+
+        Bytecode::VecSwap(_) => {
+            checked_verify!(verifier.stack.pop().unwrap().is_value());
+            checked_verify!(verifier.stack.pop().unwrap().is_value());
+            let vec_ref = verifier.stack.pop().unwrap();
+            state.vector_op(offset, vec_ref, true)?;
         }
     };
     Ok(())

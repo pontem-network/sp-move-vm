@@ -1,20 +1,17 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-//! This module defines the transfer functions for verifying local safety of a
-//! procedure body.
+//! This module defines the transfer functions for verifying local safety of a procedure body.
 //! It is concerned with the assignment state of a local variable at the time of usage, which is
-//! a control flow sensitive check
+//! a control flow sensitive check.
 
 mod abstract_state;
 
-use crate::{
-    absint::{AbstractInterpreter, BlockInvariant, BlockPostcondition, TransferFunctions},
-    binary_views::{BinaryIndexedView, FunctionView},
-};
+use crate::absint::{AbstractInterpreter, BlockInvariant, BlockPostcondition, TransferFunctions};
 use abstract_state::{AbstractState, LocalState};
 use mirai_annotations::*;
 use move_binary_format::{
+    binary_views::{BinaryIndexedView, FunctionView},
     errors::{PartialVMError, PartialVMResult},
     file_format::{Bytecode, CodeOffset},
 };
@@ -24,8 +21,8 @@ pub(crate) fn verify<'a>(
     resolver: &BinaryIndexedView,
     function_view: &'a FunctionView<'a>,
 ) -> PartialVMResult<()> {
-    let initial_state = AbstractState::new(resolver, function_view);
-    let inv_map = LocalsSafetyAnalysis().analyze_function(initial_state, &function_view);
+    let initial_state = AbstractState::new(resolver, function_view)?;
+    let inv_map = LocalsSafetyAnalysis().analyze_function(initial_state, function_view);
     // Report all the join failures
     for (_block_id, BlockInvariant { post, .. }) in inv_map {
         match post {
@@ -45,10 +42,10 @@ fn execute_inner(
     match bytecode {
         Bytecode::StLoc(idx) => match state.local_state(*idx) {
             LocalState::MaybeAvailable | LocalState::Available
-                if !state.local_abilities(*idx).has_drop() =>
-            {
-                return Err(state.error(StatusCode::STLOC_UNSAFE_TO_DESTROY_ERROR, offset))
-            }
+            if !state.local_abilities(*idx).has_drop() =>
+                {
+                    return Err(state.error(StatusCode::STLOC_UNSAFE_TO_DESTROY_ERROR, offset))
+                }
             _ => state.set_available(*idx),
         },
 
@@ -82,12 +79,12 @@ fn execute_inner(
             for (local_state, local_abilities) in local_states.iter().zip(all_local_abilities) {
                 match local_state {
                     LocalState::MaybeAvailable | LocalState::Available
-                        if !local_abilities.has_drop() =>
-                    {
-                        return Err(
-                            state.error(StatusCode::UNSAFE_RET_UNUSED_VALUES_WITHOUT_DROP, offset)
-                        )
-                    }
+                    if !local_abilities.has_drop() =>
+                        {
+                            return Err(
+                                state.error(StatusCode::UNSAFE_RET_UNUSED_VALUES_WITHOUT_DROP, offset)
+                            )
+                        }
                     _ => (),
                 }
             }
@@ -149,7 +146,15 @@ fn execute_inner(
         | Bytecode::MoveFrom(_)
         | Bytecode::MoveFromGeneric(_)
         | Bytecode::MoveTo(_)
-        | Bytecode::MoveToGeneric(_) => (),
+        | Bytecode::MoveToGeneric(_)
+        | Bytecode::VecPack(..)
+        | Bytecode::VecLen(_)
+        | Bytecode::VecImmBorrow(_)
+        | Bytecode::VecMutBorrow(_)
+        | Bytecode::VecPushBack(_)
+        | Bytecode::VecPopBack(_)
+        | Bytecode::VecUnpack(..)
+        | Bytecode::VecSwap(_) => (),
     };
     Ok(())
 }

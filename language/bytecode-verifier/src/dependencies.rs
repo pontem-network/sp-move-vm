@@ -2,21 +2,21 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! This module contains verification of usage of dependencies for modules and scripts.
-use crate::binary_views::BinaryIndexedView;
-use alloc::collections::{BTreeMap, BTreeSet};
-use alloc::string::ToString;
-use hashbrown::HashMap;
 use move_binary_format::{
     access::{ModuleAccess, ScriptAccess},
+    binary_views::BinaryIndexedView,
     errors::{verification_error, Location, PartialVMError, PartialVMResult, VMResult},
     file_format::{
         AbilitySet, Bytecode, CodeOffset, CompiledModule, CompiledScript, FunctionDefinitionIndex,
-        FunctionHandleIndex, ModuleHandleIndex, SignatureToken, StructHandleIndex, TableIndex,
-        Visibility,
+        FunctionHandleIndex, ModuleHandleIndex, SignatureToken, StructHandleIndex,
+        StructTypeParameter, TableIndex, Visibility,
     },
     IndexKind,
 };
 use move_core_types::{identifier::Identifier, language_storage::ModuleId, vm_status::StatusCode};
+use alloc::collections::{BTreeMap, BTreeSet};
+use alloc::string::ToString;
+use hashbrown::HashMap;
 
 struct Context<'a, 'b> {
     resolver: BinaryIndexedView<'a>,
@@ -212,10 +212,10 @@ fn verify_imported_structs(context: &Context) -> PartialVMResult<()> {
             Some(def_idx) => {
                 let def_handle = owner_module.struct_handle_at(*def_idx);
                 if !compatible_struct_abilities(struct_handle.abilities, def_handle.abilities)
-                    || !compatible_type_parameters(
-                        &struct_handle.type_parameters,
-                        &def_handle.type_parameters,
-                    )
+                    || !compatible_struct_type_parameters(
+                    &struct_handle.type_parameters,
+                    &def_handle.type_parameters,
+                )
                 {
                     return Err(verification_error(
                         StatusCode::TYPE_MISMATCH,
@@ -255,7 +255,7 @@ fn verify_imported_functions(context: &Context) -> PartialVMResult<()> {
             Some(def_idx) => {
                 let def_handle = owner_module.function_handle_at(*def_idx);
                 // compatible type parameter constraints
-                if !compatible_type_parameters(
+                if !compatible_fun_type_parameters(
                     &function_handle.type_parameters,
                     &def_handle.type_parameters,
                 ) {
@@ -284,7 +284,7 @@ fn verify_imported_functions(context: &Context) -> PartialVMResult<()> {
                     &def_params.0,
                     owner_module,
                 )
-                .map_err(|e| e.at_index(IndexKind::FunctionHandle, idx as TableIndex))?;
+                    .map_err(|e| e.at_index(IndexKind::FunctionHandle, idx as TableIndex))?;
 
                 // same return_
                 let handle_return = context.resolver.signature_at(function_handle.return_);
@@ -305,7 +305,7 @@ fn verify_imported_functions(context: &Context) -> PartialVMResult<()> {
                     &def_return.0,
                     owner_module,
                 )
-                .map_err(|e| e.at_index(IndexKind::FunctionHandle, idx as TableIndex))?;
+                    .map_err(|e| e.at_index(IndexKind::FunctionHandle, idx as TableIndex))?;
             }
             None => {
                 return Err(verification_error(
@@ -332,26 +332,69 @@ fn compatible_struct_abilities(
 }
 
 // - The number of type parameters must be the same
-// - For each type parameter, the local view must be a superset of (or equal to) the defined
-//   constraints. Conceptually, the local view can be more constrained than the defined one as the
-//   local context is only limiting usage, and cannot take advantage of the additional constraints.
-fn compatible_type_parameters(
+// - Each pair of parameters must satisfy [`compatible_type_parameter_constraints`]
+fn compatible_fun_type_parameters(
     local_type_parameters_declaration: &[AbilitySet],
     defined_type_parameters: &[AbilitySet],
 ) -> bool {
     local_type_parameters_declaration.len() == defined_type_parameters.len()
         && local_type_parameters_declaration
-            .iter()
-            .zip(defined_type_parameters)
-            .all(
-                |(
-                    local_type_parameter_constraints_declaration,
-                    defined_type_parameter_constraints,
-                )| {
-                    (*defined_type_parameter_constraints)
-                        .is_subset(*local_type_parameter_constraints_declaration)
-                },
-            )
+        .iter()
+        .zip(defined_type_parameters)
+        .all(
+            |(
+                 local_type_parameter_constraints_declaration,
+                 defined_type_parameter_constraints,
+             )| {
+                compatible_type_parameter_constraints(
+                    *local_type_parameter_constraints_declaration,
+                    *defined_type_parameter_constraints,
+                )
+            },
+        )
+}
+
+// - The number of type parameters must be the same
+// - Each pair of parameters must satisfy [`compatible_type_parameter_constraints`] and [`compatible_type_parameter_phantom_decl`]
+fn compatible_struct_type_parameters(
+    local_type_parameters_declaration: &[StructTypeParameter],
+    defined_type_parameters: &[StructTypeParameter],
+) -> bool {
+    local_type_parameters_declaration.len() == defined_type_parameters.len()
+        && local_type_parameters_declaration
+        .iter()
+        .zip(defined_type_parameters)
+        .all(
+            |(local_type_parameter_declaration, defined_type_parameter)| {
+                compatible_type_parameter_phantom_decl(
+                    local_type_parameter_declaration,
+                    defined_type_parameter,
+                ) && compatible_type_parameter_constraints(
+                    local_type_parameter_declaration.constraints,
+                    defined_type_parameter.constraints,
+                )
+            },
+        )
+}
+
+//  The local view of a type parameter must be a superset of (or equal to) the defined
+//  constraints. Conceptually, the local view can be more constrained than the defined one as the
+//  local context is only limiting usage, and cannot take advantage of the additional constraints.
+fn compatible_type_parameter_constraints(
+    local_type_parameter_constraints_declaration: AbilitySet,
+    defined_type_parameter_constraints: AbilitySet,
+) -> bool {
+    defined_type_parameter_constraints.is_subset(local_type_parameter_constraints_declaration)
+}
+
+// Adding phantom declarations relaxes the requirements for clients, thus, the local view may
+// lack a phantom declaration present in the definition.
+fn compatible_type_parameter_phantom_decl(
+    local_type_parameter_declaration: &StructTypeParameter,
+    defined_type_parameter: &StructTypeParameter,
+) -> bool {
+    // local_type_parameter_declaration.is_phantom => defined_type_parameter.is_phantom
+    !local_type_parameter_declaration.is_phantom || defined_type_parameter.is_phantom
 }
 
 fn compare_cross_module_signatures(
@@ -486,12 +529,12 @@ fn verify_script_visibility_usage(
                 return Err(PartialVMError::new(
                     StatusCode::CALLED_SCRIPT_VISIBLE_FROM_NON_SCRIPT_VISIBLE,
                 )
-                .at_code_offset(fdef_idx, idx)
-                .with_message(
-                    "script-visible functions can only be called from scripts or other \
+                    .at_code_offset(fdef_idx, idx)
+                    .with_message(
+                        "script-visible functions can only be called from scripts or other \
                     script-visibile functions"
-                        .to_string(),
-                ));
+                            .to_string(),
+                    ));
             }
             _ => (),
         }

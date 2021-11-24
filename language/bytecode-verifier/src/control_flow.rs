@@ -6,14 +6,14 @@
 //! - All forward jumps do not enter into the middle of a loop
 //! - All "breaks" (forward, loop-exiting jumps) go to the "end" of the loop
 //! - All "continues" (back jumps in a loop) are only to the current loop
-use alloc::vec::Vec;
-use core::convert::TryInto;
-use hashbrown::HashSet;
 use move_binary_format::{
     errors::{PartialVMError, PartialVMResult},
     file_format::{Bytecode, CodeOffset, CodeUnit, FunctionDefinitionIndex},
 };
 use move_core_types::vm_status::StatusCode;
+use alloc::vec::Vec;
+use core::convert::TryInto;
+use hashbrown::HashSet;
 
 pub fn verify(
     current_function_opt: Option<FunctionDefinitionIndex>,
@@ -82,10 +82,10 @@ fn instruction_labels(context: &ControlFlowVerifier) -> Vec<Label> {
         match instr {
             // Back jump/"continue"
             Bytecode::Branch(prev) | Bytecode::BrTrue(prev) | Bytecode::BrFalse(prev)
-                if *prev <= i =>
-            {
-                loop_continue(*prev, i)
-            }
+            if *prev <= i =>
+                {
+                    loop_continue(*prev, i)
+                }
             _ => (),
         }
     }
@@ -163,12 +163,12 @@ fn check_breaks(context: &ControlFlowVerifier, labels: &[Label]) -> PartialVMRes
             Bytecode::Branch(j) | Bytecode::BrTrue(j) | Bytecode::BrFalse(j) if *j > i => {
                 match loop_stack.last() {
                     Some((_cur_loop, last_continue))
-                        if j > last_continue && *j != last_continue + 1 =>
-                    {
-                        // Invalid loop break. Must break immediately to the instruction after
-                        // the last continue
-                        Err(context.error(StatusCode::INVALID_LOOP_BREAK, i))
-                    }
+                    if j > last_continue && *j != last_continue + 1 =>
+                        {
+                            // Invalid loop break. Must break immediately to the instruction after
+                            // the last continue
+                            Err(context.error(StatusCode::INVALID_LOOP_BREAK, i))
+                        }
                     _ => Ok(()),
                 }
             }
@@ -184,26 +184,26 @@ fn check_no_loop_splits(context: &ControlFlowVerifier, labels: &[Label]) -> Part
             Some((_cur_loop, last_continue)) => jump_target > *last_continue,
         }
     };
-    let loop_depth = count_loop_depth(&labels);
+    let loop_depth = count_loop_depth(labels);
     check_code(context, labels, |loop_stack, i, instr| {
         match instr {
             // Forward jump/"break"
             Bytecode::Branch(j) | Bytecode::BrTrue(j) | Bytecode::BrFalse(j)
-                if *j > i && !is_break(loop_stack, *j) =>
-            {
-                let j = *j;
-                let before_depth = loop_depth[i as usize];
-                let after_depth = match &labels[j as usize] {
-                    Label::Loop { .. } => loop_depth[j as usize] - 1,
-                    Label::Code => loop_depth[j as usize],
-                };
-                if before_depth != after_depth {
-                    // Invalid forward jump. Entered the middle of a loop
-                    Err(context.error(StatusCode::INVALID_LOOP_SPLIT, i))
-                } else {
-                    Ok(())
+            if *j > i && !is_break(loop_stack, *j) =>
+                {
+                    let j = *j;
+                    let before_depth = loop_depth[i as usize];
+                    let after_depth = match &labels[j as usize] {
+                        Label::Loop { .. } => loop_depth[j as usize] - 1,
+                        Label::Code => loop_depth[j as usize],
+                    };
+                    if before_depth != after_depth {
+                        // Invalid forward jump. Entered the middle of a loop
+                        Err(context.error(StatusCode::INVALID_LOOP_SPLIT, i))
+                    } else {
+                        Ok(())
+                    }
                 }
-            }
             _ => Ok(()),
         }
     })

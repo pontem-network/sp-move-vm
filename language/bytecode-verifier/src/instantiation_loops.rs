@@ -14,7 +14,6 @@
 
 use alloc::string::String;
 use alloc::vec::Vec;
-use hashbrown::{hash_map, HashMap, HashSet};
 use move_binary_format::{
     access::ModuleAccess,
     errors::{Location, PartialVMError, PartialVMResult, VMResult},
@@ -30,6 +29,7 @@ use petgraph::{
     visit::EdgeRef,
     Graph,
 };
+use hashbrown::{hash_map, HashMap, HashSet};
 
 /// Data attached to each node.
 /// Each node corresponds to a type formal of a generic function in the module.
@@ -122,7 +122,7 @@ impl<'a> InstantiationLoopChecker<'a> {
         }
     }
 
-    /// Retrives the node corresponding to the specified type formal.
+    /// Retrieves the node corresponding to the specified type formal.
     /// If none exists in the graph yet, create one.
     fn get_or_add_node(&mut self, node: Node) -> NodeIndex {
         match self.node_map.entry(node) {
@@ -193,7 +193,7 @@ impl<'a> InstantiationLoopChecker<'a> {
                         self.add_edge(
                             Node(caller_idx, type_param),
                             Node(callee_idx, formal_idx),
-                            Edge::TyConApp(&ty),
+                            Edge::TyConApp(ty),
                         );
                     }
                 }

@@ -1,14 +1,13 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use diem_proptest_helpers::pick_slice_idxs;
 use move_binary_format::{
     errors::{offset_out_of_bounds, PartialVMError},
     file_format::{
-        Bytecode, CodeOffset, CompiledModuleMut, ConstantPoolIndex, FieldHandleIndex,
+        Bytecode, CodeOffset, CompiledModule, ConstantPoolIndex, FieldHandleIndex,
         FieldInstantiationIndex, FunctionDefinitionIndex, FunctionHandleIndex,
-        FunctionInstantiationIndex, LocalIndex, StructDefInstantiationIndex, StructDefinitionIndex,
-        TableIndex,
+        FunctionInstantiationIndex, LocalIndex, SignatureIndex, StructDefInstantiationIndex,
+        StructDefinitionIndex, TableIndex,
     },
     internals::ModuleIndex,
     IndexKind,
@@ -45,7 +44,7 @@ impl AsRef<PropIndex> for CodeUnitBoundsMutation {
 }
 
 pub struct ApplyCodeUnitBoundsContext<'a> {
-    module: &'a mut CompiledModuleMut,
+    module: &'a mut CompiledModule,
     // This is so apply_one can be called after mutations has been iterated on.
     mutations: Option<Vec<CodeUnitBoundsMutation>>,
 }
@@ -56,6 +55,22 @@ macro_rules! new_bytecode {
         let new_idx: usize = dst_len + $offset;
         (
             $bytecode_ident($kind::new(new_idx as TableIndex)),
+            offset_out_of_bounds(
+                StatusCode::INDEX_OUT_OF_BOUNDS,
+                $kind::KIND,
+                new_idx,
+                dst_len,
+                $fidx,
+                $bcidx as CodeOffset,
+            ),
+        )
+    }};
+
+    ($dst_len:expr, $fidx:expr, $bcidx:expr, $offset:expr, $kind:ident, $bytecode_ident:tt, $($others:expr),+) => {{
+        let dst_len: usize = $dst_len;
+        let new_idx: usize = dst_len + $offset;
+        (
+            $bytecode_ident($kind::new(new_idx as TableIndex), $($others),+),
             offset_out_of_bounds(
                 StatusCode::INDEX_OUT_OF_BOUNDS,
                 $kind::KIND,
@@ -123,7 +138,7 @@ macro_rules! locals_bytecode {
 }
 
 impl<'a> ApplyCodeUnitBoundsContext<'a> {
-    pub fn new(module: &'a mut CompiledModuleMut, mutations: Vec<CodeUnitBoundsMutation>) -> Self {
+    pub fn new(module: &'a mut CompiledModule, mutations: Vec<CodeUnitBoundsMutation>) -> Self {
         Self {
             module,
             mutations: Some(mutations),
@@ -172,7 +187,7 @@ impl<'a> ApplyCodeUnitBoundsContext<'a> {
         let interesting_offsets: Vec<usize> = (0..code.len())
             .filter(|bytecode_idx| is_interesting(&code[*bytecode_idx]))
             .collect();
-        let to_mutate = pick_slice_idxs(interesting_offsets.len(), &mutations);
+        let to_mutate = crate::helpers::pick_slice_idxs(interesting_offsets.len(), &mutations);
 
         // These have to be computed upfront because self.module is being mutated below.
         let constant_pool_len = self.module.constant_pool.len();
@@ -182,6 +197,7 @@ impl<'a> ApplyCodeUnitBoundsContext<'a> {
         let struct_inst_len = self.module.struct_def_instantiations.len();
         let function_inst_len = self.module.function_instantiations.len();
         let field_inst_len = self.module.field_instantiations.len();
+        let signature_pool_len = self.module.signatures.len();
 
         mutations
             .iter()
@@ -392,6 +408,72 @@ impl<'a> ApplyCodeUnitBoundsContext<'a> {
                         offset,
                         ImmBorrowLoc
                     ),
+                    VecPack(_, num) => new_bytecode!(
+                        signature_pool_len,
+                        current_fdef,
+                        bytecode_idx,
+                        offset,
+                        SignatureIndex,
+                        VecPack,
+                        num
+                    ),
+                    VecLen(_) => new_bytecode!(
+                        signature_pool_len,
+                        current_fdef,
+                        bytecode_idx,
+                        offset,
+                        SignatureIndex,
+                        VecLen
+                    ),
+                    VecImmBorrow(_) => new_bytecode!(
+                        signature_pool_len,
+                        current_fdef,
+                        bytecode_idx,
+                        offset,
+                        SignatureIndex,
+                        VecImmBorrow
+                    ),
+                    VecMutBorrow(_) => new_bytecode!(
+                        signature_pool_len,
+                        current_fdef,
+                        bytecode_idx,
+                        offset,
+                        SignatureIndex,
+                        VecMutBorrow
+                    ),
+                    VecPushBack(_) => new_bytecode!(
+                        signature_pool_len,
+                        current_fdef,
+                        bytecode_idx,
+                        offset,
+                        SignatureIndex,
+                        VecPushBack
+                    ),
+                    VecPopBack(_) => new_bytecode!(
+                        signature_pool_len,
+                        current_fdef,
+                        bytecode_idx,
+                        offset,
+                        SignatureIndex,
+                        VecPopBack
+                    ),
+                    VecUnpack(_, num) => new_bytecode!(
+                        signature_pool_len,
+                        current_fdef,
+                        bytecode_idx,
+                        offset,
+                        SignatureIndex,
+                        VecUnpack,
+                        num
+                    ),
+                    VecSwap(_) => new_bytecode!(
+                        signature_pool_len,
+                        current_fdef,
+                        bytecode_idx,
+                        offset,
+                        SignatureIndex,
+                        VecSwap
+                    ),
 
                     // List out the other options explicitly so there's a compile error if a new
                     // bytecode gets added.
@@ -443,7 +525,15 @@ fn is_interesting(bytecode: &Bytecode) -> bool {
         | MoveLoc(_)
         | StLoc(_)
         | MutBorrowLoc(_)
-        | ImmBorrowLoc(_) => true,
+        | ImmBorrowLoc(_)
+        | VecPack(..)
+        | VecLen(_)
+        | VecImmBorrow(_)
+        | VecMutBorrow(_)
+        | VecPushBack(_)
+        | VecPopBack(_)
+        | VecUnpack(..)
+        | VecSwap(_) => true,
 
         // List out the other options explicitly so there's a compile error if a new
         // bytecode gets added.

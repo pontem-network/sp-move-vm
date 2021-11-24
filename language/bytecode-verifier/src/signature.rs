@@ -8,11 +8,12 @@ use crate::binary_views::BinaryIndexedView;
 use alloc::string::ToString;
 use move_binary_format::{
     access::{ModuleAccess, ScriptAccess},
+    binary_views::BinaryIndexedView,
     errors::{Location, PartialVMError, PartialVMResult, VMResult},
     file_format::{
         AbilitySet, Bytecode, CodeUnit, CompiledModule, CompiledScript, FunctionDefinition,
         FunctionHandle, Signature, SignatureIndex, SignatureToken, StructDefinition,
-        StructFieldInformation, TableIndex,
+        StructFieldInformation, StructTypeParameter, TableIndex,
     },
     IndexKind,
 };
@@ -47,7 +48,7 @@ impl<'a> SignatureChecker<'a> {
         };
         sig_check.verify_signature_pool(script.signatures())?;
         sig_check.verify_function_signatures(script.function_handles())?;
-        sig_check.verify_code(script.code(), &script.as_inner().type_parameters)
+        sig_check.verify_code(script.code(), &script.type_parameters)
     }
 
     fn verify_signature_pool(&self, signatures: &[Signature]) -> PartialVMResult<()> {
@@ -94,11 +95,17 @@ impl<'a> SignatureChecker<'a> {
             for (field_offset, field_def) in fields.iter().enumerate() {
                 self.check_signature_token(&field_def.signature.0)
                     .map_err(|err| err_handler(err, field_offset))?;
-                self.check_type_instantiation(
+                let type_param_constraints: Vec<_> =
+                    struct_handle.type_param_constraints().collect();
+                self.check_type_instantiation(&field_def.signature.0, &type_param_constraints)
+                    .map_err(|err| err_handler(err, field_offset))?;
+
+                self.check_phantom_params(
                     &field_def.signature.0,
+                    false,
                     &struct_handle.type_parameters,
                 )
-                .map_err(|err| err_handler(err, field_offset))?;
+                    .map_err(|err| err_handler(err, field_offset))?;
             }
         }
         Ok(())
@@ -136,7 +143,7 @@ impl<'a> SignatureChecker<'a> {
                     self.check_signature_tokens(type_arguments)?;
                     self.check_generic_instance(
                         type_arguments,
-                        &func_handle.type_parameters,
+                        func_handle.type_parameters.iter().copied(),
                         type_parameters,
                     )
                 }
@@ -154,7 +161,7 @@ impl<'a> SignatureChecker<'a> {
                     self.check_signature_tokens(type_arguments)?;
                     self.check_generic_instance(
                         type_arguments,
-                        &struct_handle.type_parameters,
+                        struct_handle.type_param_constraints(),
                         type_parameters,
                     )
                 }
@@ -167,9 +174,29 @@ impl<'a> SignatureChecker<'a> {
                     self.check_signature_tokens(type_arguments)?;
                     self.check_generic_instance(
                         type_arguments,
-                        &struct_handle.type_parameters,
+                        struct_handle.type_param_constraints(),
                         type_parameters,
                     )
+                }
+                VecPack(idx, _)
+                | VecLen(idx)
+                | VecImmBorrow(idx)
+                | VecMutBorrow(idx)
+                | VecPushBack(idx)
+                | VecPopBack(idx)
+                | VecUnpack(idx, _)
+                | VecSwap(idx) => {
+                    let type_arguments = &self.resolver.signature_at(*idx).0;
+                    if type_arguments.len() != 1 {
+                        return Err(PartialVMError::new(
+                            StatusCode::NUMBER_OF_TYPE_ARGUMENTS_MISMATCH,
+                        )
+                            .with_message(format!(
+                                "expected 1 type token for vector operations, got {}",
+                                type_arguments.len()
+                            )));
+                    }
+                    self.check_signature_tokens(type_arguments)
                 }
 
                 // List out the other options explicitly so there's a compile error if a new
@@ -185,6 +212,49 @@ impl<'a> SignatureChecker<'a> {
             result.map_err(|err| {
                 err.append_message_with_separator(' ', format!("at offset {} ", offset))
             })?
+        }
+        Ok(())
+    }
+
+    /// Checks that phantom type parameters are only used in phantom position.
+    fn check_phantom_params(
+        &self,
+        ty: &SignatureToken,
+        is_phantom_pos: bool,
+        type_parameters: &[StructTypeParameter],
+    ) -> PartialVMResult<()> {
+        match ty {
+            SignatureToken::Vector(ty) => self.check_phantom_params(ty, false, type_parameters)?,
+            SignatureToken::StructInstantiation(idx, type_arguments) => {
+                let sh = self.resolver.struct_handle_at(*idx);
+                for (i, ty) in type_arguments.iter().enumerate() {
+                    self.check_phantom_params(
+                        ty,
+                        sh.type_parameters[i].is_phantom,
+                        type_parameters,
+                    )?;
+                }
+            }
+            SignatureToken::TypeParameter(idx) => {
+                if type_parameters[*idx as usize].is_phantom && !is_phantom_pos {
+                    return Err(PartialVMError::new(
+                        StatusCode::INVALID_PHANTOM_TYPE_PARAM_POSITION,
+                    )
+                        .with_message(
+                            "phantom type parameter cannot be used in non-phantom position".to_string(),
+                        ));
+                }
+            }
+
+            SignatureToken::Struct(_)
+            | SignatureToken::Reference(_)
+            | SignatureToken::MutableReference(_)
+            | SignatureToken::Bool
+            | SignatureToken::U8
+            | SignatureToken::U64
+            | SignatureToken::U128
+            | SignatureToken::Address
+            | SignatureToken::Signer => {}
         }
         Ok(())
     }
@@ -252,7 +322,11 @@ impl<'a> SignatureChecker<'a> {
                 // i.e. it cannot be checked unless we are inside some module member. The only case
                 // where that happens is when checking the signature pool itself
                 let sh = self.resolver.struct_handle_at(*idx);
-                self.check_generic_instance(type_arguments, &sh.type_parameters, type_parameters)
+                self.check_generic_instance(
+                    type_arguments,
+                    sh.type_param_constraints(),
+                    type_parameters,
+                )
             }
             _ => Ok(()),
         }
@@ -262,13 +336,23 @@ impl<'a> SignatureChecker<'a> {
     fn check_generic_instance(
         &self,
         type_arguments: &[SignatureToken],
-        constraints: &[AbilitySet],
+        constraints: impl ExactSizeIterator<Item = AbilitySet>,
         global_abilities: &[AbilitySet],
     ) -> PartialVMResult<()> {
-        let abilities = type_arguments
-            .iter()
-            .map(|ty| self.resolver.abilities(ty, global_abilities));
-        for ((constraint, given), ty) in constraints.iter().zip(abilities).zip(type_arguments) {
+        if type_arguments.len() != constraints.len() {
+            return Err(
+                PartialVMError::new(StatusCode::NUMBER_OF_TYPE_ARGUMENTS_MISMATCH).with_message(
+                    format!(
+                        "expected {} type argument(s), got {}",
+                        constraints.len(),
+                        type_arguments.len()
+                    ),
+                ),
+            );
+        }
+
+        for (constraint, ty) in constraints.into_iter().zip(type_arguments) {
+            let given = self.resolver.abilities(ty, global_abilities)?;
             if !constraint.is_subset(given) {
                 return Err(PartialVMError::new(StatusCode::CONSTRAINT_NOT_SATISFIED)
                     .with_message(format!(

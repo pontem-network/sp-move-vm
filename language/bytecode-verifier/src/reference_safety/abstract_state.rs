@@ -2,15 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! This module defines the abstract state for the type and memory safety analysis.
-use crate::{
-    absint::{AbstractDomain, JoinResult},
-    binary_views::FunctionView,
-};
-use alloc::collections::{BTreeMap, BTreeSet};
-use alloc::vec::Vec;
+use crate::absint::{AbstractDomain, JoinResult};
 use borrow_graph::references::RefID;
 use mirai_annotations::{checked_postcondition, checked_precondition, checked_verify};
 use move_binary_format::{
+    binary_views::FunctionView,
     errors::{PartialVMError, PartialVMResult},
     file_format::{
         CodeOffset, FieldHandleIndex, FunctionDefinitionIndex, LocalIndex, Signature,
@@ -18,6 +14,8 @@ use move_binary_format::{
     },
 };
 use move_core_types::vm_status::StatusCode;
+use alloc::collections::{BTreeMap, BTreeSet};
+use alloc::vec::Vec;
 
 type BorrowGraph = borrow_graph::graph::BorrowGraph<(), Label>;
 
@@ -221,7 +219,7 @@ impl AbstractState {
     }
 
     /// checks if `id` is writable
-    /// - Mutable references are freezable if there are no consistent borrows
+    /// - Mutable references are writable if there are no consistent borrows
     /// - Immutable references are not writable by the typing rules
     fn is_writable(&self, id: RefID) -> bool {
         checked_precondition!(self.borrow_graph.is_mutable(id));
@@ -355,11 +353,11 @@ impl AbstractState {
     ) -> PartialVMResult<AbstractValue> {
         match (v1, v2) {
             (AbstractValue::Reference(id1), AbstractValue::Reference(id2))
-                if !self.is_readable(id1, None) || !self.is_readable(id2, None) =>
-            {
-                // TODO better error code
-                return Err(self.error(StatusCode::READREF_EXISTS_MUTABLE_BORROW_ERROR, offset));
-            }
+            if !self.is_readable(id1, None) || !self.is_readable(id2, None) =>
+                {
+                    // TODO better error code
+                    return Err(self.error(StatusCode::READREF_EXISTS_MUTABLE_BORROW_ERROR, offset));
+                }
             (AbstractValue::Reference(id1), AbstractValue::Reference(id2)) => {
                 self.release(id1);
                 self.release(id2)
@@ -457,6 +455,41 @@ impl AbstractState {
         } else {
             Ok(AbstractValue::NonReference)
         }
+    }
+
+    pub fn vector_op(
+        &mut self,
+        offset: CodeOffset,
+        vector: AbstractValue,
+        mut_: bool,
+    ) -> PartialVMResult<()> {
+        let id = vector.ref_id().unwrap();
+        if mut_ && !self.is_writable(id) {
+            return Err(self.error(StatusCode::VEC_UPDATE_EXISTS_MUTABLE_BORROW_ERROR, offset));
+        }
+        self.release(id);
+        Ok(())
+    }
+
+    pub fn vector_element_borrow(
+        &mut self,
+        offset: CodeOffset,
+        vector: AbstractValue,
+        mut_: bool,
+    ) -> PartialVMResult<AbstractValue> {
+        let vec_id = vector.ref_id().unwrap();
+        if mut_ && !self.is_writable(vec_id) {
+            return Err(self.error(
+                StatusCode::VEC_BORROW_ELEMENT_EXISTS_MUTABLE_BORROW_ERROR,
+                offset,
+            ));
+        }
+
+        let elem_id = self.new_ref(mut_);
+        self.add_borrow(vec_id, elem_id);
+
+        self.release(vec_id);
+        Ok(AbstractValue::Reference(elem_id))
     }
 
     pub fn call(
@@ -589,11 +622,11 @@ impl AbstractState {
     fn is_canonical(&self) -> bool {
         self.num_locals + 1 == self.next_id
             && self.locals.iter().all(|(local, value)| {
-                value
-                    .ref_id()
-                    .map(|id| RefID::new(*local as usize) == id)
-                    .unwrap_or(true)
-            })
+            value
+                .ref_id()
+                .map(|id| RefID::new(*local as usize) == id)
+                .unwrap_or(true)
+        })
     }
 
     fn iter_locals(&self) -> impl Iterator<Item = LocalIndex> {
