@@ -9,14 +9,14 @@ use diem_types::account_config;
 use diem_types::account_config::{ACCOUNT_MODULE_IDENTIFIER, CORE_CODE_ADDRESS};
 use diem_types::resources::currency_info::CurrencyInfoResource;
 use hashbrown::HashMap;
-use move_binary_format::errors::{Location, PartialVMResult, VMResult};
+use move_binary_format::errors::{Location, VMResult};
 use move_core_types::account_address::AccountAddress;
 use move_core_types::effects::ChangeSet;
 use move_core_types::ident_str;
 use move_core_types::identifier::{IdentStr, Identifier};
 use move_core_types::language_storage::{StructTag, TypeTag};
+use move_core_types::resolver::{ModuleResolver, ResourceResolver};
 use move_core_types::vm_status::StatusCode;
-use move_vm_runtime::data_cache::MoveStorage;
 use move_vm_types::natives::function::PartialVMError;
 use serde::{Deserialize, Serialize};
 
@@ -46,7 +46,7 @@ impl<B: BalanceAccess> MasterOfCoin<B> {
         }
     }
 
-    pub fn session<'b, 'r, R: MoveStorage>(
+    pub fn session<'b, 'r, R: ModuleResolver<Error = Error> + ResourceResolver<Error = Error>>(
         &'b self,
         remote: &'r R,
     ) -> MasterOfCoinSession<'b, 'r, B, R> {
@@ -68,7 +68,7 @@ impl<B: BalanceAccess> MasterOfCoin<B> {
         }
     }
 
-    fn get_bridge<R: MoveStorage>(&self, remote: &R, coin: &StructTag) -> Option<Vec<u8>> {
+    fn get_bridge<R: ResourceResolver>(&self, remote: &R, coin: &StructTag) -> Option<Vec<u8>> {
         let mut mapper = self.native_mapper.borrow_mut();
 
         match mapper.get(coin) {
@@ -108,13 +108,24 @@ impl<B: BalanceAccess> MasterOfCoin<B> {
     }
 }
 
-pub struct MasterOfCoinSession<'b, 'r, B: BalanceAccess, R: MoveStorage> {
+pub struct MasterOfCoinSession<
+    'b,
+    'r,
+    B: BalanceAccess,
+    R: ModuleResolver<Error = Error> + ResourceResolver<Error = Error>,
+> {
     master_of_coin: &'b MasterOfCoin<B>,
     balances: RefCell<HashMap<AccountAddress, HashMap<Cow<'static, CurrencyAccessPath>, Balance>>>,
     remote: &'r R,
 }
 
-impl<'b, 'r, B: BalanceAccess, R: MoveStorage> MasterOfCoinSession<'b, 'r, B, R> {
+impl<
+        'b,
+        'r,
+        B: BalanceAccess,
+        R: ModuleResolver<Error = Error> + ResourceResolver<Error = Error>,
+    > MasterOfCoinSession<'b, 'r, B, R>
+{
     fn get_bridge(&self, coin: &StructTag) -> Option<Vec<u8>> {
         self.master_of_coin.get_bridge(self.remote, coin)
     }
@@ -131,7 +142,7 @@ impl<'b, 'r, B: BalanceAccess, R: MoveStorage> MasterOfCoinSession<'b, 'r, B, R>
         &self,
         address: &AccountAddress,
         tag: &StructTag,
-    ) -> PartialVMResult<Option<Vec<u8>>> {
+    ) -> Result<Option<Vec<u8>>, Error> {
         if tag.module.as_ref() == ACCOUNT_MODULE_IDENTIFIER {
             if tag.name.as_ref() == DIEM_COIN_IDENTIFIER {
                 let bridge = coin_type(&tag.type_params).and_then(|coin| self.get_bridge(coin));

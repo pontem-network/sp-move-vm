@@ -8,6 +8,7 @@ use crate::{
     acquires_list_verifier::AcquiresVerifier, control_flow, locals_safety, reference_safety,
     stack_usage_verifier::StackUsageVerifier, type_safety,
 };
+use hashbrown::HashMap;
 use move_binary_format::{
     access::ModuleAccess,
     binary_views::{BinaryIndexedView, FunctionView},
@@ -18,7 +19,6 @@ use move_binary_format::{
     },
     IndexKind,
 };
-use hashbrown::HashMap;
 
 pub struct CodeUnitVerifier<'a> {
     resolver: BinaryIndexedView<'a>,

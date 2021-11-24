@@ -7,12 +7,10 @@
 //! `CompiledModule`. The entry points are exposed on the main structs `CompiledScript` and
 //! `CompiledModule`.
 
-use crate::{compat, errors::PartialVMError, file_format::*, file_format_common::*};
+use crate::{file_format::*, file_format_common::*};
 use alloc::vec::Vec;
 use anyhow::{bail, Result};
-use move_core_types::{
-    account_address::AccountAddress, identifier::Identifier, vm_status::StatusCode,
-};
+use move_core_types::{account_address::AccountAddress, identifier::Identifier};
 
 impl CompiledScript {
     /// Serializes a `CompiledScript` into a binary. The mutable `Vec<u8>` will contain the
@@ -43,9 +41,9 @@ impl CompiledScript {
 }
 
 fn write_as_uleb128<T1, T2>(binary: &mut BinaryData, x: T1, max: T2) -> Result<()>
-    where
-        T1: Into<u64>,
-        T2: Into<u64>,
+where
+    T1: Into<u64>,
+    T2: Into<u64>,
 {
     let x: u64 = x.into();
     let max: u64 = max.into();

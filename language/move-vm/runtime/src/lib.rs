@@ -14,7 +14,6 @@
 extern crate mirai_annotations;
 #[macro_use]
 extern crate alloc;
-#[macro_use]
 extern crate log;
 
 pub mod data_cache;
@@ -22,7 +21,7 @@ mod interpreter;
 pub mod loader;
 pub mod logging;
 pub mod move_vm;
-mod native_functions;
+pub mod native_functions;
 mod runtime;
 pub mod session;
 #[cfg(test)]

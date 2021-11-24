@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::account_config::constants::CORE_CODE_ADDRESS;
+use alloc::borrow::ToOwned;
 use anyhow::{bail, ensure, Result};
 use cell::Lazy;
 use move_core_types::{

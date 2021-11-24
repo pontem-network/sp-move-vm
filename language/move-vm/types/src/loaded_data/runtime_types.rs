@@ -5,7 +5,7 @@ use alloc::boxed::Box;
 use alloc::vec::Vec;
 use move_binary_format::{
     errors::{PartialVMError, PartialVMResult},
-    file_format::{AbilitySet, StructDefinitionIndex},
+    file_format::{AbilitySet, StructDefinitionIndex, StructTypeParameter},
 };
 use move_core_types::{identifier::Identifier, language_storage::ModuleId, vm_status::StatusCode};
 
@@ -15,10 +15,16 @@ pub const TYPE_DEPTH_MAX: usize = 256;
 pub struct StructType {
     pub fields: Vec<Type>,
     pub abilities: AbilitySet,
-    pub type_parameters: Vec<AbilitySet>,
+    pub type_parameters: Vec<StructTypeParameter>,
     pub name: Identifier,
     pub module: ModuleId,
     pub struct_def: StructDefinitionIndex,
+}
+
+impl StructType {
+    pub fn type_param_constraints(&self) -> impl ExactSizeIterator<Item = &AbilitySet> {
+        self.type_parameters.iter().map(|param| &param.constraints)
+    }
 }
 
 #[derive(Debug, Clone, Eq, Hash, Ord, PartialEq, PartialOrd)]

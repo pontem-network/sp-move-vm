@@ -210,14 +210,14 @@ impl CompiledModuleStrategyGen {
         )
             .prop_map(
                 |(
-                     self_idx_gen,
-                     (address_identifier_gens, identifier_gens, constant_pool_gen),
-                     module_handles_gen,
-                     (struct_handle_gens, struct_def_gens),
-                     random_sigs_gens,
-                     (function_handle_gens, function_def_gens),
-                     friend_decl_gens,
-                 )| {
+                    self_idx_gen,
+                    (address_identifier_gens, identifier_gens, constant_pool_gen),
+                    module_handles_gen,
+                    (struct_handle_gens, struct_def_gens),
+                    random_sigs_gens,
+                    (function_handle_gens, function_def_gens),
+                    friend_decl_gens,
+                )| {
                     //
                     // leaf pools
                     let address_identifiers: Vec<_> = address_identifier_gens.into_iter().collect();
@@ -319,7 +319,7 @@ impl CompiledModuleStrategyGen {
                         );
                         for function_handle_gen in function_handle_gens {
                             if let Some(function_handle) =
-                            function_handle_gen.materialize(&mut state)
+                                function_handle_gen.materialize(&mut state)
                             {
                                 function_handles.push(function_handle);
                             }

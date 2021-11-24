@@ -11,6 +11,7 @@ mod abstract_state;
 
 use crate::absint::{AbstractInterpreter, BlockInvariant, BlockPostcondition, TransferFunctions};
 use abstract_state::{AbstractState, AbstractValue};
+use alloc::boxed::Box;
 use alloc::collections::btree_set::BTreeSet;
 use alloc::vec::Vec;
 use hashbrown::HashMap;

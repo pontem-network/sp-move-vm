@@ -31,8 +31,8 @@ use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::vec::Vec;
 use anyhow::{bail, Error, Result};
-use core::{borrow::Borrow, fmt, ops::Deref};
 use core::str::FromStr;
+use core::{borrow::Borrow, fmt, ops::Deref};
 use parity_scale_codec::{Decode, Encode};
 use parity_scale_codec::{Error as PsError, Input, Output};
 #[cfg(any(test, feature = "fuzzing"))]

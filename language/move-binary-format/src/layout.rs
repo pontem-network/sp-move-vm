@@ -6,16 +6,20 @@ use crate::{
     file_format::{SignatureToken, StructDefinition, StructFieldInformation, StructHandleIndex},
     CompiledModule,
 };
+use alloc::borrow::ToOwned;
+use alloc::boxed::Box;
+use alloc::collections::BTreeMap;
+use alloc::vec;
+use alloc::vec::Vec;
 use anyhow::{anyhow, bail, Result};
+use core::cell::RefCell;
+use core::fmt::Debug;
 use move_core_types::{
     identifier::IdentStr,
     language_storage::{ModuleId, StructTag, TypeTag},
     resolver::ModuleResolver,
     value::{MoveFieldLayout, MoveStructLayout, MoveTypeLayout},
 };
-use alloc::collections::BTreeMap;
-use core::fmt::Debug;
-use parking_lot::RwLock;
 
 /// A persistent storage that can fetch the bytecode for a given module id
 /// TODO: do we want to implement this in a way that allows clients to cache struct layouts?
@@ -27,20 +31,20 @@ pub trait GetModule {
 
 /// Simple in-memory module cache
 pub struct ModuleCache<R: ModuleResolver> {
-    cache: RwLock<BTreeMap<ModuleId, CompiledModule>>,
+    cache: RefCell<BTreeMap<ModuleId, CompiledModule>>,
     resolver: R,
 }
 
 impl<R: ModuleResolver> ModuleCache<R> {
     pub fn new(resolver: R) -> Self {
         ModuleCache {
-            cache: RwLock::new(BTreeMap::new()),
+            cache: RefCell::new(BTreeMap::new()),
             resolver,
         }
     }
 
     pub fn add(&self, id: ModuleId, m: CompiledModule) {
-        self.cache.write().insert(id, m);
+        self.cache.borrow_mut().insert(id, m);
     }
 }
 
@@ -48,7 +52,7 @@ impl<R: ModuleResolver> GetModule for ModuleCache<R> {
     type Error = anyhow::Error;
 
     fn get_module_by_id(&self, id: &ModuleId) -> Result<Option<CompiledModule>, Self::Error> {
-        if let Some(compiled_module) = self.cache.read().get(id) {
+        if let Some(compiled_module) = self.cache.borrow().get(id) {
             return Ok(Some(compiled_module.clone()));
         }
 
@@ -60,9 +64,7 @@ impl<R: ModuleResolver> GetModule for ModuleCache<R> {
             let module = CompiledModule::deserialize(&module_bytes)
                 .map_err(|_| anyhow!("Failure deserializing module {:?}", id))?;
 
-            self.cache
-                .write()
-                .insert(id.clone(), module.clone());
+            self.cache.borrow_mut().insert(id.clone(), module.clone());
             Ok(Some(module))
         } else {
             Ok(None)

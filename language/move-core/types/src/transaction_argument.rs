@@ -3,11 +3,9 @@
 
 use crate::{account_address::AccountAddress, value::MoveValue};
 use alloc::vec::Vec;
-use serde::{Deserialize, Serialize};
+use anyhow::{anyhow, Error, Result};
 use core::{convert::TryFrom, fmt};
-use anyhow::{
-    Result, Error, anyhow
-};
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub enum TransactionArgument {

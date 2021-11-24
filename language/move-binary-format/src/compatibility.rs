@@ -60,9 +60,9 @@ impl Compatibility {
 
             if !struct_abilities_compatibile(old_struct.abilities, new_struct.abilities)
                 || !struct_type_parameters_compatibile(
-                &old_struct.type_parameters,
-                &new_struct.type_parameters,
-            )
+                    &old_struct.type_parameters,
+                    &new_struct.type_parameters,
+                )
             {
                 struct_and_function_linking = false;
             }
@@ -120,9 +120,9 @@ impl Compatibility {
                 || old_func.parameters != new_func.parameters
                 || old_func.return_ != new_func.return_
                 || !fun_type_parameters_compatibile(
-                &old_func.type_parameters,
-                &new_func.type_parameters,
-            )
+                    &old_func.type_parameters,
+                    &new_func.type_parameters,
+                )
             {
                 struct_and_function_linking = false;
             }
@@ -163,13 +163,13 @@ fn fun_type_parameters_compatibile(
 ) -> bool {
     old_type_parameters.len() == new_type_parameters.len()
         && old_type_parameters.iter().zip(new_type_parameters).all(
-        |(old_type_parameter_constraint, new_type_parameter_constraint)| {
-            type_parameter_constraints_compatibile(
-                *old_type_parameter_constraint,
-                *new_type_parameter_constraint,
-            )
-        },
-    )
+            |(old_type_parameter_constraint, new_type_parameter_constraint)| {
+                type_parameter_constraints_compatibile(
+                    *old_type_parameter_constraint,
+                    *new_type_parameter_constraint,
+                )
+            },
+        )
 }
 
 fn struct_type_parameters_compatibile(
@@ -178,14 +178,14 @@ fn struct_type_parameters_compatibile(
 ) -> bool {
     old_type_parameters.len() == new_type_parameters.len()
         && old_type_parameters.iter().zip(new_type_parameters).all(
-        |(old_type_parameter, new_type_parameter)| {
-            type_parameter_phantom_decl_compatibile(old_type_parameter, new_type_parameter)
-                && type_parameter_constraints_compatibile(
-                old_type_parameter.constraints,
-                new_type_parameter.constraints,
-            )
-        },
-    )
+            |(old_type_parameter, new_type_parameter)| {
+                type_parameter_phantom_decl_compatibile(old_type_parameter, new_type_parameter)
+                    && type_parameter_constraints_compatibile(
+                        old_type_parameter.constraints,
+                        new_type_parameter.constraints,
+                    )
+            },
+        )
 }
 
 // When upgrading, the new constraints must be a subset of (or equal to) the old constraints.

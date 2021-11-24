@@ -5,7 +5,9 @@ use crate::{
     file_format::{CodeOffset, FunctionDefinitionIndex, TableIndex},
     IndexKind,
 };
+use alloc::format;
 use alloc::string::String;
+use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 use move_core_types::{

@@ -3,8 +3,7 @@
 
 use crate::{
     loader::{Function, Loader, Resolver},
-    logging::LogContext,
-    native_functions::FunctionContext,
+    native_functions::NativeContext,
 };
 use alloc::borrow::ToOwned;
 use alloc::collections::VecDeque;
@@ -29,8 +28,10 @@ use move_vm_types::{
     loaded_data::runtime_types::Type,
     values::{
         self, GlobalValue, IntegerValue, Locals, Reference, Struct, StructRef, VMValueCast, Value,
+        Vector, VectorRef,
     },
 };
+use tracing::error;
 
 macro_rules! debug_write {
     ($($toks: tt)*) => {
@@ -61,16 +62,14 @@ macro_rules! set_err_info {
 ///
 /// An `Interpreter` instance is a stand alone execution context for a function.
 /// It mimics execution on a single thread, with an call stack and an operand stack.
-pub struct Interpreter<L: LogContext> {
+pub(crate) struct Interpreter {
     /// Operand stack, where Move `Value`s are stored for stack operations.
     operand_stack: Stack,
     /// The stack of active functions.
     call_stack: CallStack,
-    // Logger to report information to clients
-    log_context: L,
 }
 
-impl<L: LogContext> Interpreter<L> {
+impl Interpreter {
     /// Entrypoint into the interpreter. All external calls need to be routed through this
     /// function.
     pub(crate) fn entrypoint(
@@ -80,21 +79,19 @@ impl<L: LogContext> Interpreter<L> {
         data_store: &mut impl DataStore,
         gas_status: &mut GasStatus,
         loader: &Loader,
-        log_context: &L,
     ) -> VMResult<Vec<Value>> {
         // We count the intrinsic cost of the transaction here, since that needs to also cover the
         // setup of the function.
-        let mut interp = Self::new(log_context.clone());
+        let mut interp = Self::new();
         interp.execute(loader, data_store, gas_status, function, ty_args, args)
     }
 
     /// Create a new instance of an `Interpreter` in the context of a transaction with a
     /// given module cache and gas schedule.
-    fn new(log_context: L) -> Self {
+    fn new() -> Self {
         Interpreter {
             operand_stack: Stack::new(),
             call_stack: CallStack::new(),
-            log_context,
         }
     }
 
@@ -149,7 +146,7 @@ impl<L: LogContext> Interpreter<L> {
                         current_frame = frame;
                         current_frame.pc += 1; // advance past the Call instruction in the caller
                     } else {
-                        return Ok(mem::replace(&mut self.operand_stack.0, vec![]));
+                        return Ok(mem::take(&mut self.operand_stack.0));
                     }
                 }
                 ExitCode::Call(fh_idx) => {
@@ -272,9 +269,9 @@ impl<L: LogContext> Interpreter<L> {
         for _ in 0..expected_args {
             arguments.push_front(self.operand_stack.pop()?);
         }
-        let mut native_context = FunctionContext::new(self, data_store, gas_status, resolver);
+        let mut native_context = NativeContext::new(self, data_store, gas_status, resolver);
         let native_function = function.get_native()?;
-        let result = native_function.dispatch(&mut native_context, ty_args, arguments)?;
+        let result = native_function(&mut native_context, ty_args, arguments)?;
         gas_status.deduct_gas(result.cost)?;
         let return_values = result
             .result
@@ -321,12 +318,11 @@ impl<L: LogContext> Interpreter<L> {
     }
 
     /// Load a resource from the data store.
-    fn load_resource<'a>(
-        data_store: &'a mut impl DataStore,
+    fn load_resource<'b>(
+        data_store: &'b mut impl DataStore,
         addr: AccountAddress,
         ty: &Type,
-        _log_context: &impl LogContext,
-    ) -> PartialVMResult<&'a mut GlobalValue> {
+    ) -> PartialVMResult<&'b mut GlobalValue> {
         match data_store.load_resource(addr, ty) {
             Ok(gv) => Ok(gv),
             Err(e) => {
@@ -346,7 +342,7 @@ impl<L: LogContext> Interpreter<L> {
         addr: AccountAddress,
         ty: &Type,
     ) -> PartialVMResult<AbstractMemorySize<GasCarrier>> {
-        let g = Self::load_resource(data_store, addr, ty, &self.log_context)?.borrow_global()?;
+        let g = Self::load_resource(data_store, addr, ty)?.borrow_global()?;
         let size = g.size();
         self.operand_stack.push(g)?;
         Ok(size)
@@ -359,7 +355,7 @@ impl<L: LogContext> Interpreter<L> {
         addr: AccountAddress,
         ty: &Type,
     ) -> PartialVMResult<AbstractMemorySize<GasCarrier>> {
-        let gv = Self::load_resource(data_store, addr, ty, &self.log_context)?;
+        let gv = Self::load_resource(data_store, addr, ty)?;
         let mem_size = gv.size();
         let exists = gv.exists()?;
         self.operand_stack.push(Value::bool(exists))?;
@@ -373,7 +369,7 @@ impl<L: LogContext> Interpreter<L> {
         addr: AccountAddress,
         ty: &Type,
     ) -> PartialVMResult<AbstractMemorySize<GasCarrier>> {
-        let resource = Self::load_resource(data_store, addr, ty, &self.log_context)?.move_from()?;
+        let resource = Self::load_resource(data_store, addr, ty)?.move_from()?;
         let size = resource.size();
         self.operand_stack.push(resource)?;
         Ok(size)
@@ -388,7 +384,7 @@ impl<L: LogContext> Interpreter<L> {
         resource: Value,
     ) -> PartialVMResult<AbstractMemorySize<GasCarrier>> {
         let size = resource.size();
-        Self::load_resource(data_store, addr, ty, &self.log_context)?.move_to(resource)?;
+        Self::load_resource(data_store, addr, ty)?.move_to(resource)?;
         Ok(size)
     }
 
@@ -410,6 +406,7 @@ impl<L: LogContext> Interpreter<L> {
         }
         if err.status_type() == StatusType::InvariantViolation {
             let state = self.get_internal_state(current_frame);
+
             error!(
                 "Error: {:?}\nCORE DUMP: >>>>>>>>>>>>\n{}\n<<<<<<<<<<<<\n",
                 err, state,
@@ -419,9 +416,9 @@ impl<L: LogContext> Interpreter<L> {
     }
 
     #[allow(dead_code)]
-    fn debug_print_frame<B: Write>(
+    fn debug_print_frame(
         &self,
-        buf: &mut B,
+        buf: &mut String,
         loader: &Loader,
         idx: usize,
         frame: &Frame,
@@ -483,9 +480,9 @@ impl<L: LogContext> Interpreter<L> {
     }
 
     #[allow(dead_code)]
-    pub(crate) fn debug_print_stack_trace<B: Write>(
+    pub(crate) fn debug_print_stack_trace(
         &self,
-        buf: &mut B,
+        buf: &mut String,
         loader: &Loader,
     ) -> PartialVMResult<()> {
         debug_writeln!(buf, "Call Stack:")?;
@@ -607,8 +604,8 @@ impl Stack {
 }
 
 /// A call stack.
-#[derive(Debug)]
-struct CallStack(pub Vec<Frame>);
+// #[derive(Debug)]
+struct CallStack(Vec<Frame>);
 
 impl CallStack {
     /// Create a new empty call stack.
@@ -639,7 +636,6 @@ impl CallStack {
 
 /// A `Frame` is the execution context for a function. It holds the locals of the function and
 /// the function itself.
-#[derive(Debug)]
 struct Frame {
     pc: u16,
     locals: Locals,
@@ -672,7 +668,7 @@ impl Frame {
     fn execute_code(
         &mut self,
         resolver: &Resolver,
-        interpreter: &mut Interpreter<impl LogContext>,
+        interpreter: &mut Interpreter,
         data_store: &mut impl DataStore,
         gas_status: &mut GasStatus,
     ) -> VMResult<ExitCode> {
@@ -686,7 +682,7 @@ impl Frame {
     fn execute_code_impl(
         &mut self,
         resolver: &Resolver,
-        interpreter: &mut Interpreter<impl LogContext>,
+        interpreter: &mut Interpreter,
         data_store: &mut impl DataStore,
         gas_status: &mut GasStatus,
     ) -> PartialVMResult<ExitCode> {
@@ -1084,6 +1080,61 @@ impl Frame {
                     }
                     Bytecode::Nop => {
                         gas_status.charge_instr(Opcodes::NOP)?;
+                    }
+                    Bytecode::VecPack(si, num) => {
+                        let elements = interpreter.operand_stack.popn(*num as u16)?;
+                        let size = AbstractMemorySize::new(*num);
+                        gas_status.charge_instr_with_size(Opcodes::VEC_PACK, size)?;
+                        let value = Vector::pack(resolver.single_type_at(*si), elements)?;
+                        interpreter.operand_stack.push(value)?;
+                    }
+                    Bytecode::VecLen(si) => {
+                        let vec_ref = interpreter.operand_stack.pop_as::<VectorRef>()?;
+                        gas_status.charge_instr(Opcodes::VEC_LEN)?;
+                        let value = vec_ref.len(resolver.single_type_at(*si))?;
+                        interpreter.operand_stack.push(value)?;
+                    }
+                    Bytecode::VecImmBorrow(si) => {
+                        let idx = interpreter.operand_stack.pop_as::<u64>()? as usize;
+                        let vec_ref = interpreter.operand_stack.pop_as::<VectorRef>()?;
+                        gas_status.charge_instr(Opcodes::VEC_IMM_BORROW)?;
+                        let value = vec_ref.borrow_elem(idx, resolver.single_type_at(*si))?;
+                        interpreter.operand_stack.push(value)?;
+                    }
+                    Bytecode::VecMutBorrow(si) => {
+                        let idx = interpreter.operand_stack.pop_as::<u64>()? as usize;
+                        let vec_ref = interpreter.operand_stack.pop_as::<VectorRef>()?;
+                        gas_status.charge_instr(Opcodes::VEC_MUT_BORROW)?;
+                        let value = vec_ref.borrow_elem(idx, resolver.single_type_at(*si))?;
+                        interpreter.operand_stack.push(value)?;
+                    }
+                    Bytecode::VecPushBack(si) => {
+                        let elem = interpreter.operand_stack.pop()?;
+                        let vec_ref = interpreter.operand_stack.pop_as::<VectorRef>()?;
+                        gas_status.charge_instr_with_size(Opcodes::VEC_PUSH_BACK, elem.size())?;
+                        vec_ref.push_back(elem, resolver.single_type_at(*si))?;
+                    }
+                    Bytecode::VecPopBack(si) => {
+                        let vec_ref = interpreter.operand_stack.pop_as::<VectorRef>()?;
+                        gas_status.charge_instr(Opcodes::VEC_POP_BACK)?;
+                        let value = vec_ref.pop(resolver.single_type_at(*si))?;
+                        interpreter.operand_stack.push(value)?;
+                    }
+                    Bytecode::VecUnpack(si, num) => {
+                        let vec_val = interpreter.operand_stack.pop_as::<Vector>()?;
+                        let size = AbstractMemorySize::new(*num);
+                        gas_status.charge_instr_with_size(Opcodes::VEC_UNPACK, size)?;
+                        let elements = vec_val.unpack(resolver.single_type_at(*si), *num)?;
+                        for value in elements {
+                            interpreter.operand_stack.push(value)?;
+                        }
+                    }
+                    Bytecode::VecSwap(si) => {
+                        let idx2 = interpreter.operand_stack.pop_as::<u64>()? as usize;
+                        let idx1 = interpreter.operand_stack.pop_as::<u64>()? as usize;
+                        let vec_ref = interpreter.operand_stack.pop_as::<VectorRef>()?;
+                        gas_status.charge_instr(Opcodes::VEC_SWAP)?;
+                        vec_ref.swap(idx1, idx2, resolver.single_type_at(*si))?;
                     }
                 }
                 // invariant: advance to pc +1 is iff instruction at pc executed without aborting

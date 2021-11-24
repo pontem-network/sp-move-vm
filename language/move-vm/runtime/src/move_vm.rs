@@ -1,17 +1,24 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{data_cache::MoveStorage, runtime::VMRuntime, session::Session};
+use crate::{native_functions::NativeFunction, runtime::VMRuntime, session::Session};
+use move_binary_format::errors::{Location, VMResult};
+use move_core_types::{
+    account_address::AccountAddress, identifier::Identifier, resolver::MoveResolver,
+};
 
 pub struct MoveVM {
     pub runtime: VMRuntime,
 }
 
 impl MoveVM {
-    pub fn new() -> Self {
-        Self {
-            runtime: VMRuntime::new(),
-        }
+    pub fn new<I>(natives: I) -> VMResult<Self>
+    where
+        I: IntoIterator<Item = (AccountAddress, Identifier, Identifier, NativeFunction)>,
+    {
+        Ok(Self {
+            runtime: VMRuntime::new(natives).map_err(|err| err.finish(Location::Undefined))?,
+        })
     }
 
     /// Create a new Session backed by the given storage.
@@ -28,18 +35,12 @@ impl MoveVM {
     ///     cases where this may not be necessary, with the most notable one being the common module
     ///     publishing flow: you can keep using the same Move VM if you publish some modules in a Session
     ///     and apply the effects to the storage when the Session ends.
-    pub fn new_session<'r, S: MoveStorage>(&self, remote: &'r S) -> Session<'r, '_, S> {
+    pub fn new_session<'r, S: MoveResolver>(&self, remote: &'r S) -> Session<'r, '_, S> {
         self.runtime.new_session(remote)
     }
 
     /// Clears vm state.
     pub fn clear(&self) {
         self.runtime.clear();
-    }
-}
-
-impl Default for MoveVM {
-    fn default() -> Self {
-        MoveVM::new()
     }
 }

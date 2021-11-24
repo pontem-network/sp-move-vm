@@ -1,9 +1,9 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use proptest::sample::Index as PropIndex;
 use alloc::collections::btree_set::BTreeSet;
 use core::ops::Index as OpsIndex;
+use proptest::sample::Index as PropIndex;
 /// Given a maximum value `max` and a list of [`Index`](proptest::sample::Index) instances, picks
 /// integers in the range `[0, max)` uniformly randomly and without duplication.
 ///
@@ -13,9 +13,9 @@ use core::ops::Index as OpsIndex;
 /// algorithm](https://blog.acolyer.org/2018/01/30/a-sample-of-brilliance/) for sampling without
 /// replacement.
 pub(crate) fn pick_idxs<T, P>(max: usize, indexes: &T, indexes_len: usize) -> Vec<usize>
-    where
-        T: OpsIndex<usize, Output = P> + ?Sized,
-        P: AsRef<PropIndex>,
+where
+    T: OpsIndex<usize, Output = P> + ?Sized,
+    P: AsRef<PropIndex>,
 {
     // See https://blog.acolyer.org/2018/01/30/a-sample-of-brilliance/ (the F2 algorithm)
     // for a longer explanation. This is a variant that works with zero-indexing.

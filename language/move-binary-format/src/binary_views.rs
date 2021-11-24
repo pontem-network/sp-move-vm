@@ -16,6 +16,9 @@ use crate::{
     },
     CompiledModule,
 };
+use alloc::borrow::ToOwned;
+use alloc::vec;
+use alloc::vec::Vec;
 use move_core_types::{
     account_address::AccountAddress,
     identifier::{IdentStr, Identifier},

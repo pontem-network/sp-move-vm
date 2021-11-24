@@ -82,7 +82,7 @@ const HEX_CHARS_LOWER: &[u8; 16] = b"0123456789abcdef";
 #[inline(always)]
 fn byte2hex(byte: u8) -> (u8, u8) {
     #[allow(clippy::integer_arithmetic)] // X >> 4 is valid for all bytes
-        let hi = HEX_CHARS_LOWER[((byte >> 4) & 0x0f) as usize];
+    let hi = HEX_CHARS_LOWER[((byte >> 4) & 0x0f) as usize];
     let lo = HEX_CHARS_LOWER[(byte & 0x0f) as usize];
     (hi, lo)
 }

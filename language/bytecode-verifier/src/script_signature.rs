@@ -46,8 +46,8 @@ pub fn verify_module_script_function(module: &CompiledModule, name: &IdentStr) -
             return Err(PartialVMError::new(
                 StatusCode::EXECUTE_SCRIPT_FUNCTION_CALLED_ON_NON_SCRIPT_VISIBLE,
             )
-                .at_index(IndexKind::FunctionDefinition, idx as TableIndex)
-                .finish(Location::Module(module.self_id())))
+            .at_index(IndexKind::FunctionDefinition, idx as TableIndex)
+            .finish(Location::Module(module.self_id())))
         }
     }
 

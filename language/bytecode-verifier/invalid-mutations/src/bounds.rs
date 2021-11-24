@@ -338,8 +338,8 @@ impl ApplyOutOfBoundsContext {
         tokens: impl IntoIterator<Item = SignatureTokenView<'b, CompiledModule>> + 'b,
         map_fn: F,
     ) -> impl Iterator<Item = T> + 'b
-        where
-            F: Fn(usize) -> T + 'b,
+    where
+        F: Fn(usize) -> T + 'b,
     {
         tokens
             .into_iter()

@@ -16,8 +16,9 @@ use crate::{
     internals::ModuleIndex,
     IndexKind,
 };
-use move_core_types::vm_status::StatusCode;
+use alloc::format;
 use core::u8;
+use move_core_types::vm_status::StatusCode;
 
 enum BoundsCheckingContext {
     Module,
@@ -163,7 +164,7 @@ impl<'a> BoundsChecker<'a> {
     fn check_function_defs(&mut self) -> PartialVMResult<()> {
         let view = self.view;
         for (function_def_idx, function_def) in
-        view.function_defs().into_iter().flatten().enumerate()
+            view.function_defs().into_iter().flatten().enumerate()
         {
             self.check_function_def(function_def_idx, function_def)?
         }
@@ -403,7 +404,7 @@ impl<'a> BoundsChecker<'a> {
                     )?;
                     // check type parameters in call are bound to the function type parameters
                     if let Some(func_inst) =
-                    self.view.function_instantiations().get(idx.into_index())
+                        self.view.function_instantiations().get(idx.into_index())
                     {
                         if let Some(sig) = self
                             .view
@@ -526,10 +527,10 @@ impl<'a> BoundsChecker<'a> {
                             return Err(PartialVMError::new(
                                 StatusCode::NUMBER_OF_TYPE_ARGUMENTS_MISMATCH,
                             )
-                                .with_message(format!(
-                                    "expected {} type parameters got 0 (Struct)",
-                                    sh.type_parameters.len(),
-                                )));
+                            .with_message(format!(
+                                "expected {} type parameters got 0 (Struct)",
+                                sh.type_parameters.len(),
+                            )));
                         }
                     }
                 }
@@ -540,11 +541,11 @@ impl<'a> BoundsChecker<'a> {
                             return Err(PartialVMError::new(
                                 StatusCode::NUMBER_OF_TYPE_ARGUMENTS_MISMATCH,
                             )
-                                .with_message(format!(
-                                    "expected {} type parameters got {}",
-                                    sh.type_parameters.len(),
-                                    type_params.len(),
-                                )));
+                            .with_message(format!(
+                                "expected {} type parameters got {}",
+                                sh.type_parameters.len(),
+                                type_params.len(),
+                            )));
                         }
                     }
                 }
@@ -595,8 +596,8 @@ impl<'a> BoundsChecker<'a> {
         idx: I,
         bytecode_offset: usize,
     ) -> PartialVMResult<()>
-        where
-            I: ModuleIndex,
+    where
+        I: ModuleIndex,
     {
         pool.map_or(Ok(()), |p| {
             self.check_code_unit_bounds_impl(p, idx, bytecode_offset)
@@ -609,8 +610,8 @@ impl<'a> BoundsChecker<'a> {
         idx: I,
         bytecode_offset: usize,
     ) -> PartialVMResult<()>
-        where
-            I: ModuleIndex,
+    where
+        I: ModuleIndex,
     {
         let idx = idx.into_index();
         let len = pool.len();
@@ -673,15 +674,15 @@ impl<'a> BoundsChecker<'a> {
 }
 
 fn check_bounds_impl_opt<T, I>(pool: &Option<&[T]>, idx: I) -> PartialVMResult<()>
-    where
-        I: ModuleIndex,
+where
+    I: ModuleIndex,
 {
     pool.map_or(Ok(()), |p| check_bounds_impl(p, idx))
 }
 
 fn check_bounds_impl<T, I>(pool: &[T], idx: I) -> PartialVMResult<()>
-    where
-        I: ModuleIndex,
+where
+    I: ModuleIndex,
 {
     let idx = idx.into_index();
     let len = pool.len();

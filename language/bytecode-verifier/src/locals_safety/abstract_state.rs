@@ -4,6 +4,7 @@
 //! This module defines the abstract state for the local safety analysis.
 
 use crate::absint::{AbstractDomain, JoinResult};
+use alloc::vec::Vec;
 use mirai_annotations::{checked_precondition, checked_verify};
 use move_binary_format::{
     binary_views::{BinaryIndexedView, FunctionView},

@@ -6,8 +6,6 @@
 
 #[macro_use]
 extern crate mirai_annotations;
-#[macro_use]
-extern crate anyhow;
 extern crate alloc;
 use core::fmt;
 
@@ -18,8 +16,8 @@ pub mod compatibility;
 #[macro_use]
 pub mod errors;
 pub mod constant;
-pub mod cursor;
 pub mod control_flow_graph;
+pub mod cursor;
 pub mod deserializer;
 pub mod file_format;
 pub mod file_format_common;

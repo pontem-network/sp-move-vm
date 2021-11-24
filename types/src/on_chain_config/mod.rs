@@ -7,6 +7,7 @@ use crate::{
     account_config::CORE_CODE_ADDRESS,
     event::{EventHandle, EventKey},
 };
+use alloc::borrow::ToOwned;
 use alloc::sync::Arc;
 use anyhow::{format_err, Result};
 use core::fmt;

@@ -161,7 +161,6 @@ pub fn signing_message<T: CryptoHash + Serialize>(message: &T) -> Vec<u8> {
     bytes
 }
 
-
 /// A type for key material that can be publicly shared, and in asymmetric
 /// fashion, can be obtained from a [`PrivateKey`][PrivateKey]
 /// reference.

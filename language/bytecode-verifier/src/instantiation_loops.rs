@@ -14,6 +14,7 @@
 
 use alloc::string::String;
 use alloc::vec::Vec;
+use hashbrown::{hash_map, HashMap, HashSet};
 use move_binary_format::{
     access::ModuleAccess,
     errors::{Location, PartialVMError, PartialVMResult, VMResult},
@@ -29,7 +30,6 @@ use petgraph::{
     visit::EdgeRef,
     Graph,
 };
-use hashbrown::{hash_map, HashMap, HashSet};
 
 /// Data attached to each node.
 /// Each node corresponds to a type formal of a generic function in the module.

@@ -4,12 +4,12 @@
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use anyhow::Result;
+use core::{convert::TryFrom, fmt, str::FromStr};
 use hex::FromHex;
 use parity_scale_codec_derive::{Decode, Encode};
 #[cfg(feature = "std")]
 use rand::{rngs::OsRng, Rng};
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize, Serializer};
-use core::{convert::TryFrom, fmt, str::FromStr};
 
 /// A struct that represents an account address.
 #[derive(Ord, PartialOrd, Eq, PartialEq, Hash, Clone, Copy, Encode, Decode)]
@@ -265,6 +265,7 @@ impl fmt::Display for AccountAddressParseError {
     }
 }
 
+#[cfg(feature = "std")]
 impl std::error::Error for AccountAddressParseError {}
 
 #[cfg(test)]

@@ -13,6 +13,7 @@ use crate::{
         signature::{AbilitySetGen, SignatureTokenGen},
     },
 };
+use alloc::collections::BTreeSet;
 use proptest::{
     collection::{vec, SizeRange},
     option,
@@ -20,7 +21,6 @@ use proptest::{
     sample::Index as PropIndex,
     std_facade::hash_set::HashSet,
 };
-use alloc::collections::BTreeSet;
 
 #[derive(Debug)]
 struct TypeSignatureIndex(u16);

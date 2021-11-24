@@ -14,17 +14,16 @@ use crate::{
     proptest_types::{
         prop_index_avoid,
         signature::{AbilitySetGen, SignatureGen, SignatureTokenGen},
-        TableSize,
     },
 };
+use alloc::collections::BTreeSet;
+use core::hash::Hash;
+use hashbrown::{HashMap, HashSet};
 use proptest::{
     collection::{vec, SizeRange},
     prelude::*,
     sample::{select, Index as PropIndex},
 };
-use alloc::collections::BTreeSet;
-use core::hash::Hash;
-use hashbrown::{HashMap, HashSet};
 
 #[derive(Debug, Default)]
 struct SignatureState {
@@ -86,16 +85,16 @@ impl FieldHandleState {
 #[derive(Debug)]
 #[allow(unused)]
 struct InstantiationState<T>
-    where
-        T: Eq + Clone + Hash,
+where
+    T: Eq + Clone + Hash,
 {
     instantiations: Vec<T>,
     instantiation_map: HashMap<T, TableIndex>,
 }
 
 impl<T> InstantiationState<T>
-    where
-        T: Eq + Clone + Hash,
+where
+    T: Eq + Clone + Hash,
 {
     fn new() -> Self {
         InstantiationState {

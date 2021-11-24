@@ -1,12 +1,12 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+use alloc::collections::BTreeMap;
 use move_binary_format::{
     binary_views::FunctionView,
     control_flow_graph::{BlockId, ControlFlowGraph},
     file_format::{Bytecode, CodeOffset},
 };
-use alloc::collections::BTreeMap;
 
 /// Trait for finite-height abstract domains. Infinite height domains would require a more complex
 /// trait with widening and a partial order.
@@ -43,7 +43,7 @@ pub(crate) struct BlockInvariant<State, AnalysisError> {
 /// A map from block id's to the pre/post of each block after a fixed point is reached.
 #[allow(dead_code)]
 pub(crate) type InvariantMap<State, AnalysisError> =
-BTreeMap<BlockId, BlockInvariant<State, AnalysisError>>;
+    BTreeMap<BlockId, BlockInvariant<State, AnalysisError>>;
 
 /// Take a pre-state + instruction and mutate it to produce a post-state
 /// Auxiliary data can be stored in self.

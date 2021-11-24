@@ -1,13 +1,17 @@
 use alloc::borrow::ToOwned;
 use alloc::collections::VecDeque;
+use alloc::format;
+use alloc::vec;
 use alloc::vec::Vec;
 use core::ops::Div;
 use move_binary_format::errors::{PartialVMError, PartialVMResult};
 use move_core_types::vm_status::StatusCode;
+use move_vm_runtime::native_functions::NativeContext;
 use move_vm_types::{
     gas_schedule::NativeCostIndex,
     loaded_data::runtime_types::Type,
-    natives::function::{native_gas, NativeContext, NativeResult},
+    natives::function::{native_gas, NativeResult},
+    pop_arg,
     values::{values_impl::Struct, Value},
 };
 use smallvec::smallvec;
@@ -18,7 +22,7 @@ construct_uint! {
 }
 
 pub fn from_u8(
-    context: &mut impl NativeContext,
+    context: &mut NativeContext,
     ty_args: Vec<Type>,
     mut arguments: VecDeque<Value>,
 ) -> PartialVMResult<NativeResult> {
@@ -31,7 +35,7 @@ pub fn from_u8(
 }
 
 pub fn from_u64(
-    context: &mut impl NativeContext,
+    context: &mut NativeContext,
     ty_args: Vec<Type>,
     mut arguments: VecDeque<Value>,
 ) -> PartialVMResult<NativeResult> {
@@ -44,7 +48,7 @@ pub fn from_u64(
 }
 
 pub fn from_u128(
-    context: &mut impl NativeContext,
+    context: &mut NativeContext,
     ty_args: Vec<Type>,
     mut arguments: VecDeque<Value>,
 ) -> PartialVMResult<NativeResult> {
@@ -56,7 +60,7 @@ pub fn from_u128(
 }
 
 pub fn as_u8(
-    context: &mut impl NativeContext,
+    context: &mut NativeContext,
     ty_args: Vec<Type>,
     mut arguments: VecDeque<Value>,
 ) -> PartialVMResult<NativeResult> {
@@ -76,7 +80,7 @@ pub fn as_u8(
 }
 
 pub fn as_u64(
-    context: &mut impl NativeContext,
+    context: &mut NativeContext,
     ty_args: Vec<Type>,
     mut arguments: VecDeque<Value>,
 ) -> PartialVMResult<NativeResult> {
@@ -96,7 +100,7 @@ pub fn as_u64(
 }
 
 pub fn as_u128(
-    context: &mut impl NativeContext,
+    context: &mut NativeContext,
     ty_args: Vec<Type>,
     mut arguments: VecDeque<Value>,
 ) -> PartialVMResult<NativeResult> {
@@ -117,7 +121,7 @@ pub fn as_u128(
 }
 
 pub fn mul(
-    context: &mut impl NativeContext,
+    context: &mut NativeContext,
     ty_args: Vec<Type>,
     mut arguments: VecDeque<Value>,
 ) -> PartialVMResult<NativeResult> {
@@ -138,7 +142,7 @@ pub fn mul(
 }
 
 pub fn div(
-    context: &mut impl NativeContext,
+    context: &mut NativeContext,
     ty_args: Vec<Type>,
     mut arguments: VecDeque<Value>,
 ) -> PartialVMResult<NativeResult> {
@@ -159,7 +163,7 @@ pub fn div(
 }
 
 pub fn sub(
-    context: &mut impl NativeContext,
+    context: &mut NativeContext,
     ty_args: Vec<Type>,
     mut arguments: VecDeque<Value>,
 ) -> PartialVMResult<NativeResult> {
@@ -180,7 +184,7 @@ pub fn sub(
 }
 
 pub fn add(
-    context: &mut impl NativeContext,
+    context: &mut NativeContext,
     ty_args: Vec<Type>,
     mut arguments: VecDeque<Value>,
 ) -> PartialVMResult<NativeResult> {

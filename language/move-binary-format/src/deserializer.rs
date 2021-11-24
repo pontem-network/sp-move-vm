@@ -1,18 +1,17 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    check_bounds::BoundsChecker, compat, errors::*, file_format::*, file_format_common::*,
-};
-use move_core_types::{
-    account_address::AccountAddress, identifier::Identifier, vm_status::StatusCode,
-};
+use crate::{check_bounds::BoundsChecker, errors::*, file_format::*, file_format_common::*};
 use alloc::boxed::Box;
-use alloc::string::String;
+use alloc::format;
 use alloc::string::ToString;
+use alloc::vec;
 use alloc::vec::Vec;
 use core::convert::TryInto;
 use hashbrown::HashSet;
+use move_core_types::{
+    account_address::AccountAddress, identifier::Identifier, vm_status::StatusCode,
+};
 
 impl CompiledScript {
     /// Deserializes a &[u8] slice into a `CompiledScript` instance.
@@ -82,8 +81,8 @@ pub fn read_u128_internal(cursor: &mut VersionedCursor) -> BinaryLoaderResult<u1
 // Helpers to read all uleb128 encoded integers.
 //
 pub fn read_uleb_internal<T>(cursor: &mut VersionedCursor, max: u64) -> BinaryLoaderResult<T>
-    where
-        u64: TryInto<T>,
+where
+    u64: TryInto<T>,
 {
     let x = cursor.read_uleb128_as_u64().map_err(|_| {
         PartialVMError::new(StatusCode::MALFORMED).with_message("Bad Uleb".to_string())
@@ -107,7 +106,9 @@ pub fn load_signature_index(cursor: &mut VersionedCursor) -> BinaryLoaderResult<
     )?))
 }
 
-pub fn load_module_handle_index(cursor: &mut VersionedCursor) -> BinaryLoaderResult<ModuleHandleIndex> {
+pub fn load_module_handle_index(
+    cursor: &mut VersionedCursor,
+) -> BinaryLoaderResult<ModuleHandleIndex> {
     Ok(ModuleHandleIndex(read_uleb_internal(
         cursor,
         MODULE_HANDLE_INDEX_MAX,
@@ -121,7 +122,9 @@ pub fn load_identifier_index(cursor: &mut VersionedCursor) -> BinaryLoaderResult
     )?))
 }
 
-pub fn load_struct_handle_index(cursor: &mut VersionedCursor) -> BinaryLoaderResult<StructHandleIndex> {
+pub fn load_struct_handle_index(
+    cursor: &mut VersionedCursor,
+) -> BinaryLoaderResult<StructHandleIndex> {
     Ok(StructHandleIndex(read_uleb_internal(
         cursor,
         STRUCT_HANDLE_INDEX_MAX,
@@ -155,7 +158,9 @@ pub fn load_function_handle_index(
     )?))
 }
 
-pub fn load_field_handle_index(cursor: &mut VersionedCursor) -> BinaryLoaderResult<FieldHandleIndex> {
+pub fn load_field_handle_index(
+    cursor: &mut VersionedCursor,
+) -> BinaryLoaderResult<FieldHandleIndex> {
     Ok(FieldHandleIndex(read_uleb_internal(
         cursor,
         FIELD_HANDLE_INDEX_MAX,

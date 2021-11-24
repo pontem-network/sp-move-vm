@@ -5,13 +5,13 @@
 
 use crate::language_storage::ModuleId;
 use anyhow::Result;
+use core::{convert::TryFrom, fmt};
 use enum_iterator::IntoEnumIterator;
 #[cfg(any(test, feature = "fuzzing"))]
 use proptest::prelude::*;
 #[cfg(any(test, feature = "fuzzing"))]
 use proptest_derive::Arbitrary;
 use serde::{de, ser, Deserialize, Serialize};
-use core::{convert::TryFrom, fmt};
 
 /// The minimum status code for validation statuses
 pub static VALIDATION_STATUS_MIN_CODE: u64 = 0;
@@ -324,6 +324,7 @@ pub mod known_locations {
         language_storage::{ModuleId, CORE_CODE_ADDRESS},
         vm_status::AbortLocation,
     };
+    use alloc::borrow::ToOwned;
     use cell::Lazy;
 
     /// The Identifier for the Account module.

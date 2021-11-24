@@ -4,10 +4,10 @@ use crate::io::key::AccessKey;
 use crate::io::session::StateSession;
 use crate::io::traits::{BalanceAccess, Storage};
 use alloc::vec::Vec;
-use move_binary_format::errors::{PartialVMResult, VMResult};
+use anyhow::Error;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::language_storage::{ModuleId, StructTag};
-use move_vm_runtime::data_cache::MoveStorage;
+use move_core_types::resolver::{ModuleResolver, ResourceResolver};
 
 pub struct State<S: Storage> {
     store: S,
@@ -27,17 +27,23 @@ impl<S: Storage> State<S> {
     }
 }
 
-impl<S: Storage> MoveStorage for State<S> {
-    fn get_module(&self, module_id: &ModuleId) -> VMResult<Option<Vec<u8>>> {
+impl<S: Storage> ModuleResolver for State<S> {
+    type Error = Error;
+
+    fn get_module(&self, module_id: &ModuleId) -> Result<Option<Vec<u8>>, Self::Error> {
         Ok(self.store.get(AccessKey::from(module_id).as_ref()))
     }
+}
+
+impl<S: Storage> ResourceResolver for State<S> {
+    type Error = Error;
 
     fn get_resource(
         &self,
         address: &AccountAddress,
-        tag: &StructTag,
-    ) -> PartialVMResult<Option<Vec<u8>>> {
-        Ok(self.store.get(AccessKey::from((address, tag)).as_ref()))
+        typ: &StructTag,
+    ) -> Result<Option<Vec<u8>>, Self::Error> {
+        Ok(self.store.get(AccessKey::from((address, typ)).as_ref()))
     }
 }
 

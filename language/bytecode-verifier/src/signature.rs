@@ -4,8 +4,8 @@
 //! This module implements a checker for verifying signature tokens used in types of function
 //! parameters, locals, and fields of structs are well-formed. References can only occur at the
 //! top-level in all tokens.  Additionally, references cannot occur at all in field types.
-use crate::binary_views::BinaryIndexedView;
 use alloc::string::ToString;
+use alloc::vec::Vec;
 use move_binary_format::{
     access::{ModuleAccess, ScriptAccess},
     binary_views::BinaryIndexedView,
@@ -105,7 +105,7 @@ impl<'a> SignatureChecker<'a> {
                     false,
                     &struct_handle.type_parameters,
                 )
-                    .map_err(|err| err_handler(err, field_offset))?;
+                .map_err(|err| err_handler(err, field_offset))?;
             }
         }
         Ok(())
@@ -191,10 +191,10 @@ impl<'a> SignatureChecker<'a> {
                         return Err(PartialVMError::new(
                             StatusCode::NUMBER_OF_TYPE_ARGUMENTS_MISMATCH,
                         )
-                            .with_message(format!(
-                                "expected 1 type token for vector operations, got {}",
-                                type_arguments.len()
-                            )));
+                        .with_message(format!(
+                            "expected 1 type token for vector operations, got {}",
+                            type_arguments.len()
+                        )));
                     }
                     self.check_signature_tokens(type_arguments)
                 }
@@ -240,9 +240,9 @@ impl<'a> SignatureChecker<'a> {
                     return Err(PartialVMError::new(
                         StatusCode::INVALID_PHANTOM_TYPE_PARAM_POSITION,
                     )
-                        .with_message(
-                            "phantom type parameter cannot be used in non-phantom position".to_string(),
-                        ));
+                    .with_message(
+                        "phantom type parameter cannot be used in non-phantom position".to_string(),
+                    ));
                 }
             }
 

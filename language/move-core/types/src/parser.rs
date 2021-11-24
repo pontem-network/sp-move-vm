@@ -10,7 +10,7 @@ use crate::{
 use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::vec::Vec;
-use anyhow::{bail, Error, format_err, Result};
+use anyhow::{bail, format_err, Error, Result};
 use core::iter::Peekable;
 
 #[derive(Eq, PartialEq, Debug)]
@@ -229,9 +229,9 @@ impl<I: Iterator<Item = Token>> Parser<I> {
         end_token: Token,
         allow_trailing_comma: bool,
     ) -> Result<Vec<R>>
-        where
-            F: Fn(&mut Self) -> Result<R>,
-            R: core::fmt::Debug,
+    where
+        F: Fn(&mut Self) -> Result<R>,
+        R: core::fmt::Debug,
     {
         let mut v = vec![];
         if !(self.peek() == Some(&end_token)) {

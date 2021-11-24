@@ -12,6 +12,7 @@
 //! It's used to compress mostly indexes into the main binary tables.
 use crate::file_format::Bytecode;
 use alloc::string::ToString;
+use alloc::vec;
 use alloc::vec::Vec;
 use anyhow::{bail, Result};
 use core::mem::size_of;
@@ -463,6 +464,14 @@ pub mod versioned_data {
                 version: self.version,
                 binary: self.cursor.get_ref(),
             }
+        }
+
+        pub fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
+            self.cursor.read(buf)
+        }
+
+        pub fn read_exact(&mut self, buf: &mut [u8]) -> Result<()> {
+            self.cursor.read_exact(buf)
         }
 
         pub fn read_u8(&mut self) -> Result<u8> {

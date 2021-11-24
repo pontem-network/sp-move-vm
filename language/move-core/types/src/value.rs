@@ -2,15 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{account_address::AccountAddress, identifier::Identifier};
+use alloc::boxed::Box;
+use alloc::vec::Vec;
 use anyhow::{Error, Result as AResult};
+use core::fmt::{self, Debug};
 use serde::{
     de::Error as DeError,
     ser::{SerializeMap, SerializeSeq, SerializeTuple},
     Deserialize, Serialize,
 };
-use core::fmt::{self, Debug};
-use alloc::boxed::Box;
-use alloc::vec::Vec;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum MoveStruct {
@@ -84,8 +84,8 @@ impl MoveValue {
 }
 
 pub fn serialize_values<'a, I>(vals: I) -> Vec<Vec<u8>>
-    where
-        I: IntoIterator<Item = &'a MoveValue>,
+where
+    I: IntoIterator<Item = &'a MoveValue>,
 {
     vals.into_iter()
         .map(|val| {
@@ -191,8 +191,8 @@ impl<'d, 'a> serde::de::Visitor<'d> for VectorElementVisitor<'a> {
     }
 
     fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-        where
-            A: serde::de::SeqAccess<'d>,
+    where
+        A: serde::de::SeqAccess<'d>,
     {
         let mut vals = Vec::new();
         while let Some(elem) = seq.next_element_seed(self.0)? {
@@ -212,8 +212,8 @@ impl<'d, 'a> serde::de::Visitor<'d> for DecoratedStructFieldVisitor<'a> {
     }
 
     fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-        where
-            A: serde::de::SeqAccess<'d>,
+    where
+        A: serde::de::SeqAccess<'d>,
     {
         let mut vals = Vec::new();
         for (i, layout) in self.0.iter().enumerate() {
@@ -236,8 +236,8 @@ impl<'d, 'a> serde::de::Visitor<'d> for StructFieldVisitor<'a> {
     }
 
     fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-        where
-            A: serde::de::SeqAccess<'d>,
+    where
+        A: serde::de::SeqAccess<'d>,
     {
         let mut val = Vec::new();
         for (i, field_type) in self.0.iter().enumerate() {
@@ -325,13 +325,13 @@ impl serde::Serialize for MoveStruct {
 }
 
 impl fmt::Display for MoveFieldLayout {
-    fn fmt(&self, f: &mut fmt::Formatter) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> core::fmt::Result {
         write!(f, "{}: {}", self.name, self.layout)
     }
 }
 
 impl fmt::Display for MoveTypeLayout {
-    fn fmt(&self, f: &mut fmt::Formatter) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> core::fmt::Result {
         use MoveTypeLayout::*;
         match self {
             Bool => write!(f, "bool"),
@@ -347,7 +347,7 @@ impl fmt::Display for MoveTypeLayout {
 }
 
 impl fmt::Display for MoveStructLayout {
-    fn fmt(&self, f: &mut fmt::Formatter) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> core::fmt::Result {
         write!(f, "{{ ")?;
         match self {
             Self::Runtime(layouts) => {

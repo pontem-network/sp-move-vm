@@ -42,10 +42,10 @@ fn execute_inner(
     match bytecode {
         Bytecode::StLoc(idx) => match state.local_state(*idx) {
             LocalState::MaybeAvailable | LocalState::Available
-            if !state.local_abilities(*idx).has_drop() =>
-                {
-                    return Err(state.error(StatusCode::STLOC_UNSAFE_TO_DESTROY_ERROR, offset))
-                }
+                if !state.local_abilities(*idx).has_drop() =>
+            {
+                return Err(state.error(StatusCode::STLOC_UNSAFE_TO_DESTROY_ERROR, offset))
+            }
             _ => state.set_available(*idx),
         },
 
@@ -79,12 +79,12 @@ fn execute_inner(
             for (local_state, local_abilities) in local_states.iter().zip(all_local_abilities) {
                 match local_state {
                     LocalState::MaybeAvailable | LocalState::Available
-                    if !local_abilities.has_drop() =>
-                        {
-                            return Err(
-                                state.error(StatusCode::UNSAFE_RET_UNUSED_VALUES_WITHOUT_DROP, offset)
-                            )
-                        }
+                        if !local_abilities.has_drop() =>
+                    {
+                        return Err(
+                            state.error(StatusCode::UNSAFE_RET_UNUSED_VALUES_WITHOUT_DROP, offset)
+                        )
+                    }
                     _ => (),
                 }
             }

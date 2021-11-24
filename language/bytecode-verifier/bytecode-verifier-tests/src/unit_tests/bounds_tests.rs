@@ -30,7 +30,7 @@ fn invalid_default_module() {
         version: file_format_common::VERSION_MAX,
         ..Default::default()
     })
-        .unwrap_err();
+    .unwrap_err();
 }
 
 #[test]

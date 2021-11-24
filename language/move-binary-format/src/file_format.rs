@@ -33,8 +33,10 @@ use crate::{
     internals::ModuleIndex,
     IndexKind, SignatureTokenKind,
 };
+use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
 use alloc::string::ToString;
+use alloc::vec;
 use alloc::vec::Vec;
 use core::ops::BitOr;
 use mirai_annotations::*;
@@ -460,8 +462,8 @@ pub struct FunctionDefinition {
     pub acquires_global_resources: Vec<StructDefinitionIndex>,
     /// Code for this function.
     #[cfg_attr(
-    any(test, feature = "fuzzing"),
-    proptest(strategy = "any_with::<CodeUnit>(params).prop_map(Some)")
+        any(test, feature = "fuzzing"),
+        proptest(strategy = "any_with::<CodeUnit>(params).prop_map(Some)")
     )]
     pub code: Option<CodeUnit>,
 }
@@ -497,14 +499,14 @@ pub struct TypeSignature(pub SignatureToken);
 pub struct FunctionSignature {
     /// The list of return types.
     #[cfg_attr(
-    any(test, feature = "fuzzing"),
-    proptest(strategy = "vec(any::<SignatureToken>(), 0..=params)")
+        any(test, feature = "fuzzing"),
+        proptest(strategy = "vec(any::<SignatureToken>(), 0..=params)")
     )]
     pub return_: Vec<SignatureToken>,
     /// The list of arguments to the function.
     #[cfg_attr(
-    any(test, feature = "fuzzing"),
-    proptest(strategy = "vec(any::<SignatureToken>(), 0..=params)")
+        any(test, feature = "fuzzing"),
+        proptest(strategy = "vec(any::<SignatureToken>(), 0..=params)")
     )]
     pub parameters: Vec<SignatureToken>,
     /// The type formals (identified by their index into the vec) and their constraints
@@ -520,8 +522,8 @@ pub struct FunctionSignature {
 #[cfg_attr(any(test, feature = "fuzzing"), proptest(params = "usize"))]
 pub struct Signature(
     #[cfg_attr(
-    any(test, feature = "fuzzing"),
-    proptest(strategy = "vec(any::<SignatureToken>(), 0..=params)")
+        any(test, feature = "fuzzing"),
+        proptest(strategy = "vec(any::<SignatureToken>(), 0..=params)")
     )]
     pub Vec<SignatureToken>,
 );
@@ -673,11 +675,11 @@ impl AbilitySet {
         declared_phantom_parameters: I1,
         type_arguments: I2,
     ) -> PartialVMResult<Self>
-        where
-            I1: IntoIterator<Item = bool>,
-            I2: IntoIterator<Item = Self>,
-            I1::IntoIter: ExactSizeIterator,
-            I2::IntoIter: ExactSizeIterator,
+    where
+        I1: IntoIterator<Item = bool>,
+        I2: IntoIterator<Item = Self>,
+        I1::IntoIter: ExactSizeIterator,
+        I2::IntoIter: ExactSizeIterator,
     {
         let declared_phantom_parameters = declared_phantom_parameters.into_iter();
         let type_arguments = type_arguments.into_iter();
@@ -775,8 +777,8 @@ impl IntoIterator for AbilitySet {
     }
 }
 
-impl std::fmt::Debug for AbilitySet {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+impl core::fmt::Debug for AbilitySet {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
         write!(f, "[")?;
         for ability in *self {
             write!(f, "{:?}, ", ability)?;
@@ -927,7 +929,7 @@ impl Arbitrary for SignatureToken {
                 ]
             },
         )
-            .boxed()
+        .boxed()
     }
 }
 
@@ -1079,8 +1081,8 @@ pub struct CodeUnit {
     pub locals: SignatureIndex,
     /// Code stream, function body.
     #[cfg_attr(
-    any(test, feature = "fuzzing"),
-    proptest(strategy = "vec(any::<Bytecode>(), 0..=params)")
+        any(test, feature = "fuzzing"),
+        proptest(strategy = "vec(any::<Bytecode>(), 0..=params)")
     )]
     pub code: Vec<Bytecode>,
 }
@@ -1802,13 +1804,13 @@ impl Arbitrary for CompiledScript {
         )
             .prop_map(
                 |(
-                     (module_handles, struct_handles, function_handles),
-                     signatures,
-                     (identifiers, address_identifiers),
-                     type_parameters,
-                     parameters,
-                     code,
-                 )| {
+                    (module_handles, struct_handles, function_handles),
+                    signatures,
+                    (identifiers, address_identifiers),
+                    type_parameters,
+                    parameters,
+                    code,
+                )| {
                     // TODO actual constant generation
                     CompiledScript {
                         version: file_format_common::VERSION_MAX,
@@ -1857,13 +1859,13 @@ impl Arbitrary for CompiledModule {
         )
             .prop_map(
                 |(
-                     (module_handles, struct_handles, function_handles),
-                     self_module_handle_idx,
-                     friend_decls,
-                     signatures,
-                     (identifiers, address_identifiers),
-                     (struct_defs, function_defs),
-                 )| {
+                    (module_handles, struct_handles, function_handles),
+                    self_module_handle_idx,
+                    friend_decls,
+                    signatures,
+                    (identifiers, address_identifiers),
+                    (struct_defs, function_defs),
+                )| {
                     // TODO actual constant generation
                     CompiledModule {
                         version: file_format_common::VERSION_MAX,

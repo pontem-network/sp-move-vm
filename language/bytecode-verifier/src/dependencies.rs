@@ -2,6 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! This module contains verification of usage of dependencies for modules and scripts.
+use alloc::borrow::ToOwned;
+use alloc::collections::{BTreeMap, BTreeSet};
+use alloc::string::ToString;
+use hashbrown::HashMap;
 use move_binary_format::{
     access::{ModuleAccess, ScriptAccess},
     binary_views::BinaryIndexedView,
@@ -14,9 +18,6 @@ use move_binary_format::{
     IndexKind,
 };
 use move_core_types::{identifier::Identifier, language_storage::ModuleId, vm_status::StatusCode};
-use alloc::collections::{BTreeMap, BTreeSet};
-use alloc::string::ToString;
-use hashbrown::HashMap;
 
 struct Context<'a, 'b> {
     resolver: BinaryIndexedView<'a>,
@@ -213,9 +214,9 @@ fn verify_imported_structs(context: &Context) -> PartialVMResult<()> {
                 let def_handle = owner_module.struct_handle_at(*def_idx);
                 if !compatible_struct_abilities(struct_handle.abilities, def_handle.abilities)
                     || !compatible_struct_type_parameters(
-                    &struct_handle.type_parameters,
-                    &def_handle.type_parameters,
-                )
+                        &struct_handle.type_parameters,
+                        &def_handle.type_parameters,
+                    )
                 {
                     return Err(verification_error(
                         StatusCode::TYPE_MISMATCH,
@@ -284,7 +285,7 @@ fn verify_imported_functions(context: &Context) -> PartialVMResult<()> {
                     &def_params.0,
                     owner_module,
                 )
-                    .map_err(|e| e.at_index(IndexKind::FunctionHandle, idx as TableIndex))?;
+                .map_err(|e| e.at_index(IndexKind::FunctionHandle, idx as TableIndex))?;
 
                 // same return_
                 let handle_return = context.resolver.signature_at(function_handle.return_);
@@ -305,7 +306,7 @@ fn verify_imported_functions(context: &Context) -> PartialVMResult<()> {
                     &def_return.0,
                     owner_module,
                 )
-                    .map_err(|e| e.at_index(IndexKind::FunctionHandle, idx as TableIndex))?;
+                .map_err(|e| e.at_index(IndexKind::FunctionHandle, idx as TableIndex))?;
             }
             None => {
                 return Err(verification_error(
@@ -339,19 +340,19 @@ fn compatible_fun_type_parameters(
 ) -> bool {
     local_type_parameters_declaration.len() == defined_type_parameters.len()
         && local_type_parameters_declaration
-        .iter()
-        .zip(defined_type_parameters)
-        .all(
-            |(
-                 local_type_parameter_constraints_declaration,
-                 defined_type_parameter_constraints,
-             )| {
-                compatible_type_parameter_constraints(
-                    *local_type_parameter_constraints_declaration,
-                    *defined_type_parameter_constraints,
-                )
-            },
-        )
+            .iter()
+            .zip(defined_type_parameters)
+            .all(
+                |(
+                    local_type_parameter_constraints_declaration,
+                    defined_type_parameter_constraints,
+                )| {
+                    compatible_type_parameter_constraints(
+                        *local_type_parameter_constraints_declaration,
+                        *defined_type_parameter_constraints,
+                    )
+                },
+            )
 }
 
 // - The number of type parameters must be the same
@@ -362,19 +363,19 @@ fn compatible_struct_type_parameters(
 ) -> bool {
     local_type_parameters_declaration.len() == defined_type_parameters.len()
         && local_type_parameters_declaration
-        .iter()
-        .zip(defined_type_parameters)
-        .all(
-            |(local_type_parameter_declaration, defined_type_parameter)| {
-                compatible_type_parameter_phantom_decl(
-                    local_type_parameter_declaration,
-                    defined_type_parameter,
-                ) && compatible_type_parameter_constraints(
-                    local_type_parameter_declaration.constraints,
-                    defined_type_parameter.constraints,
-                )
-            },
-        )
+            .iter()
+            .zip(defined_type_parameters)
+            .all(
+                |(local_type_parameter_declaration, defined_type_parameter)| {
+                    compatible_type_parameter_phantom_decl(
+                        local_type_parameter_declaration,
+                        defined_type_parameter,
+                    ) && compatible_type_parameter_constraints(
+                        local_type_parameter_declaration.constraints,
+                        defined_type_parameter.constraints,
+                    )
+                },
+            )
 }
 
 //  The local view of a type parameter must be a superset of (or equal to) the defined
@@ -529,12 +530,12 @@ fn verify_script_visibility_usage(
                 return Err(PartialVMError::new(
                     StatusCode::CALLED_SCRIPT_VISIBLE_FROM_NON_SCRIPT_VISIBLE,
                 )
-                    .at_code_offset(fdef_idx, idx)
-                    .with_message(
-                        "script-visible functions can only be called from scripts or other \
+                .at_code_offset(fdef_idx, idx)
+                .with_message(
+                    "script-visible functions can only be called from scripts or other \
                     script-visibile functions"
-                            .to_string(),
-                    ));
+                        .to_string(),
+                ));
             }
             _ => (),
         }

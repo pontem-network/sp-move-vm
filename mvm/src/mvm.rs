@@ -13,8 +13,6 @@ use move_core_types::gas_schedule::{AbstractMemorySize, GasAlgebra, GasUnits};
 use move_core_types::identifier::{IdentStr, Identifier};
 use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS};
 use move_core_types::vm_status::{StatusCode, VMStatus};
-use move_vm_runtime::data_cache::MoveStorage;
-use move_vm_runtime::logging::NoContextLog;
 use move_vm_runtime::move_vm::MoveVM;
 use move_vm_runtime::session::Session;
 
@@ -28,6 +26,7 @@ use crate::io::traits::{BalanceAccess, EventHandler, Storage};
 use crate::types::{Call, Gas, ModuleTx, PublishPackageTx, ScriptTx, VmResult};
 use crate::{StateAccess, Vm};
 use move_binary_format::CompiledModule;
+use move_core_types::resolver::{ModuleResolver, ResourceResolver};
 use move_vm_types::gas_schedule::GasStatus;
 
 /// MoveVM.
@@ -64,7 +63,12 @@ where
         config: VMConfig,
     ) -> Result<Mvm<S, E, B>, Error> {
         Ok(Mvm {
-            vm: MoveVM::new(),
+            vm: MoveVM::new(move_stdlib::natives::all_natives(CORE_CODE_ADDRESS)).map_err(
+                |err| {
+                    let (code, _, msg, _, _, _) = err.all_data();
+                    anyhow!("Error code:{:?}: msg: '{}'", code, msg.unwrap_or_default())
+                },
+            )?,
             cost_table: config.gas_schedule,
             state: State::new(store),
             event_handler,
@@ -87,14 +91,8 @@ where
         let mut cost_strategy =
             GasStatus::new(&self.cost_table, GasUnits::new(gas.max_gas_amount()));
 
-        let result = session.execute_function(
-            module,
-            function_name,
-            ty_args,
-            args,
-            &mut cost_strategy,
-            &NoContextLog::new(),
-        );
+        let result =
+            session.execute_function(module, function_name, ty_args, args, &mut cost_strategy);
 
         self.handle_vm_result(
             sender,
@@ -211,11 +209,11 @@ where
         cost_strategy: &mut GasStatus,
     ) -> VMResult<()>
     where
-        R: MoveStorage,
+        R: ModuleResolver<Error = Error> + ResourceResolver<Error = Error>,
     {
         cost_strategy.charge_intrinsic_gas(AbstractMemorySize::new(module.len() as u64))?;
 
-        let result = session.publish_module(module, sender, cost_strategy, &NoContextLog::new());
+        let result = session.publish_module(module, sender, cost_strategy);
         Self::charge_global_write_gas_usage(cost_strategy, session, &sender)?;
         result
     }
@@ -226,7 +224,7 @@ where
         sender: &AccountAddress,
     ) -> VMResult<()>
     where
-        R: MoveStorage,
+        R: ModuleResolver<Error = Error> + ResourceResolver<Error = Error>,
     {
         let total_cost = session.num_mutated_accounts(sender)
             * cost_strategy
@@ -275,10 +273,8 @@ where
         let mut cost_strategy =
             GasStatus::new(&self.cost_table, GasUnits::new(gas.max_gas_amount()));
 
-        // We need to create a new vm to publish module packages.
-        // Because during batch publishing, the cache mutates.
-        // This is not the correct behavior for the dry_run case or for rolling back a transaction.
-        let vm = MoveVM::new();
+        let vm = MoveVM::new(move_stdlib::natives::all_natives(CORE_CODE_ADDRESS))
+            .expect("Valid functions.");
         let mut session = vm.new_session(&self.state);
 
         for module in modules {
@@ -315,14 +311,9 @@ where
             GasStatus::new(&self.cost_table, GasUnits::new(gas.max_gas_amount()));
 
         let result = match script {
-            Call::Script { code } => vm_session.execute_script(
-                code,
-                type_args,
-                args,
-                senders,
-                &mut cost_strategy,
-                &NoContextLog::new(),
-            ),
+            Call::Script { code } => {
+                vm_session.execute_script(code, type_args, args, senders, &mut cost_strategy)
+            }
             Call::ScriptFunction {
                 mod_address,
                 mod_name,
@@ -334,7 +325,6 @@ where
                 args,
                 senders,
                 &mut cost_strategy,
-                &NoContextLog::new(),
             ),
         };
 
@@ -362,10 +352,7 @@ where
 {
     fn get_module(&self, module_id: &[u8]) -> Result<Option<Vec<u8>>, Error> {
         let module_id = bcs::from_bytes(module_id).map_err(Error::msg)?;
-        self.state.get_module(&module_id).map_err(|err| {
-            let (code, _, msg, _, _, _) = err.all_data();
-            anyhow!("Error code:{:?}: msg: '{}'", code, msg.unwrap_or_default())
-        })
+        self.state.get_module(&module_id)
     }
 
     fn get_module_abi(&self, module_id: &[u8]) -> Result<Option<Vec<u8>>, Error> {
@@ -385,9 +372,6 @@ where
         let tag = bcs::from_bytes(tag).map_err(Error::msg)?;
 
         let state_session = self.state.state_session(None, &self.master_of_coin);
-        state_session.get_resource(address, &tag).map_err(|err| {
-            let (code, _, msg, _, _) = err.all_data();
-            anyhow!("Error code:{:?}: msg: '{}'", code, msg.unwrap_or_default())
-        })
+        state_session.get_resource(address, &tag)
     }
 }

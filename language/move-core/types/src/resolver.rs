@@ -5,6 +5,7 @@ use crate::{
     account_address::AccountAddress,
     language_storage::{ModuleId, StructTag},
 };
+use alloc::vec::Vec;
 use core::fmt::Debug;
 
 /// Traits for resolving Move modules and resources from persistent storage
@@ -45,13 +46,13 @@ pub trait ResourceResolver {
 
 /// A persistent storage implementation that can resolve both resources and modules
 pub trait MoveResolver:
-ModuleResolver<Error = Self::Err> + ResourceResolver<Error = Self::Err>
+    ModuleResolver<Error = Self::Err> + ResourceResolver<Error = Self::Err>
 {
     type Err: Debug;
 }
 
 impl<E: Debug, T: ModuleResolver<Error = E> + ResourceResolver<Error = E> + ?Sized> MoveResolver
-for T
+    for T
 {
     type Err = E;
 }

@@ -1,11 +1,7 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    data_cache::{MoveStorage, TransactionDataCache},
-    logging::LogContext,
-    runtime::VMRuntime,
-};
+use crate::{data_cache::TransactionDataCache, runtime::VMRuntime};
 use alloc::vec::Vec;
 use move_binary_format::errors::*;
 use move_core_types::{
@@ -13,6 +9,8 @@ use move_core_types::{
     effects::{ChangeSet, Event},
     identifier::IdentStr,
     language_storage::{ModuleId, TypeTag},
+    resolver::MoveResolver,
+    value::MoveTypeLayout,
 };
 use move_vm_types::gas_schedule::GasStatus;
 
@@ -21,7 +19,7 @@ pub struct Session<'r, 'l, S> {
     pub(crate) data_cache: TransactionDataCache<'r, 'l, S>,
 }
 
-impl<'r, 'l, S: MoveStorage> Session<'r, 'l, S> {
+impl<'r, 'l, S: MoveResolver> Session<'r, 'l, S> {
     /// Execute a Move function with the given arguments. This is mainly designed for an external
     /// environment to invoke system logic written in Move.
     ///
@@ -44,7 +42,6 @@ impl<'r, 'l, S: MoveStorage> Session<'r, 'l, S> {
         ty_args: Vec<TypeTag>,
         args: Vec<Vec<u8>>,
         gas_status: &mut GasStatus,
-        log_context: &impl LogContext,
     ) -> VMResult<Vec<Vec<u8>>> {
         self.runtime.execute_function(
             module,
@@ -53,7 +50,6 @@ impl<'r, 'l, S: MoveStorage> Session<'r, 'l, S> {
             args,
             &mut self.data_cache,
             gas_status,
-            log_context,
         )
     }
 
@@ -89,7 +85,6 @@ impl<'r, 'l, S: MoveStorage> Session<'r, 'l, S> {
         args: Vec<Vec<u8>>,
         senders: Vec<AccountAddress>,
         gas_status: &mut GasStatus,
-        log_context: &impl LogContext,
     ) -> VMResult<()> {
         self.runtime.execute_script_function(
             module,
@@ -99,7 +94,6 @@ impl<'r, 'l, S: MoveStorage> Session<'r, 'l, S> {
             senders,
             &mut self.data_cache,
             gas_status,
-            log_context,
         )
     }
 
@@ -126,7 +120,6 @@ impl<'r, 'l, S: MoveStorage> Session<'r, 'l, S> {
         args: Vec<Vec<u8>>,
         senders: Vec<AccountAddress>,
         gas_status: &mut GasStatus,
-        log_context: &impl LogContext,
     ) -> VMResult<()> {
         self.runtime.execute_script(
             script,
@@ -135,13 +128,12 @@ impl<'r, 'l, S: MoveStorage> Session<'r, 'l, S> {
             senders,
             &mut self.data_cache,
             gas_status,
-            log_context,
         )
     }
 
     /// Publish the given module.
     ///
-    /// The Move VM MUST return a user error (in other words, an error that's not an invariant violation) if
+    /// The Move VM MUST return a user error, i.e., an error that's not an invariant violation, if
     ///   - The module fails to deserialize or verify.
     ///   - The sender address does not match that of the module.
     ///   - (Republishing-only) the module to be updated is not backward compatible with the old module.
@@ -150,22 +142,37 @@ impl<'r, 'l, S: MoveStorage> Session<'r, 'l, S> {
     /// The Move VM should not be able to produce other user errors.
     /// Besides, no user input should cause the Move VM to return an invariant violation.
     ///
-    /// In case an invariant violation occurs, the whole Session should be considered corrupted and one shall
-    /// not proceed with effect generation.
+    /// In case an invariant violation occurs, the whole Session should be considered corrupted and
+    /// one shall not proceed with effect generation.
     pub fn publish_module(
         &mut self,
         module: Vec<u8>,
         sender: AccountAddress,
         gas_status: &mut GasStatus,
-        log_context: &impl LogContext,
     ) -> VMResult<()> {
-        self.runtime.publish_module(
-            module,
-            sender,
-            &mut self.data_cache,
-            gas_status,
-            log_context,
-        )
+        self.publish_module_bundle(vec![module], sender, gas_status)
+    }
+
+    /// Publish a series of modules.
+    ///
+    /// The Move VM MUST return a user error, i.e., an error that's not an invariant violation, if
+    /// any module fails to deserialize or verify (see the full list of  failing conditions in the
+    /// `publish_module` API). The publishing of the module series is an all-or-nothing action:
+    /// either all modules are published to the data store or none is.
+    ///
+    /// Similar to the `publish_module` API, the Move VM should not be able to produce other user
+    /// errors. Besides, no user input should cause the Move VM to return an invariant violation.
+    ///
+    /// In case an invariant violation occurs, the whole Session should be considered corrupted and
+    /// one shall not proceed with effect generation.
+    pub fn publish_module_bundle(
+        &mut self,
+        modules: Vec<Vec<u8>>,
+        sender: AccountAddress,
+        gas_status: &mut GasStatus,
+    ) -> VMResult<()> {
+        self.runtime
+            .publish_module_bundle(modules, sender, &mut self.data_cache, gas_status)
     }
 
     pub fn num_mutated_accounts(&self, sender: &AccountAddress) -> u64 {
@@ -181,5 +188,11 @@ impl<'r, 'l, S: MoveStorage> Session<'r, 'l, S> {
         self.data_cache
             .into_effects()
             .map_err(|e| e.finish(Location::Undefined))
+    }
+
+    pub fn get_type_layout(&self, type_tag: &TypeTag) -> VMResult<MoveTypeLayout> {
+        self.runtime
+            .loader()
+            .get_type_layout(type_tag, &self.data_cache)
     }
 }

@@ -5,6 +5,7 @@ use crate::{
     identifier::{IdentStr, Identifier},
     language_storage::{StructTag, TypeTag},
 };
+use alloc::borrow::ToOwned;
 use alloc::vec::Vec;
 use serde::de::DeserializeOwned;
 
