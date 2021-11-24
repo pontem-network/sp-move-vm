@@ -34,7 +34,7 @@ impl ShortHexStr {
             // We include a tiny hex encode here instead of using the `hex` crate's
             // `encode_to_slice`, since the compiler seems unable to inline across
             // the crate boundary.
-            hex_encode(&src_short_bytes, &mut dest_bytes);
+            hex_encode(src_short_bytes, &mut dest_bytes);
             Ok(Self(dest_bytes))
         } else {
             Err(InputTooShortError)
@@ -81,13 +81,15 @@ const HEX_CHARS_LOWER: &[u8; 16] = b"0123456789abcdef";
 /// the second character as ASCII bytes.
 #[inline(always)]
 fn byte2hex(byte: u8) -> (u8, u8) {
-    let hi = HEX_CHARS_LOWER[((byte >> 4) & 0x0f) as usize];
+    #[allow(clippy::integer_arithmetic)] // X >> 4 is valid for all bytes
+        let hi = HEX_CHARS_LOWER[((byte >> 4) & 0x0f) as usize];
     let lo = HEX_CHARS_LOWER[(byte & 0x0f) as usize];
     (hi, lo)
 }
 
 /// Hex encode a byte slice into the destination byte slice.
 #[inline(always)]
+#[allow(clippy::integer_arithmetic)] // debug only assertion
 fn hex_encode(src: &[u8], dst: &mut [u8]) {
     debug_checked_precondition!(dst.len() == 2 * src.len());
 

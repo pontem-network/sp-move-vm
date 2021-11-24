@@ -132,7 +132,7 @@ impl TestDiemCryptoHasher {
     fn new() -> Self {
         let name = crate::serde_name::trace_name::<TestDiemCrypto>()
             .expect("The `CryptoHasher` macro only applies to structs and enums");
-        TestDiemCryptoHasher(crate::hash::DefaultHasher::new(&name.as_bytes()))
+        TestDiemCryptoHasher(crate::hash::DefaultHasher::new(name.as_bytes()))
     }
 }
 
@@ -154,7 +154,7 @@ impl crate::hash::CryptoHasher for TestDiemCryptoHasher {
             let name = crate::serde_name::trace_name::<TestDiemCrypto>()
                 .expect("The `CryptoHasher` macro only applies to structs and enums.")
                 .as_bytes();
-            crate::hash::DefaultHasher::prefixed_hash(&name)
+            crate::hash::DefaultHasher::prefixed_hash(name)
         })
     }
     fn update(&mut self, bytes: &[u8]) {

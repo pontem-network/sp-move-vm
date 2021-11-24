@@ -11,9 +11,9 @@
 # will likely look very different (and much more reasonable)
 
 [package]
-edition = "2018"
+edition = "2021"
 name = "bcs"
-version = "0.1.1"
+version = "0.1.3"
 authors = ["Diem <opensource@diem.com>"]
 description = "Binary Canonical Serialization (BCS)"
 homepage = "https://diem.com"

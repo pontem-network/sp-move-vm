@@ -212,6 +212,14 @@ impl HashValue {
         hash
     }
 
+    /// Returns the `index`-th nibble in the bytes.
+    pub fn nibble(&self, index: usize) -> u8 {
+        assume!(index < Self::LENGTH * 2); // assumed precondition
+        let pos = index / 2;
+        let shift = if index % 2 == 0 { 4 } else { 0 };
+        (self.hash[pos] >> shift) & 0x0f
+    }
+
     /// Returns a `HashValueBitIterator` over all the bits that represent this `HashValue`.
     pub fn iter_bits(&self) -> HashValueBitIterator<'_> {
         HashValueBitIterator::new(self)
@@ -247,11 +255,28 @@ impl HashValue {
         format!("{:x}", self)
     }
 
+    /// Full hex representation of a given hash value with `0x` prefix.
+    pub fn to_hex_literal(&self) -> String {
+        format!("{:#x}", self)
+    }
+
     /// Parse a given hex string to a hash value.
     pub fn from_hex<T: AsRef<[u8]>>(hex: T) -> Result<Self, HashValueParseError> {
         <[u8; Self::LENGTH]>::from_hex(hex)
             .map_err(|_| HashValueParseError)
             .map(Self::new)
+    }
+
+    /// Create a hash value whose contents are just the given integer. Useful for
+    /// generating basic mock hash values.
+    ///
+    /// Ex: HashValue::from_u64(0x1234) => HashValue([0, .., 0, 0x12, 0x34])
+    #[cfg(any(test, feature = "fuzzing"))]
+    pub fn from_u64(v: u64) -> Self {
+        let mut hash = [0u8; Self::LENGTH];
+        let bytes = v.to_be_bytes();
+        hash[Self::LENGTH - bytes.len()..].copy_from_slice(&bytes[..]);
+        Self::new(hash)
     }
 }
 
@@ -294,6 +319,9 @@ impl fmt::Binary for HashValue {
 
 impl fmt::LowerHex for HashValue {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
         for byte in &self.hash {
             write!(f, "{:02x}", byte)?;
         }
@@ -419,6 +447,13 @@ pub trait CryptoHasher: Default + std::io::Write {
 
     /// Finish constructing the [`HashValue`].
     fn finish(self) -> HashValue;
+
+    /// Convenience method to compute the hash of a complete byte slice.
+    fn hash_all(bytes: &[u8]) -> HashValue {
+        let mut hasher = Self::default();
+        hasher.update(bytes);
+        hasher.finish()
+    }
 }
 
 /// A trait for representing the state of a cryptographic hasher.
