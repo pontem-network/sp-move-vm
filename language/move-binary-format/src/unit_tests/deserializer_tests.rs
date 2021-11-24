@@ -216,8 +216,8 @@ fn malformed_simple() {
     );
 
     // versioned tests
-    for version in &[VERSION_1, VERSION_2] {
-        malformed_simple_versioned_test(*version);
+    for version in VERSION_1..VERSION_MAX {
+        malformed_simple_versioned_test(version);
     }
 }
 
@@ -227,4 +227,17 @@ static EMPTY_SCRIPT: &[u8] = include_bytes!("../../../../types/src/test_helpers/
 #[test]
 fn deserialize_file() {
     CompiledScript::deserialize(EMPTY_SCRIPT).expect("script should deserialize properly");
+}
+
+// An invalid script that is missing a signature should not deserialize successfully.
+static INVALID_SCRIPT_NO_SIGNATURE: &[u8] = include_bytes!("invalid_script_no_signature.mv");
+
+#[test]
+fn deserialize_invalid_script_no_signature() {
+    assert_eq!(
+        CompiledScript::deserialize(INVALID_SCRIPT_NO_SIGNATURE)
+            .unwrap_err()
+            .major_status(),
+        StatusCode::INDEX_OUT_OF_BOUNDS
+    );
 }

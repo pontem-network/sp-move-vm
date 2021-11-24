@@ -14,16 +14,17 @@ use crate::{
     proptest_types::{
         prop_index_avoid,
         signature::{AbilitySetGen, SignatureGen, SignatureTokenGen},
+        TableSize,
     },
 };
-use alloc::collections::BTreeSet;
-use core::hash::Hash;
-use hashbrown::{HashMap, HashSet};
 use proptest::{
     collection::{vec, SizeRange},
     prelude::*,
     sample::{select, Index as PropIndex},
 };
+use alloc::collections::BTreeSet;
+use core::hash::Hash;
+use hashbrown::{HashMap, HashSet};
 
 #[derive(Debug, Default)]
 struct SignatureState {
@@ -85,16 +86,16 @@ impl FieldHandleState {
 #[derive(Debug)]
 #[allow(unused)]
 struct InstantiationState<T>
-where
-    T: Eq + Clone + Hash,
+    where
+        T: Eq + Clone + Hash,
 {
     instantiations: Vec<T>,
     instantiation_map: HashMap<T, TableIndex>,
 }
 
 impl<T> InstantiationState<T>
-where
-    T: Eq + Clone + Hash,
+    where
+        T: Eq + Clone + Hash,
 {
     fn new() -> Self {
         InstantiationState {
@@ -121,7 +122,7 @@ where
     }
 }
 
-/// Represents state required to materialize final data structures for function definitions.
+/// Represents state required to materialize final data structures for function handles.
 #[derive(Debug)]
 pub struct FnHandleMaterializeState<'a> {
     self_module_handle_idx: ModuleHandleIndex,
@@ -138,13 +139,14 @@ impl<'a> FnHandleMaterializeState<'a> {
         module_handles_len: usize,
         identifiers_len: usize,
         struct_handles: &'a [StructHandle],
+        signatures: Vec<Signature>,
     ) -> Self {
         Self {
             self_module_handle_idx,
             module_handles_len,
             identifiers_len,
             struct_handles,
-            signatures: SignatureState::default(),
+            signatures: SignatureState::new(signatures),
             function_handles: HashSet::new(),
         }
     }
@@ -300,7 +302,10 @@ impl<'a> FnDefnMaterializeState<'a> {
         FunctionHandleIndex((self.function_handles.len() - 1) as TableIndex)
     }
 
-    fn get_signature_from_type_params(&mut self, abilities: &[AbilitySet]) -> Signature {
+    fn get_signature_from_type_params(
+        &mut self,
+        abilities: impl IntoIterator<Item = AbilitySet>,
+    ) -> Signature {
         let mut type_params = vec![];
         for abs in abilities {
             assert!(!abs.has_key());
@@ -312,14 +317,17 @@ impl<'a> FnDefnMaterializeState<'a> {
         Signature(type_params)
     }
 
-    fn add_signature_from_type_params(&mut self, abilities: &[AbilitySet]) -> SignatureIndex {
+    fn add_signature_from_type_params(
+        &mut self,
+        abilities: impl IntoIterator<Item = AbilitySet>,
+    ) -> SignatureIndex {
         let sig = self.get_signature_from_type_params(abilities);
         self.signatures.add_signature(sig)
     }
 
     fn get_function_instantiation(&mut self, fh_idx: usize) -> FunctionInstantiationIndex {
         let abilities = self.function_handles[fh_idx].type_parameters.clone();
-        let sig_idx = self.add_signature_from_type_params(&abilities);
+        let sig_idx = self.add_signature_from_type_params(abilities.iter().copied());
         let fi = FunctionInstantiation {
             handle: FunctionHandleIndex(fh_idx as TableIndex),
             type_parameters: sig_idx,
@@ -329,10 +337,8 @@ impl<'a> FnDefnMaterializeState<'a> {
 
     fn get_type_instantiation(&mut self, sd_idx: usize) -> StructDefInstantiationIndex {
         let sd = &self.struct_defs[sd_idx];
-        let type_parameters = self.struct_handles[sd.struct_handle.0 as usize]
-            .type_parameters
-            .clone();
-        let sig_idx = self.add_signature_from_type_params(&type_parameters);
+        let struct_handle = &self.struct_handles[sd.struct_handle.0 as usize];
+        let sig_idx = self.add_signature_from_type_params(struct_handle.type_param_constraints());
         let si = StructDefInstantiation {
             def: StructDefinitionIndex(sd_idx as TableIndex),
             type_parameters: sig_idx,
@@ -494,6 +500,15 @@ enum BytecodeGen {
     StLoc(PropIndex),
     MutBorrowLoc(PropIndex),
     ImmBorrowLoc(PropIndex),
+
+    VecPack((PropIndex, u64)),
+    VecLen(PropIndex),
+    VecImmBorrow(PropIndex),
+    VecMutBorrow(PropIndex),
+    VecPushBack(PropIndex),
+    VecPopBack(PropIndex),
+    VecUnpack((PropIndex, u64)),
+    VecSwap(PropIndex),
 }
 
 impl BytecodeGen {
@@ -523,6 +538,14 @@ impl BytecodeGen {
             any::<PropIndex>().prop_map(StLoc),
             any::<PropIndex>().prop_map(MutBorrowLoc),
             any::<PropIndex>().prop_map(ImmBorrowLoc),
+            (any::<PropIndex>(), any::<u64>()).prop_map(VecPack),
+            any::<PropIndex>().prop_map(VecLen),
+            any::<PropIndex>().prop_map(VecImmBorrow),
+            any::<PropIndex>().prop_map(VecMutBorrow),
+            any::<PropIndex>().prop_map(VecPushBack),
+            any::<PropIndex>().prop_map(VecPopBack),
+            (any::<PropIndex>(), any::<u64>()).prop_map(VecUnpack),
+            any::<PropIndex>().prop_map(VecSwap),
         ]
     }
 
@@ -553,13 +576,13 @@ impl BytecodeGen {
                     field: field.index(*field_count) as TableIndex,
                 });
 
-                let type_parameters = &state.struct_handles
-                    [state.struct_defs[sd_idx].struct_handle.0 as usize]
-                    .type_parameters;
-                if type_parameters.is_empty() {
+                let struct_handle =
+                    &state.struct_handles[state.struct_defs[sd_idx].struct_handle.0 as usize];
+                if struct_handle.type_parameters.is_empty() {
                     Bytecode::MutBorrowField(fh_idx)
                 } else {
-                    let sig_idx = state.add_signature_from_type_params(&type_parameters.clone());
+                    let sig_idx = state
+                        .add_signature_from_type_params(struct_handle.type_param_constraints());
                     let fi_idx = state
                         .field_instantiations
                         .add_instantiation(FieldInstantiation {
@@ -580,13 +603,13 @@ impl BytecodeGen {
                     field: field.index(*field_count) as TableIndex,
                 });
 
-                let type_parameters = &state.struct_handles
-                    [state.struct_defs[sd_idx].struct_handle.0 as usize]
-                    .type_parameters;
-                if type_parameters.is_empty() {
+                let struct_handle =
+                    &state.struct_handles[state.struct_defs[sd_idx].struct_handle.0 as usize];
+                if struct_handle.type_parameters.is_empty() {
                     Bytecode::ImmBorrowField(fh_idx)
                 } else {
-                    let sig_idx = state.add_signature_from_type_params(&type_parameters.clone());
+                    let sig_idx = state
+                        .add_signature_from_type_params(struct_handle.type_param_constraints());
                     let fi_idx = state
                         .field_instantiations
                         .add_instantiation(FieldInstantiation {
@@ -752,9 +775,126 @@ impl BytecodeGen {
                 }
                 Bytecode::ImmBorrowLoc(idx.index(locals_signature.len()) as LocalIndex)
             }
+            BytecodeGen::VecPack((idx, num)) => {
+                let sigs_len = state.signatures.signatures.len();
+                if sigs_len == 0 {
+                    return None;
+                }
+                let sig_idx = idx.index(sigs_len);
+                let sig = &state.signatures.signatures[sig_idx];
+                if !BytecodeGen::is_valid_vector_element_sig(sig) {
+                    return None;
+                }
+                Bytecode::VecPack(SignatureIndex(sig_idx as TableIndex), num)
+            }
+            BytecodeGen::VecLen(idx) => {
+                let sigs_len = state.signatures.signatures.len();
+                if sigs_len == 0 {
+                    return None;
+                }
+                let sig_idx = idx.index(sigs_len);
+                let sig = &state.signatures.signatures[sig_idx];
+                if !BytecodeGen::is_valid_vector_element_sig(sig) {
+                    return None;
+                }
+                Bytecode::VecLen(SignatureIndex(sig_idx as TableIndex))
+            }
+            BytecodeGen::VecImmBorrow(idx) => {
+                let sigs_len = state.signatures.signatures.len();
+                if sigs_len == 0 {
+                    return None;
+                }
+                let sig_idx = idx.index(sigs_len);
+                let sig = &state.signatures.signatures[sig_idx];
+                if !BytecodeGen::is_valid_vector_element_sig(sig) {
+                    return None;
+                }
+                Bytecode::VecImmBorrow(SignatureIndex(sig_idx as TableIndex))
+            }
+            BytecodeGen::VecMutBorrow(idx) => {
+                let sigs_len = state.signatures.signatures.len();
+                if sigs_len == 0 {
+                    return None;
+                }
+                let sig_idx = idx.index(sigs_len);
+                let sig = &state.signatures.signatures[sig_idx];
+                if !BytecodeGen::is_valid_vector_element_sig(sig) {
+                    return None;
+                }
+                Bytecode::VecMutBorrow(SignatureIndex(sig_idx as TableIndex))
+            }
+            BytecodeGen::VecPushBack(idx) => {
+                let sigs_len = state.signatures.signatures.len();
+                if sigs_len == 0 {
+                    return None;
+                }
+                let sig_idx = idx.index(sigs_len);
+                let sig = &state.signatures.signatures[sig_idx];
+                if !BytecodeGen::is_valid_vector_element_sig(sig) {
+                    return None;
+                }
+                Bytecode::VecPushBack(SignatureIndex(sig_idx as TableIndex))
+            }
+            BytecodeGen::VecPopBack(idx) => {
+                let sigs_len = state.signatures.signatures.len();
+                if sigs_len == 0 {
+                    return None;
+                }
+                let sig_idx = idx.index(sigs_len);
+                let sig = &state.signatures.signatures[sig_idx];
+                if !BytecodeGen::is_valid_vector_element_sig(sig) {
+                    return None;
+                }
+                Bytecode::VecPopBack(SignatureIndex(sig_idx as TableIndex))
+            }
+            BytecodeGen::VecUnpack((idx, num)) => {
+                let sigs_len = state.signatures.signatures.len();
+                if sigs_len == 0 {
+                    return None;
+                }
+                let sig_idx = idx.index(sigs_len);
+                let sig = &state.signatures.signatures[sig_idx];
+                if !BytecodeGen::is_valid_vector_element_sig(sig) {
+                    return None;
+                }
+                Bytecode::VecUnpack(SignatureIndex(sig_idx as TableIndex), num)
+            }
+            BytecodeGen::VecSwap(idx) => {
+                let sigs_len = state.signatures.signatures.len();
+                if sigs_len == 0 {
+                    return None;
+                }
+                let sig_idx = idx.index(sigs_len);
+                let sig = &state.signatures.signatures[sig_idx];
+                if !BytecodeGen::is_valid_vector_element_sig(sig) {
+                    return None;
+                }
+                Bytecode::VecSwap(SignatureIndex(sig_idx as TableIndex))
+            }
         };
 
         Some(bytecode)
+    }
+
+    /// Checks if the given type is well defined in the given context.
+    /// No references are permitted.
+    fn check_signature_token(token: &SignatureToken) -> bool {
+        use SignatureToken::*;
+        match token {
+            U8 | U64 | U128 | Bool | Address | Signer | Struct(_) | TypeParameter(_) => true,
+            Vector(element_token) => BytecodeGen::check_signature_token(element_token),
+            StructInstantiation(_, type_arguments) => type_arguments
+                .iter()
+                .all(|ty| BytecodeGen::check_signature_token(ty)),
+            Reference(_) | MutableReference(_) => false,
+        }
+    }
+
+    fn is_valid_vector_element_sig(sig: &Signature) -> bool {
+        if sig.len() != 1 {
+            return false;
+        }
+        BytecodeGen::check_signature_token(&sig.0[0])
     }
 
     fn simple_bytecode_strategy() -> impl Strategy<Value = Bytecode> {

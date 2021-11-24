@@ -7,23 +7,45 @@
 //! `CompiledModule`. The entry points are exposed on the main structs `CompiledScript` and
 //! `CompiledModule`.
 
-use crate::{file_format::*, file_format_common::*};
+use crate::{compat, errors::PartialVMError, file_format::*, file_format_common::*};
 use alloc::vec::Vec;
 use anyhow::{bail, Result};
-use move_core_types::{account_address::AccountAddress, identifier::Identifier};
+use move_core_types::{
+    account_address::AccountAddress, identifier::Identifier, vm_status::StatusCode,
+};
 
 impl CompiledScript {
     /// Serializes a `CompiledScript` into a binary. The mutable `Vec<u8>` will contain the
     /// binary blob on return.
     pub fn serialize(&self, binary: &mut Vec<u8>) -> Result<()> {
-        self.as_inner().serialize(binary)
+        let mut binary_data = BinaryData::from(binary.clone());
+        let mut ser = ScriptSerializer::new(VERSION_MAX);
+        let mut temp = BinaryData::new();
+
+        ser.common.serialize_common_tables(&mut temp, self)?;
+        if temp.len() > TABLE_CONTENT_SIZE_MAX as usize {
+            bail!(
+                "table content size ({}) cannot exceed ({})",
+                temp.len(),
+                TABLE_CONTENT_SIZE_MAX
+            );
+        }
+        ser.common.serialize_header(&mut binary_data)?;
+        ser.common.serialize_table_indices(&mut binary_data)?;
+
+        binary_data.extend(temp.as_inner())?;
+
+        ser.serialize_main(&mut binary_data, self)?;
+
+        *binary = binary_data.into_inner();
+        Ok(())
     }
 }
 
 fn write_as_uleb128<T1, T2>(binary: &mut BinaryData, x: T1, max: T2) -> Result<()>
-where
-    T1: Into<u64>,
-    T2: Into<u64>,
+    where
+        T1: Into<u64>,
+        T2: Into<u64>,
 {
     let x: u64 = x.into();
     let max: u64 = max.into();
@@ -152,49 +174,9 @@ fn serialize_local_index(binary: &mut BinaryData, idx: u8) -> Result<()> {
     write_as_uleb128(binary, idx, LOCAL_INDEX_MAX)
 }
 
-impl CompiledScriptMut {
-    /// Serializes this into a binary format.
-    ///
-    /// This is intended mainly for test code. Production code will typically use
-    /// [`CompiledScript::serialize`].
-    pub fn serialize(&self, binary: &mut Vec<u8>) -> Result<()> {
-        let mut binary_data = BinaryData::from(binary.clone());
-        let mut ser = ScriptSerializer::new(VERSION_MAX);
-        let mut temp = BinaryData::new();
-
-        ser.common.serialize_common_tables(&mut temp, self)?;
-        if temp.len() > TABLE_CONTENT_SIZE_MAX as usize {
-            bail!(
-                "table content size ({}) cannot exceed ({})",
-                temp.len(),
-                TABLE_CONTENT_SIZE_MAX
-            );
-        }
-        ser.common.serialize_header(&mut binary_data)?;
-        ser.common.serialize_table_indices(&mut binary_data)?;
-
-        binary_data.extend(temp.as_inner())?;
-
-        ser.serialize_main(&mut binary_data, self)?;
-
-        *binary = binary_data.into_inner();
-        Ok(())
-    }
-}
-
 impl CompiledModule {
     /// Serializes a `CompiledModule` into a binary. The mutable `Vec<u8>` will contain the
     /// binary blob on return.
-    pub fn serialize(&self, binary: &mut Vec<u8>) -> Result<()> {
-        self.as_inner().serialize(binary)
-    }
-}
-
-impl CompiledModuleMut {
-    /// Serializes this into a binary format.
-    ///
-    /// This is intended mainly for test code. Production code will typically use
-    /// [`CompiledModule::serialize`].
     pub fn serialize(&self, binary: &mut Vec<u8>) -> Result<()> {
         let mut binary_data = BinaryData::from(binary.clone());
         let mut ser = ModuleSerializer::new(VERSION_MAX);
@@ -215,6 +197,7 @@ impl CompiledModuleMut {
         serialize_module_handle_index(&mut binary_data, &self.self_module_handle_idx)?;
 
         *binary = binary_data.into_inner();
+
         Ok(())
     }
 }
@@ -306,7 +289,7 @@ trait CommonTables {
     fn get_signatures(&self) -> &[Signature];
 }
 
-impl CommonTables for CompiledScriptMut {
+impl CommonTables for CompiledScript {
     fn get_module_handles(&self) -> &[ModuleHandle] {
         &self.module_handles
     }
@@ -340,7 +323,7 @@ impl CommonTables for CompiledScriptMut {
     }
 }
 
-impl CommonTables for CompiledModuleMut {
+impl CommonTables for CompiledModule {
     fn get_module_handles(&self) -> &[ModuleHandle] {
         &self.module_handles
     }
@@ -395,7 +378,26 @@ fn serialize_struct_handle(binary: &mut BinaryData, struct_handle: &StructHandle
     serialize_module_handle_index(binary, &struct_handle.module)?;
     serialize_identifier_index(binary, &struct_handle.name)?;
     serialize_ability_set(binary, struct_handle.abilities)?;
-    serialize_ability_sets(binary, &struct_handle.type_parameters)
+    serialize_type_parameters(binary, &struct_handle.type_parameters)
+}
+
+fn serialize_type_parameters(
+    binary: &mut BinaryData,
+    type_parameters: &[StructTypeParameter],
+) -> Result<()> {
+    serialize_type_parameter_count(binary, type_parameters.len())?;
+    for type_param in type_parameters {
+        serialize_type_parameter(binary, type_param)?;
+    }
+    Ok(())
+}
+
+fn serialize_type_parameter(
+    binary: &mut BinaryData,
+    type_param: &StructTypeParameter,
+) -> Result<()> {
+    serialize_ability_set(binary, type_param.constraints)?;
+    write_as_uleb128(binary, type_param.is_phantom as u8, 1u64)
 }
 
 /// Serializes a `FunctionHandle`.
@@ -842,6 +844,40 @@ fn serialize_instruction_inner(binary: &mut BinaryData, opcode: &Bytecode) -> Re
             binary.push(Opcodes::MOVE_TO_GENERIC as u8)?;
             serialize_struct_def_inst_index(binary, class_idx)
         }
+        Bytecode::VecPack(sig_idx, num) => {
+            binary.push(Opcodes::VEC_PACK as u8)?;
+            serialize_signature_index(binary, sig_idx)?;
+            write_u64(binary, *num)
+        }
+        Bytecode::VecLen(sig_idx) => {
+            binary.push(Opcodes::VEC_LEN as u8)?;
+            serialize_signature_index(binary, sig_idx)
+        }
+        Bytecode::VecImmBorrow(sig_idx) => {
+            binary.push(Opcodes::VEC_IMM_BORROW as u8)?;
+            serialize_signature_index(binary, sig_idx)
+        }
+        Bytecode::VecMutBorrow(sig_idx) => {
+            binary.push(Opcodes::VEC_MUT_BORROW as u8)?;
+            serialize_signature_index(binary, sig_idx)
+        }
+        Bytecode::VecPushBack(sig_idx) => {
+            binary.push(Opcodes::VEC_PUSH_BACK as u8)?;
+            serialize_signature_index(binary, sig_idx)
+        }
+        Bytecode::VecPopBack(sig_idx) => {
+            binary.push(Opcodes::VEC_POP_BACK as u8)?;
+            serialize_signature_index(binary, sig_idx)
+        }
+        Bytecode::VecUnpack(sig_idx, num) => {
+            binary.push(Opcodes::VEC_UNPACK as u8)?;
+            serialize_signature_index(binary, sig_idx)?;
+            write_u64(binary, *num)
+        }
+        Bytecode::VecSwap(sig_idx) => {
+            binary.push(Opcodes::VEC_SWAP as u8)?;
+            serialize_signature_index(binary, sig_idx)
+        }
     };
     res?;
     Ok(())
@@ -1112,11 +1148,7 @@ impl ModuleSerializer {
         }
     }
 
-    fn serialize_tables(
-        &mut self,
-        binary: &mut BinaryData,
-        module: &CompiledModuleMut,
-    ) -> Result<()> {
+    fn serialize_tables(&mut self, binary: &mut BinaryData, module: &CompiledModule) -> Result<()> {
         self.common.serialize_common_tables(binary, module)?;
         self.serialize_struct_definitions(binary, &module.struct_defs)?;
         self.serialize_struct_def_instantiations(binary, &module.struct_def_instantiations)?;
@@ -1277,11 +1309,7 @@ impl ScriptSerializer {
     }
 
     /// Serializes the main function.
-    fn serialize_main(
-        &mut self,
-        binary: &mut BinaryData,
-        script: &CompiledScriptMut,
-    ) -> Result<()> {
+    fn serialize_main(&mut self, binary: &mut BinaryData, script: &CompiledScript) -> Result<()> {
         serialize_ability_sets(binary, &script.type_parameters)?;
         serialize_signature_index(binary, &script.parameters)?;
         serialize_code_unit(binary, &script.code)?;

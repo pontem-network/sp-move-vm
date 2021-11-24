@@ -1,6 +1,5 @@
 [workspace]
 members = [
-    "common/num-variants",
     "common/short-hex-str",
     "common/cell",
     "crypto/crypto",

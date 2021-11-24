@@ -91,8 +91,8 @@ impl ResourceKey {
 #[cfg_attr(any(test, feature = "fuzzing"), derive(Arbitrary))]
 #[cfg_attr(any(test, feature = "fuzzing"), proptest(no_params))]
 pub struct ModuleId {
-    pub address: AccountAddress,
-    pub name: Identifier,
+    address: AccountAddress,
+    name: Identifier,
 }
 
 impl From<ModuleId> for (AccountAddress, Identifier) {
@@ -152,13 +152,25 @@ impl Display for TypeTag {
     fn fmt(&self, f: &mut Formatter) -> core::fmt::Result {
         match self {
             TypeTag::Struct(s) => write!(f, "{}", s),
-            TypeTag::Vector(ty) => write!(f, "Vector<{}>", ty),
-            TypeTag::U8 => write!(f, "U8"),
-            TypeTag::U64 => write!(f, "U64"),
-            TypeTag::U128 => write!(f, "U128"),
-            TypeTag::Address => write!(f, "Address"),
-            TypeTag::Signer => write!(f, "Signer"),
-            TypeTag::Bool => write!(f, "Bool"),
+            TypeTag::Vector(ty) => write!(f, "vector<{}>", ty),
+            TypeTag::U8 => write!(f, "u8"),
+            TypeTag::U64 => write!(f, "u64"),
+            TypeTag::U128 => write!(f, "u128"),
+            TypeTag::Address => write!(f, "address"),
+            TypeTag::Signer => write!(f, "signer"),
+            TypeTag::Bool => write!(f, "bool"),
         }
+    }
+}
+
+impl Display for ResourceKey {
+    fn fmt(&self, f: &mut Formatter) -> core::fmt::Result {
+        write!(f, "0x{}/{}", self.address.short_str_lossless(), self.type_)
+    }
+}
+
+impl From<StructTag> for TypeTag {
+    fn from(t: StructTag) -> TypeTag {
+        TypeTag::Struct(t)
     }
 }

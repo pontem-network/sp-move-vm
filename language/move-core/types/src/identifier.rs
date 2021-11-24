@@ -32,6 +32,7 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use anyhow::{bail, Error, Result};
 use core::{borrow::Borrow, fmt, ops::Deref};
+use core::str::FromStr;
 use parity_scale_codec::{Decode, Encode};
 use parity_scale_codec::{Error as PsError, Input, Output};
 #[cfg(any(test, feature = "fuzzing"))]
@@ -144,6 +145,14 @@ impl Identifier {
     }
 }
 
+impl FromStr for Identifier {
+    type Err = anyhow::Error;
+
+    fn from_str(data: &str) -> Result<Self> {
+        Self::new(data)
+    }
+}
+
 impl From<&IdentStr> for Identifier {
     fn from(ident_str: &IdentStr) -> Self {
         ident_str.to_owned()
@@ -241,10 +250,6 @@ impl IdentStr {
     /// Converts `self` to a byte slice.
     pub fn as_bytes(&self) -> &[u8] {
         self.0.as_bytes()
-    }
-
-    pub fn to_owned(&self) -> Identifier {
-        Identifier(self.0.into())
     }
 }
 

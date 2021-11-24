@@ -195,6 +195,14 @@ pub enum Opcodes {
     IMM_BORROW_GLOBAL_GENERIC   = 0x3D,
     MOVE_FROM_GENERIC           = 0x3E,
     MOVE_TO_GENERIC             = 0x3F,
+    VEC_PACK                    = 0x40,
+    VEC_LEN                     = 0x41,
+    VEC_IMM_BORROW              = 0x42,
+    VEC_MUT_BORROW              = 0x43,
+    VEC_PUSH_BACK               = 0x44,
+    VEC_POP_BACK                = 0x45,
+    VEC_UNPACK                  = 0x46,
+    VEC_SWAP                    = 0x47,
 }
 
 /// Upper limit on the binary size
@@ -353,16 +361,23 @@ pub const VERSION_1: u32 = 1;
 /// Version 2: changes compared with version 1
 ///  + function visibility stored in separate byte before the flags byte
 ///  + the flags byte now contains only the is_native information (at bit 0x2)
-///  + the "friend" visibility modifier
+///  + new visibility modifiers for "friend" and "script" functions
 ///  + friend list for modules
 pub const VERSION_2: u32 = 2;
 
+/// Version 3: changes compared with version 2
+///  + phantom type parameters
+pub const VERSION_3: u32 = 3;
+
+/// Version 4: changes compared with version 3
+///  + bytecode for vector operations
+pub const VERSION_4: u32 = 4;
+
 // Mark which version is the latest version
-pub const VERSION_MAX: u32 = VERSION_2;
+pub const VERSION_MAX: u32 = VERSION_4;
 
 pub mod versioned_data {
     use crate::{errors::*, file_format_common::*};
-    use anyhow::Result;
     use move_core_types::vm_status::StatusCode;
 
     pub struct VersionedBinary<'a> {
@@ -448,14 +463,6 @@ pub mod versioned_data {
                 version: self.version,
                 binary: self.cursor.get_ref(),
             }
-        }
-
-        pub fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
-            self.cursor.read(buf)
-        }
-
-        pub fn read_exact(&mut self, buf: &mut [u8]) -> Result<()> {
-            self.cursor.read_exact(buf)
         }
 
         pub fn read_u8(&mut self) -> Result<u8> {
@@ -567,6 +574,14 @@ pub fn instruction_key(instruction: &Bytecode) -> u8 {
         MoveFromGeneric(_) => Opcodes::MOVE_FROM_GENERIC,
         MoveTo(_) => Opcodes::MOVE_TO,
         MoveToGeneric(_) => Opcodes::MOVE_TO_GENERIC,
+        VecPack(..) => Opcodes::VEC_PACK,
+        VecLen(_) => Opcodes::VEC_LEN,
+        VecImmBorrow(_) => Opcodes::VEC_IMM_BORROW,
+        VecMutBorrow(_) => Opcodes::VEC_MUT_BORROW,
+        VecPushBack(_) => Opcodes::VEC_PUSH_BACK,
+        VecPopBack(_) => Opcodes::VEC_POP_BACK,
+        VecUnpack(..) => Opcodes::VEC_UNPACK,
+        VecSwap(_) => Opcodes::VEC_SWAP,
     };
     opcode as u8
 }
