@@ -2,18 +2,28 @@ use std::fs;
 use std::path::Path;
 use std::process::{Command, Stdio};
 
-const STDLIB_DIR_NAME: &str = "move-stdlib";
-const REPO: &str = "https://github.com/pontem-network/move-stdlib.git";
-const REV: &str = "34cedad7436f7dad6c9a521f3f6199324737d69f";
+const DIEM_STDLIB_DIR_NAME: &str = "diem-stdlib";
+const DIEM_REPO: &str = "https://github.com/pontem-network/diem-stdlib.git";
+const DIEM_STDLIB_REV: &str = "11609d0797dcedf6fac39f6d99ffaab1c40342da";
+
+const MOVE_STDLIB_DIR_NAME: &str = "move-stdlib";
+const MOVE_REPO: &str = "https://github.com/pontem-network/move-stdlib.git";
+const MOVE_STDLIB_REV: &str = "6349ac2e4a4926c1b79e2761d76c0d26adee3c6b";
+
 
 fn main() {
-    let path: &Path = STDLIB_DIR_NAME.as_ref();
+    clone_and_build(DIEM_STDLIB_DIR_NAME, DIEM_REPO, DIEM_STDLIB_REV);
+    clone_and_build(MOVE_STDLIB_DIR_NAME, MOVE_REPO, MOVE_STDLIB_REV);
+}
+
+fn clone_and_build(dir: &str, repo: &str, rev: &str) {
+    let path: &Path = dir.as_ref();
     if path.exists() {
         fs::remove_dir_all(path).unwrap();
     }
-    run(".", "git", &["clone", REPO]);
-    run(STDLIB_DIR_NAME, "git", &["checkout", REV]);
-    run(STDLIB_DIR_NAME, "dove", &["build", "-p"]);
+    run(".", "git", &["clone", repo]);
+    run(dir, "git", &["checkout", rev]);
+    run(dir, "dove", &["build", "-p"]);
 }
 
 pub fn run(path: &str, cmd: &str, args: &[&str]) {
@@ -25,6 +35,7 @@ pub fn run(path: &str, cmd: &str, args: &[&str]) {
         .unwrap()
         .wait()
         .unwrap();
+
     if !status.success() {
         panic!("Failed to run {} {} {:?}", path, cmd, args);
     }

@@ -1,8 +1,8 @@
 script {
-    use 0x1::DiemAccount;
-    use 0x1::PONT::PONT;
-    use 0x1::Signer;
-    use 0x1::Errors;
+    use DiemFramework::DiemAccount;
+    use DiemFramework::PONT::PONT;
+    use Std::Signer;
+    use Std::Errors;
 
     fun transfer(from: signer, to: signer, from_balance: u64, to_balance: u64, to_move: u64) {
         assert(DiemAccount::balance<PONT>(Signer::address_of(&from)) == from_balance, Errors::custom(0));

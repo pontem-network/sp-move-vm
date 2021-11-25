@@ -204,7 +204,7 @@ where
     fn _publish_module<R>(
         &self,
         session: &mut Session<'_, '_, R>,
-        module: Vec<u8>,
+        module: Vec<Vec<u8>>,
         sender: AccountAddress,
         cost_strategy: &mut GasStatus,
     ) -> VMResult<()>
@@ -212,8 +212,7 @@ where
         R: ModuleResolver<Error = Error> + ResourceResolver<Error = Error>,
     {
         cost_strategy.charge_intrinsic_gas(AbstractMemorySize::new(module.len() as u64))?;
-
-        let result = session.publish_module(module, sender, cost_strategy);
+        let result = session.publish_module_bundle(module, sender, cost_strategy);
         Self::charge_global_write_gas_usage(cost_strategy, session, &sender)?;
         result
     }
@@ -257,7 +256,7 @@ where
         let mut session = self.vm.new_session(&self.state);
 
         let result = self
-            ._publish_module(&mut session, module, sender, &mut cost_strategy)
+            ._publish_module(&mut session, vec![module], sender, &mut cost_strategy)
             .and_then(|_| session.finish().map(|(ws, e)| (ws, e, vec![])));
 
         self.handle_vm_result(sender, cost_strategy, gas, result, dry_run)
@@ -273,23 +272,12 @@ where
         let mut cost_strategy =
             GasStatus::new(&self.cost_table, GasUnits::new(gas.max_gas_amount()));
 
-        let vm = MoveVM::new(move_stdlib::natives::all_natives(CORE_CODE_ADDRESS))
-            .expect("Valid functions.");
-        let mut session = vm.new_session(&self.state);
+        let mut session = self.vm.new_session(&self.state);
+        let result = self
+            ._publish_module(&mut session, modules, sender, &mut cost_strategy)
+            .and_then(|_| session.finish().map(|(ws, e)| (ws, e, vec![])));
 
-        for module in modules {
-            if let Err(err) = self._publish_module(&mut session, module, sender, &mut cost_strategy)
-            {
-                return self.handle_vm_result(sender, cost_strategy, gas, Err(err), dry_run);
-            }
-        }
-        self.handle_vm_result(
-            sender,
-            cost_strategy,
-            gas,
-            session.finish().map(|(ws, e)| (ws, e, vec![])),
-            dry_run,
-        )
+        self.handle_vm_result(sender, cost_strategy, gas, result, dry_run)
     }
 
     fn execute_script(

@@ -1,3 +1,3 @@
-module 0x1::ScriptBook {
+module Assets::ScriptBook {
     public (script) fun test() {}
 }

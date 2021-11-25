@@ -342,6 +342,10 @@ pub struct ModulePackage {
 }
 
 impl ModulePackage {
+    pub fn join(&mut self, pac: ModulePackage) {
+        self.modules.extend(pac.modules);
+    }
+
     pub fn into_tx(self, address: AccountAddress) -> PublishPackageTx {
         PublishPackageTx {
             modules: self.modules,

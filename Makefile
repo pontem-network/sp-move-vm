@@ -6,4 +6,3 @@ build_wasm_std:
 
 tests:
 	cargo test --all --tests --no-fail-fast -- --test-threads=4 --nocapture
-

@@ -270,7 +270,7 @@ impl CurrencyInfo {
     }
 }
 
-#[derive(Ord, PartialOrd, Eq, PartialEq)]
+#[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
 pub enum BalanceOp {
     /// 'Sub' should be at first place, as Op codes will be sorted.
     Sub(AccountAddress, Cow<'static, CurrencyAccessPath>, Balance),

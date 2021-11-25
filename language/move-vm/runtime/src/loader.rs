@@ -629,7 +629,6 @@ impl Loader {
         for module in modules {
             let module_id = module.self_id();
             bundle_unverified.remove(&module_id);
-
             self.verify_module_for_publication(
                 module,
                 &bundle_verified,

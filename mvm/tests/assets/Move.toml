@@ -1,0 +1,19 @@
+[package]
+name = "assets"
+version = "0.0.1"
+authors = []
+dialect = "Pont"
+dove_version = ">=1.5.0"
+
+[addresses]
+Std = "0x1"
+DiemFramework = "0x1"
+Assets = "0x1"
+
+[dependencies.MoveStdlib]
+git = "https://github.com/pontem-network/diem-stdlib.git"
+rev = "main"
+
+[dependencies.move-stdlib]
+git = "https://github.com/pontem-network/move-stdlib.git"
+rev = "6349ac2e4a4926c1b79e2761d76c0d26adee3c6b"

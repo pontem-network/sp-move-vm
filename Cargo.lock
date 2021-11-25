@@ -1395,6 +1395,7 @@ dependencies = [
 name = "move-stdlib"
 version = "0.1.0"
 dependencies = [
+ "diem-crypto",
  "move-binary-format",
  "move-core-types",
  "move-vm-runtime",

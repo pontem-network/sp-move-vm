@@ -7,6 +7,8 @@ pub mod hash;
 pub mod signer;
 pub mod u256;
 pub mod vector;
+pub mod account;
+pub mod signature;
 
 #[cfg(feature = "testing")]
 pub mod unit_test;
@@ -56,6 +58,26 @@ pub fn all_natives(move_std_addr: AccountAddress) -> NativeFunctionTable {
         ("U256", "sub", u256::sub),
         ("U256", "mul", u256::mul),
         ("U256", "div", u256::div),
+        (
+            "DiemAccount",
+            "create_signer",
+            account::native_create_signer,
+        ),
+        (
+            "DiemAccount",
+            "destroy_signer",
+            account::native_destroy_signer,
+        ),
+        (
+            "Signature",
+            "ed25519_validate_pubkey",
+            signature::native_ed25519_publickey_validation,
+        ),
+        (
+            "Signature",
+            "ed25519_verify",
+            signature::native_ed25519_signature_verification,
+        ),
     ];
     NATIVES
         .iter()

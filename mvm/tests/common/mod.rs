@@ -3,7 +3,7 @@
 use diem_types::account_config::CORE_CODE_ADDRESS;
 use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::ModuleId;
-use move_vm_runtime::data_cache::MoveStorage;
+use move_core_types::resolver::ModuleResolver;
 use mvm::genesis::init_storage;
 use mvm::io::state::State;
 use mvm::mvm::Mvm;
