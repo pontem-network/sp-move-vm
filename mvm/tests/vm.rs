@@ -46,7 +46,7 @@ fn test_module_republication() {
 #[test]
 fn test_run_module_function() {
     let tx = Transaction::try_from(
-        &include_bytes!("assets/artifacts/transactions/ScriptBook_test.mvt")[..],
+        &include_bytes!("assets/build/assets/transaction/ScriptBook_test.mvt")[..],
     )
     .unwrap();
     let script = tx.into_script(vec![]).unwrap();
@@ -99,7 +99,6 @@ fn test_store_event() {
     vm.pub_mod(event_proxy_module());
 
     vm.exec(emit_event_script(addr("0x1"), test_value));
-
     let (guid, seq, tag, msg) = event.data.borrow_mut().remove(0);
     assert_eq!(
         guid,

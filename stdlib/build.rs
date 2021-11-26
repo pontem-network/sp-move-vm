@@ -8,7 +8,7 @@ const DIEM_STDLIB_REV: &str = "11609d0797dcedf6fac39f6d99ffaab1c40342da";
 
 const MOVE_STDLIB_DIR_NAME: &str = "move-stdlib";
 const MOVE_REPO: &str = "https://github.com/pontem-network/move-stdlib.git";
-const MOVE_STDLIB_REV: &str = "c1306f32a3c61059e98279ad4702132eca34d848";
+const MOVE_STDLIB_REV: &str = "7dc6877b76b841c096d248da367aeb78a6086c0e";
 
 
 fn main() {

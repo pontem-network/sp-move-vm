@@ -13,7 +13,7 @@ use mvm::types::{Call, ModulePackage, Transaction};
 #[test]
 fn test_parse_transaction() {
     let tx =
-        Transaction::try_from(&include_bytes!("assets/artifacts/transactions/tx_test.mvt")[..])
+        Transaction::try_from(&include_bytes!("assets/build/assets/transaction/tx_test.mvt")[..])
             .unwrap();
     assert_eq!(tx.signers_count(), 0);
     assert!(!tx.has_root_signer());
@@ -44,7 +44,7 @@ fn test_parse_transaction() {
 #[test]
 fn test_module_function() {
     let tx = Transaction::try_from(
-        &include_bytes!("assets/artifacts/transactions/ScriptBook_test.mvt")[..],
+        &include_bytes!("assets/build/assets/transaction/ScriptBook_test.mvt")[..],
     )
     .unwrap();
     assert_eq!(tx.signers_count(), 0);
@@ -68,7 +68,7 @@ fn test_module_function() {
 #[test]
 fn test_transaction_with_sys_signers() {
     let tx =
-        Transaction::try_from(&include_bytes!("assets/artifacts/transactions/rt_signers.mvt")[..])
+        Transaction::try_from(&include_bytes!("assets/build/assets/transaction/rt_signers.mvt")[..])
             .unwrap();
     assert_eq!(tx.signers_count(), 0);
     assert!(tx.has_root_signer());
@@ -86,7 +86,7 @@ fn test_transaction_with_sys_signers() {
     assert_eq!(script.signers(), &[diem_root_address()][..]);
 
     let tx =
-        Transaction::try_from(&include_bytes!("assets/artifacts/transactions/tr_signers.mvt")[..])
+        Transaction::try_from(&include_bytes!("assets/build/assets/transaction/tr_signers.mvt")[..])
             .unwrap();
     assert_eq!(tx.signers_count(), 0);
     assert!(!tx.has_root_signer());
@@ -107,7 +107,7 @@ fn test_transaction_with_sys_signers() {
     );
 
     let tx = Transaction::try_from(
-        &include_bytes!("assets/artifacts/transactions/tr_and_rt_signers.mvt")[..],
+        &include_bytes!("assets/build/assets/transaction/tr_and_rt_signers.mvt")[..],
     )
     .unwrap();
     assert_eq!(tx.signers_count(), 0);
@@ -129,7 +129,7 @@ fn test_transaction_with_sys_signers() {
     );
 
     let tx = Transaction::try_from(
-        &include_bytes!("assets/artifacts/transactions/signers_tr_and_rt_with_user.mvt")[..],
+        &include_bytes!("assets/build/assets/transaction/signers_tr_and_rt_with_user.mvt")[..],
     )
     .unwrap();
     assert_eq!(tx.signers_count(), 1);
@@ -159,7 +159,7 @@ fn test_transaction_with_sys_signers() {
 #[test]
 fn test_parse_mvt() {
     let tx =
-        Transaction::try_from(&include_bytes!("assets/artifacts/transactions/store_u64.mvt")[..])
+        Transaction::try_from(&include_bytes!("assets/build/assets/transaction/store_u64.mvt")[..])
             .unwrap();
     assert_eq!(tx.signers_count(), 1);
     let script = tx.into_script(vec![CORE_CODE_ADDRESS]).unwrap();
@@ -189,21 +189,22 @@ fn test_transaction_invalid_signer() {
 #[test]
 fn test_parse_pac() {
     let pac =
-        ModulePackage::try_from(&include_bytes!("assets/artifacts/bundles/valid_pack.pac")[..])
+        ModulePackage::try_from(&include_bytes!("assets/build/assets/bundles/valid_pack.pac")[..])
             .unwrap();
     let tx = pac.into_tx(CORE_CODE_ADDRESS);
     let (modules, address) = tx.into_inner();
 
     assert_eq!(address, CORE_CODE_ADDRESS);
 
-    let modules = modules
+    let mut modules = modules
         .iter()
         .map(|module| CompiledModule::deserialize(&module).unwrap())
         .map(|module| module.name().to_string())
         .collect::<Vec<_>>();
+    modules.sort();
     assert_eq!(
         modules.iter().map(|s| s.as_str()).collect::<Vec<_>>(),
-        vec!["Abort", "ScriptBook", "EventProxy", "Store", "Foo"]
+        vec!["Abort", "EventProxy", "Foo", "ScriptBook", "Store"]
     );
 }
 
@@ -213,7 +214,7 @@ fn test_module_abi() {
     use mvm::abi::Type::*;
     use mvm::abi::TypeAbility::*;
 
-    let bytecode = include_bytes!("assets/artifacts/modules/EventProxy.mv");
+    let bytecode = include_bytes!("assets/build/assets/bytecode_modules/EventProxy.mv");
     let abi = ModuleAbi::from(CompiledModule::deserialize(bytecode).unwrap());
     assert_eq!(
         abi,

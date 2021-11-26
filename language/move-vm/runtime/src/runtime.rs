@@ -8,15 +8,12 @@ use crate::{
     native_functions::{NativeFunction, NativeFunctions},
     session::Session,
 };
-use alloc::collections::BTreeSet;
 use alloc::string::ToString;
 use alloc::vec::Vec;
 use move_binary_format::{
     access::ModuleAccess,
-    compatibility::Compatibility,
     errors::{verification_error, Location, PartialVMError, PartialVMResult, VMResult},
-    file_format_common::VERSION_1,
-    normalized, CompiledModule, IndexKind,
+    file_format_common::VERSION_1, CompiledModule, IndexKind,
 };
 use move_core_types::{
     account_address::AccountAddress,
@@ -102,7 +99,7 @@ impl VMRuntime {
         }
 
         // Collect ids for modules that are published together
-        let mut bundle_unverified = BTreeSet::new();
+        //let mut bundle_unverified = BTreeSet::new();
 
         // For now, we assume that all modules can be republished, as long as the new module is
         // backward compatible with the old module.
@@ -112,22 +109,24 @@ impl VMRuntime {
         for module in &compiled_modules {
             let module_id = module.self_id();
             if data_store.exists_module(&module_id)? {
-                let old_module_ref = self.loader.load_module(&module_id, data_store)?;
-                let old_module = old_module_ref.module();
-                let old_m = normalized::Module::new(old_module);
-                let new_m = normalized::Module::new(module);
-                let compat = Compatibility::check(&old_m, &new_m);
-                if !compat.is_fully_compatible() {
-                    return Err(PartialVMError::new(
-                        StatusCode::BACKWARD_INCOMPATIBLE_MODULE_UPDATE,
-                    )
-                    .finish(Location::Undefined));
-                }
-            }
-            if !bundle_unverified.insert(module_id) {
                 return Err(PartialVMError::new(StatusCode::DUPLICATE_MODULE_NAME)
                     .finish(Location::Undefined));
+                // let old_module_ref = self.loader.load_module(&module_id, data_store)?;
+                // let old_module = old_module_ref.module();
+                // let old_m = normalized::Module::new(old_module);
+                // let new_m = normalized::Module::new(module);
+                // let compat = Compatibility::check(&old_m, &new_m);
+                // if !compat.is_fully_compatible() {
+                //     return Err(PartialVMError::new(
+                //         StatusCode::BACKWARD_INCOMPATIBLE_MODULE_UPDATE,
+                //     )
+                //     .finish(Location::Undefined));
+                // }
             }
+            // if !bundle_unverified.insert(module_id) {
+            //     return Err(PartialVMError::new(StatusCode::DUPLICATE_MODULE_NAME)
+            //         .finish(Location::Undefined));
+            // }
         }
 
         // Perform bytecode and loading verification. Modules must be sorted in topological order.

@@ -229,6 +229,8 @@ pub enum Signer {
     Treasury,
     /// Template to replace.
     Placeholder,
+    /// Named address.
+    Name(String),
 }
 
 /// Transaction model.
@@ -285,6 +287,9 @@ impl Transaction {
                     } else {
                         Err(anyhow!("Invalid signers count."))
                     }
+                }
+                Signer::Name(_) => {
+                    Err(anyhow!("The use of named addresses in a transaction is prohibited"))
                 }
             })
             .collect::<Result<Vec<_>, _>>()?;
