@@ -1,6 +1,9 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+use alloc::collections::VecDeque;
+use alloc::vec::Vec;
+use core::convert::TryFrom;
 use diem_crypto::{ed25519, traits::*};
 use move_binary_format::errors::PartialVMResult;
 use move_vm_runtime::native_functions::NativeContext;
@@ -12,9 +15,6 @@ use move_vm_types::{
     values::Value,
 };
 use smallvec::smallvec;
-use alloc::{collections::VecDeque};
-use core::convert::TryFrom;
-use alloc::vec::Vec;
 
 pub fn native_ed25519_publickey_validation(
     context: &mut NativeContext,

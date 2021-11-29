@@ -1,6 +1,8 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+use alloc::collections::VecDeque;
+use alloc::vec::Vec;
 use move_binary_format::errors::PartialVMResult;
 use move_core_types::account_address::AccountAddress;
 use move_vm_runtime::native_functions::NativeContext;
@@ -12,8 +14,6 @@ use move_vm_types::{
     values::Value,
 };
 use smallvec::smallvec;
-use alloc::collections::VecDeque;
-use alloc::vec::Vec;
 
 pub fn native_create_signer(
     context: &mut NativeContext,

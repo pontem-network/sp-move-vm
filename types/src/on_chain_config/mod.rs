@@ -2,10 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    access_path::AccessPath,
-    account_address::AccountAddress,
-    account_config::CORE_CODE_ADDRESS,
-    event::{EventHandle, EventKey},
+    access_path::AccessPath, account_address::AccountAddress, account_config::CORE_CODE_ADDRESS,
+    event::EventHandle,
 };
 use alloc::borrow::ToOwned;
 use alloc::sync::Arc;
@@ -16,7 +14,7 @@ use move_core_types::{
     ident_str,
     identifier::{IdentStr, Identifier},
     language_storage::{StructTag, TypeTag},
-    move_resource::{MoveResource, MoveStructType},
+    move_resource::MoveStructType,
 };
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
@@ -159,10 +157,6 @@ pub trait OnChainConfig: Send + Sync + DeserializeOwned {
     }
 }
 
-pub fn new_epoch_event_key() -> EventKey {
-    EventKey::new_from_address(&config_address(), 4)
-}
-
 pub fn access_path_for_config(address: AccountAddress, config_name: Identifier) -> AccessPath {
     AccessPath::new(
         address,
@@ -230,5 +224,3 @@ impl MoveStructType for ConfigurationResource {
     const MODULE_NAME: &'static IdentStr = ident_str!("DiemConfig");
     const STRUCT_NAME: &'static IdentStr = ident_str!("Configuration");
 }
-
-impl MoveResource for ConfigurationResource {}

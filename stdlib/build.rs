@@ -10,7 +10,6 @@ const MOVE_STDLIB_DIR_NAME: &str = "move-stdlib";
 const MOVE_REPO: &str = "https://github.com/pontem-network/move-stdlib.git";
 const MOVE_STDLIB_REV: &str = "7dc6877b76b841c096d248da367aeb78a6086c0e";
 
-
 fn main() {
     clone_and_build(DIEM_STDLIB_DIR_NAME, DIEM_REPO, DIEM_STDLIB_REV);
     clone_and_build(MOVE_STDLIB_DIR_NAME, MOVE_REPO, MOVE_STDLIB_REV);

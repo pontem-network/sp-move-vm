@@ -1,14 +1,14 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+pub mod account;
 pub mod bcs;
 pub mod event;
 pub mod hash;
+pub mod signature;
 pub mod signer;
 pub mod u256;
 pub mod vector;
-pub mod account;
-pub mod signature;
 
 #[cfg(feature = "testing")]
 pub mod unit_test;

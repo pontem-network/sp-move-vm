@@ -3,10 +3,10 @@ extern crate alloc;
 
 use common::mock::Utils;
 use common::{assets::*, contains_core_module, mock::*, vm};
-use diem_types::event::EventKey;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS};
+use move_core_types::resolver::{ModuleResolver, ResourceResolver};
 use move_core_types::vm_status::{AbortLocation, StatusCode, VMStatus};
 use mvm::io::balance::CurrencyInfo;
 use mvm::io::context::ExecutionContext;
@@ -16,7 +16,6 @@ use mvm::types::Gas;
 use mvm::types::Transaction;
 use mvm::Vm;
 use std::convert::TryFrom;
-use move_core_types::resolver::{ModuleResolver, ResourceResolver};
 
 mod common;
 
@@ -162,9 +161,9 @@ fn test_error_event() {
     );
 
     let (guid, seq, tag, msg) = events.pop().unwrap();
-    let key = EventKey::from_bytes(&guid).unwrap();
-    assert_eq!(sender, key.get_creator_address());
-    assert_eq!(0, key.get_creation_number());
+    let mut expected_guid = 0_u64.to_le_bytes().to_vec();
+    expected_guid.extend(sender.to_u8());
+    assert_eq!(expected_guid, guid);
     assert_eq!(0, seq);
 
     assert_eq!(

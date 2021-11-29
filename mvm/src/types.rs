@@ -1,4 +1,5 @@
 use alloc::vec::Vec;
+use alloc::string::String;
 use core::convert::TryFrom;
 use core::fmt;
 
@@ -288,9 +289,9 @@ impl Transaction {
                         Err(anyhow!("Invalid signers count."))
                     }
                 }
-                Signer::Name(_) => {
-                    Err(anyhow!("The use of named addresses in a transaction is prohibited"))
-                }
+                Signer::Name(_) => Err(anyhow!(
+                    "The use of named addresses in a transaction is prohibited"
+                )),
             })
             .collect::<Result<Vec<_>, _>>()?;
 

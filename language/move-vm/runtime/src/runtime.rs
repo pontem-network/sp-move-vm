@@ -13,7 +13,8 @@ use alloc::vec::Vec;
 use move_binary_format::{
     access::ModuleAccess,
     errors::{verification_error, Location, PartialVMError, PartialVMResult, VMResult},
-    file_format_common::VERSION_1, CompiledModule, IndexKind,
+    file_format_common::VERSION_1,
+    CompiledModule, IndexKind,
 };
 use move_core_types::{
     account_address::AccountAddress,

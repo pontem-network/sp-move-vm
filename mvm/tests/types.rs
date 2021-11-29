@@ -67,9 +67,10 @@ fn test_module_function() {
 
 #[test]
 fn test_transaction_with_sys_signers() {
-    let tx =
-        Transaction::try_from(&include_bytes!("assets/build/assets/transaction/rt_signers.mvt")[..])
-            .unwrap();
+    let tx = Transaction::try_from(
+        &include_bytes!("assets/build/assets/transaction/rt_signers.mvt")[..],
+    )
+    .unwrap();
     assert_eq!(tx.signers_count(), 0);
     assert!(tx.has_root_signer());
     assert!(!tx.has_treasury_signer());
@@ -85,9 +86,10 @@ fn test_transaction_with_sys_signers() {
     assert!(script.type_parameters().is_empty());
     assert_eq!(script.signers(), &[diem_root_address()][..]);
 
-    let tx =
-        Transaction::try_from(&include_bytes!("assets/build/assets/transaction/tr_signers.mvt")[..])
-            .unwrap();
+    let tx = Transaction::try_from(
+        &include_bytes!("assets/build/assets/transaction/tr_signers.mvt")[..],
+    )
+    .unwrap();
     assert_eq!(tx.signers_count(), 0);
     assert!(!tx.has_root_signer());
     assert!(tx.has_treasury_signer());

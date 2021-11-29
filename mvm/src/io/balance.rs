@@ -163,7 +163,7 @@ impl<
                             .get_currency_info(&bridge)
                             .map(|info| (val, info))
                     })
-                    .map(|(info, path)| path.apply(&info).unwrap()));
+                    .map(|(info, patch)| patch.apply(&info).unwrap()));
             }
         }
 

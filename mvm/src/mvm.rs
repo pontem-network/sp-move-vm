@@ -2,7 +2,6 @@ use alloc::vec::Vec;
 
 use anyhow::{anyhow, Error};
 
-use diem_types::event::EventKey;
 use diem_types::on_chain_config::{OnChainConfig, VMConfig};
 use move_binary_format::errors::{Location, VMError, VMResult};
 use move_core_types::account_address::AccountAddress;
@@ -196,7 +195,8 @@ where
         let msg = bcs::to_bytes(&status)
             .map_err(|err| Error::msg(format!("Failed to generate event message: {:?}", err)))?;
 
-        let guid = EventKey::new_from_address(&sender, 0).to_vec();
+        let mut guid = 0_u64.to_le_bytes().to_vec();
+        guid.extend(sender.to_u8());
         self.event_handler.on_event(guid, 0, tag, msg);
         Ok(())
     }

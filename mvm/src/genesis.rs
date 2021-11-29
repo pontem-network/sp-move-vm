@@ -29,8 +29,8 @@ use crate::types::{Gas, ModulePackage, PublishPackageTx};
 use crate::Vm;
 
 pub fn init_storage<S>(storage: S, config: GenesisConfig) -> Result<(), Error>
-    where
-        S: Storage,
+where
+    S: Storage,
 {
     let fork = StorageFork::new(storage);
     let vm_config = VMConfig {
@@ -73,15 +73,17 @@ pub struct GenesisConfig {
     // Standard library.
     pub init_func_config: Option<InitFuncConfig>,
     // Initialize function config.
-    cost_table: CostTable,                        // Cost table.
+    cost_table: CostTable, // Cost table.
 }
 
 impl Default for GenesisConfig {
     #[cfg(feature = "move_stdlib")]
     fn default() -> Self {
         use core::convert::TryFrom;
-        let mut diem_stdlib = ModulePackage::try_from(stdlib::diem_stdlib_package()).expect("Expected valid stdlib");
-        let move_stdlib = ModulePackage::try_from(stdlib::stdlib_package()).expect("Expected valid stdlib");
+        let mut diem_stdlib =
+            ModulePackage::try_from(stdlib::diem_stdlib_package()).expect("Expected valid stdlib");
+        let move_stdlib =
+            ModulePackage::try_from(stdlib::stdlib_package()).expect("Expected valid stdlib");
         diem_stdlib.join(move_stdlib);
         let stdlib = diem_stdlib.into_tx(CORE_CODE_ADDRESS);
 
@@ -101,9 +103,12 @@ impl Default for GenesisConfig {
                 args: serialize_values(&vec![
                     MoveValue::Signer(account_config::diem_root_address()), // dr_signer
                     MoveValue::Signer(account_config::treasury_compliance_account_address()), // tr_signer
-                    MoveValue::vector_u8(account_config::diem_root_address().to_u8()[20..].to_vec()), // dr_address
                     MoveValue::vector_u8(
-                        account_config::treasury_compliance_account_address().to_u8()[20..].to_vec(),
+                        account_config::diem_root_address().to_u8()[20..].to_vec(),
+                    ), // dr_address
+                    MoveValue::vector_u8(
+                        account_config::treasury_compliance_account_address().to_u8()[20..]
+                            .to_vec(),
                     ), // tr_address
                     MoveValue::Vector(vec![]), // Initial allow list.
                     MoveValue::Bool(true),
@@ -111,7 +116,7 @@ impl Default for GenesisConfig {
                     MoveValue::vector_u8(native_gas_costs),
                     MoveValue::U8(chain_id.id()),
                     MoveValue::U64(0),
-                    MoveValue::vector_u8(vec![])
+                    MoveValue::vector_u8(vec![]),
                 ]),
             }),
         }

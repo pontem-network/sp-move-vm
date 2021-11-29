@@ -55,7 +55,8 @@ pub fn store_sys_resources_script(
     addr_for_timestamp: AccountAddress,
 ) -> ScriptTx {
     ScriptTx::with_script(
-        include_bytes!("../assets/build/assets/bytecode_scripts/store_system_resources.mv").to_vec(),
+        include_bytes!("../assets/build/assets/bytecode_scripts/store_system_resources.mv")
+            .to_vec(),
         vec![],
         vec![],
         vec![addr_for_block, addr_for_timestamp],
