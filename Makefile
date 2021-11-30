@@ -4,5 +4,11 @@ build_wasm_no_std:
 build_wasm_std:
 	cd mvm; cargo +nightly build --package mvm --no-default-features --features="std,sp_check"
 
+clippy:
+	cargo clippy
+
 tests:
 	cargo test --all --tests --no-fail-fast -- --test-threads=4 --nocapture
+
+pre-compile: clippy tests build_wasm_std build_wasm_no_std
+	cargo build

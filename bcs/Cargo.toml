@@ -11,7 +11,7 @@
 # will likely look very different (and much more reasonable)
 
 [package]
-edition = "2021"
+edition = "2018"
 name = "bcs"
 version = "0.1.3"
 authors = ["Diem <opensource@diem.com>"]
