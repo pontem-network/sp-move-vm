@@ -22,39 +22,40 @@ mod bench {
         vm.pub_mod(store_module());
 
         let mut avg = Avg::default();
-        find_gas_per_seconds(5_650_000, 5_000, &vm, &mut avg, empty_loop, "empty_loop");
-        find_gas_per_seconds(15_000, 200, &vm, &mut avg, math_loop, "math_loop");
-        find_gas_per_seconds(
-            500_000,
-            5_000,
-            &vm,
-            &mut avg,
-            read_write_loop,
-            "read_write_loop",
-        );
-        find_gas_per_seconds(1000, 100, &vm, &mut avg, vector_loop, "vector_loop");
+        find_gas_per_seconds(&vm, &mut avg, empty_loop, "empty_loop");
+        find_gas_per_seconds(&vm, &mut avg, math_loop, "math_loop");
+        find_gas_per_seconds(&vm, &mut avg, read_write_loop, "read_write_loop");
+        find_gas_per_seconds(&vm, &mut avg, vector_loop, "vector_loop");
 
         println!("Gas avg: {}", avg);
     }
 
     fn find_gas_per_seconds<S>(
-        start: u64,
-        step: u64,
         vm: &Mvm<StorageMock, EventHandlerMock, BankMock>,
         avg: &mut Avg,
         script_supplier: S,
         name: &str,
+    ) where
+        S: Fn(u64) -> ScriptTx,
+    {
+        for _ in 0..20 {
+            let gas = calc_gas_per_seconds(vm, &script_supplier);
+            println!("Check script {}: gas: {}", name, gas);
+            avg.add(gas);
+        }
+    }
+
+    fn calc_gas_per_seconds<S>(
+        vm: &Mvm<StorageMock, EventHandlerMock, BankMock>,
+        script_supplier: &S,
     ) -> u64
     where
         S: Fn(u64) -> ScriptTx,
     {
-        let mut iter_count = start;
-        let mut last_check = None;
-
-        loop {
-            iter_count += step;
-            let script = script_supplier(iter_count);
-
+        let mut total_time = 0;
+        let mut total_gas = 0;
+        while total_time < 10_000 {
+            let script = script_supplier(10_000);
             let gas = Gas::new(18446744073709550, 1).unwrap();
             let context = ExecutionContext::new(100, 100);
             let now = Instant::now();
@@ -63,76 +64,11 @@ mod bench {
             if res.status_code != StatusCode::EXECUTED {
                 panic!("Transaction failed: {:?}", res);
             }
-            let res = Results {
-                time: elapsed,
-                gas: res.gas_used,
-                iter: iter_count,
-            };
-            if res.time > 1_000 {
-                if last_check.is_none() {
-                    let back_step = step * 2;
-                    if back_step > iter_count {
-                        iter_count = 0;
-                    } else {
-                        iter_count -= back_step;
-                    }
-                    continue;
-                }
-
-                return calc_and_show_stat(
-                    vm,
-                    avg,
-                    last_check.take().unwrap(),
-                    res,
-                    &script_supplier,
-                    name,
-                );
-            }
-            last_check = Some(res);
-        }
-    }
-
-    fn calc_and_show_stat<S>(
-        vm: &Mvm<StorageMock, EventHandlerMock, BankMock>,
-        avg: &mut Avg,
-        last: Results,
-        res: Results,
-        script_supplier: &S,
-        name: &str,
-    ) -> u64
-    where
-        S: Fn(u64) -> ScriptTx,
-    {
-        println!("Check script {}:", name);
-        println!("  Time range: [{}, {}]", last.time, res.time);
-        println!("  Gas range: [{}, {}]", last.gas, res.gas);
-        println!("  Iter range: [{}, {}]", last.iter, res.iter);
-
-        let iter = (last.iter + res.iter) / 2;
-        let mut total_gas = 0;
-        let mut total_time = 0;
-
-        for _ in 0..10 {
-            let script = script_supplier(iter);
-            let gas = Gas::new(18446744073709550, 1).unwrap();
-            let context = ExecutionContext::new(100, 100);
-
-            let now = Instant::now();
-            let res = vm.execute_script(gas, context, script, false);
-            total_time += now.elapsed().as_millis();
+            total_time += elapsed;
             total_gas += res.gas_used;
-            avg.add(res.gas_used);
-            if res.status_code != StatusCode::EXECUTED {
-                panic!("Transaction failed: {:?}", res);
-            }
         }
-        println!("  Time avg: [{} ms]", total_time / 10);
-        println!("  Gas avg: [{}]", total_gas / 10);
-        println!(
-            "================================================================================"
-        );
 
-        total_gas / 10
+        total_gas / (total_time as u64 / 1000)
     }
 
     #[derive(Debug)]
