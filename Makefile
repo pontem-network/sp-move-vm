@@ -12,3 +12,6 @@ tests:
 
 pre-compile: clippy tests build_wasm_std build_wasm_no_std
 	cargo build
+
+gas_bench:
+	cargo test --release --test gas_bench gas_bench  --features "bench" -- --nocapture

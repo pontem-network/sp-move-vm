@@ -14,6 +14,11 @@ module Assets::Store {
         move_to<U64>(account, foo);
     }
 
+    public fun load_u64(account: address): u64 acquires U64 {
+        let val = move_from<U64>(account);
+        return val.val
+    }
+
     public fun store_u128(account: &signer, val: u128) {
         let foo = U128 { val: val };
         move_to<U128>(account, foo);

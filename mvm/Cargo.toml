@@ -35,6 +35,7 @@ optional = true
 [features]
 default = ["std", "assets", "move_stdlib", "sp_check"]
 assets = []
+bench = []
 move_stdlib = [
     "stdlib"
 ]
