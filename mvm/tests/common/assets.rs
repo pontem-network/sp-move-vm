@@ -144,56 +144,44 @@ pub fn transfer_script(
     .unwrap()
 }
 
-pub fn empty_loop(
-    iter: u64
-) -> ScriptTx {
+pub fn empty_loop(iter: u64) -> ScriptTx {
     ScriptTx::with_script(
         include_bytes!("../assets/build/assets/bytecode_scripts/empty_loop.mv").to_vec(),
-        vec![
-            ScriptArg::U64(iter),
-        ],
+        vec![ScriptArg::U64(iter)],
         vec![],
         vec![],
-    ).unwrap()
+    )
+    .unwrap()
 }
 
-pub fn math_loop(
-    iter: u64
-) -> ScriptTx {
+pub fn math_loop(iter: u64) -> ScriptTx {
     ScriptTx::with_script(
         include_bytes!("../assets/build/assets/bytecode_scripts/math_loop.mv").to_vec(),
-        vec![
-            ScriptArg::U64(iter),
-        ],
+        vec![ScriptArg::U64(iter)],
         vec![],
         vec![],
-    ).unwrap()
+    )
+    .unwrap()
 }
 
-pub fn read_write_loop(
-    iter: u64
-) -> ScriptTx {
+pub fn read_write_loop(iter: u64) -> ScriptTx {
     ScriptTx::with_script(
         include_bytes!("../assets/build/assets/bytecode_scripts/read_write_loop.mv").to_vec(),
-        vec![
-            ScriptArg::U64(iter),
-        ],
+        vec![ScriptArg::U64(iter)],
         vec![],
         vec![AccountAddress::random()],
-    ).unwrap()
+    )
+    .unwrap()
 }
 
-pub fn vector_loop(
-    iter: u64
-) -> ScriptTx {
+pub fn vector_loop(iter: u64) -> ScriptTx {
     ScriptTx::with_script(
         include_bytes!("../assets/build/assets/bytecode_scripts/vector_loop.mv").to_vec(),
-        vec![
-            ScriptArg::U64(iter),
-        ],
+        vec![ScriptArg::U64(iter)],
         vec![],
         vec![],
-    ).unwrap()
+    )
+    .unwrap()
 }
 
 pub fn valid_package() -> ModulePackage {

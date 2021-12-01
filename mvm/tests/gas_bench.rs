@@ -2,17 +2,19 @@ mod common;
 
 #[cfg(feature = "bench")]
 mod bench {
-    use std::fmt::{Display, Formatter};
-    use std::time::Instant;
+    use crate::common::assets::{
+        empty_loop, math_loop, read_write_loop, store_module, vector_loop,
+    };
+    use crate::common::mock::Utils;
+    use crate::common::mock::{BankMock, EventHandlerMock, StorageMock};
+    use crate::common::vm;
     use move_core_types::vm_status::StatusCode;
     use mvm::io::context::ExecutionContext;
     use mvm::mvm::Mvm;
     use mvm::types::{Gas, ScriptTx};
     use mvm::Vm;
-    use crate::common::assets::{empty_loop, math_loop, read_write_loop, store_module, vector_loop};
-    use crate::common::mock::{BankMock, EventHandlerMock, StorageMock};
-    use crate::common::vm;
-    use crate::common::mock::Utils;
+    use std::fmt::{Display, Formatter};
+    use std::time::Instant;
 
     #[test]
     fn gas_bench() {
@@ -22,13 +24,30 @@ mod bench {
         let mut avg = Avg::default();
         find_gas_per_seconds(5_650_000, 5_000, &vm, &mut avg, empty_loop, "empty_loop");
         find_gas_per_seconds(15_000, 200, &vm, &mut avg, math_loop, "math_loop");
-        find_gas_per_seconds(500_000, 5_000, &vm, &mut avg, read_write_loop, "read_write_loop");
+        find_gas_per_seconds(
+            500_000,
+            5_000,
+            &vm,
+            &mut avg,
+            read_write_loop,
+            "read_write_loop",
+        );
         find_gas_per_seconds(1000, 100, &vm, &mut avg, vector_loop, "vector_loop");
 
         println!("Gas avg: {}", avg);
     }
 
-    fn find_gas_per_seconds<S>(start: u64, step: u64, vm: &Mvm<StorageMock, EventHandlerMock, BankMock>, avg: &mut Avg, script_supplier: S, name: &str) -> u64 where S: Fn(u64) -> ScriptTx {
+    fn find_gas_per_seconds<S>(
+        start: u64,
+        step: u64,
+        vm: &Mvm<StorageMock, EventHandlerMock, BankMock>,
+        avg: &mut Avg,
+        script_supplier: S,
+        name: &str,
+    ) -> u64
+    where
+        S: Fn(u64) -> ScriptTx,
+    {
         let mut iter_count = start;
         let mut last_check = None;
 
@@ -44,7 +63,11 @@ mod bench {
             if res.status_code != StatusCode::EXECUTED {
                 panic!("Transaction failed: {:?}", res);
             }
-            let res = Results { time: elapsed, gas: res.gas_used, iter: iter_count };
+            let res = Results {
+                time: elapsed,
+                gas: res.gas_used,
+                iter: iter_count,
+            };
             if res.time > 1_000 {
                 if last_check.is_none() {
                     let back_step = step * 2;
@@ -56,13 +79,30 @@ mod bench {
                     continue;
                 }
 
-                return calc_and_show_stat(vm, avg, last_check.take().unwrap(), res, &script_supplier, name);
+                return calc_and_show_stat(
+                    vm,
+                    avg,
+                    last_check.take().unwrap(),
+                    res,
+                    &script_supplier,
+                    name,
+                );
             }
             last_check = Some(res);
         }
     }
 
-    fn calc_and_show_stat<S>(vm: &Mvm<StorageMock, EventHandlerMock, BankMock>, avg: &mut Avg, last: Results, res: Results, script_supplier: &S, name: &str) -> u64 where S: Fn(u64) -> ScriptTx {
+    fn calc_and_show_stat<S>(
+        vm: &Mvm<StorageMock, EventHandlerMock, BankMock>,
+        avg: &mut Avg,
+        last: Results,
+        res: Results,
+        script_supplier: &S,
+        name: &str,
+    ) -> u64
+    where
+        S: Fn(u64) -> ScriptTx,
+    {
         println!("Check script {}:", name);
         println!("  Time range: [{}, {}]", last.time, res.time);
         println!("  Gas range: [{}, {}]", last.gas, res.gas);
@@ -88,7 +128,9 @@ mod bench {
         }
         println!("  Time avg: [{} ms]", total_time / 10);
         println!("  Gas avg: [{}]", total_gas / 10);
-        println!("================================================================================");
+        println!(
+            "================================================================================"
+        );
 
         total_gas / 10
     }
@@ -115,7 +157,9 @@ mod bench {
         fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
             let avg = (self.vec.iter().sum::<u64>() as f64) / self.vec.len() as f64;
 
-            let sum: f64 = self.vec.iter()
+            let sum: f64 = self
+                .vec
+                .iter()
                 .map(|val| *val as f64)
                 .map(|val| (val - avg).powf(2.0))
                 .sum();
