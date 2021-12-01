@@ -10,7 +10,10 @@ clippy:
 tests:
 	cargo test --all --tests --no-fail-fast -- --test-threads=4 --nocapture
 
-pre-compile: clippy tests build_wasm_std build_wasm_no_std
+fmt:
+	cargo fmt --all
+
+pre-compile: fmt clippy tests build_wasm_std build_wasm_no_std
 	cargo build
 
 gas_bench:

@@ -80,12 +80,12 @@ impl Default for GenesisConfig {
     #[cfg(feature = "move_stdlib")]
     fn default() -> Self {
         use core::convert::TryFrom;
-        let mut diem_stdlib =
-            ModulePackage::try_from(stdlib::diem_stdlib_package()).expect("Expected valid stdlib");
-        let move_stdlib =
+        let pont_stdlib =
+            ModulePackage::try_from(stdlib::pont_stdlib_package()).expect("Expected valid stdlib");
+        let mut move_stdlib =
             ModulePackage::try_from(stdlib::stdlib_package()).expect("Expected valid stdlib");
-        diem_stdlib.join(move_stdlib);
-        let stdlib = diem_stdlib.into_tx(CORE_CODE_ADDRESS);
+        move_stdlib.join(pont_stdlib);
+        let stdlib = move_stdlib.into_tx(CORE_CODE_ADDRESS);
 
         let cost_table = cost_table();
         let instr_gas_costs = bcs::to_bytes(&cost_table.instruction_table)

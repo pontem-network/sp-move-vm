@@ -2,5 +2,5 @@
 .idea
 .cargo
 /stdlib/move-stdlib
-/stdlib/diem-stdlib
+/stdlib/pont-stdlib
 /mvm/tests/assets/artifacts

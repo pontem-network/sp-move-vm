@@ -10,10 +10,10 @@ Std = "0x1"
 DiemFramework = "0x1"
 Assets = "0x1"
 
-[dependencies.MoveStdlib]
-git = "https://github.com/pontem-network/diem-stdlib.git"
-rev = "main"
+[dependencies.PontStdlib]
+git = "https://github.com/pontem-network/pont-stdlib.git"
+rev = "52d6f3b92f46f0333b0efff732d96ad129edbac0"
 
-[dependencies.move-stdlib]
+[dependencies.MoveStdlib]
 git = "https://github.com/pontem-network/move-stdlib.git"
-rev = "6349ac2e4a4926c1b79e2761d76c0d26adee3c6b"
+rev = "main"
