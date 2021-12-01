@@ -196,7 +196,7 @@ where
             .map_err(|err| Error::msg(format!("Failed to generate event message: {:?}", err)))?;
 
         let mut guid = 0_u64.to_le_bytes().to_vec();
-        guid.extend(sender.to_u8());
+        guid.extend(&sender.to_u8());
         self.event_handler.on_event(guid, 0, tag, msg);
         Ok(())
     }
