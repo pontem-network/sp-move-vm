@@ -38,7 +38,7 @@ mod bench {
     ) where
         S: Fn(u64) -> ScriptTx,
     {
-        for _ in 0..20 {
+        for _ in 0..10 {
             let gas = calc_gas_per_seconds(vm, &script_supplier);
             println!("Check script {}: gas: {}", name, gas);
             avg.add(gas);
