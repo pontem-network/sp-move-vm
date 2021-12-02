@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -e
+dove clean --global
 
 dove build
 dove tx "store_u64(13)"
