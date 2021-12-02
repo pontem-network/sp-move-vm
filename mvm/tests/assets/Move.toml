@@ -16,4 +16,4 @@ rev = "52d6f3b92f46f0333b0efff732d96ad129edbac0"
 
 [dependencies.MoveStdlib]
 git = "https://github.com/pontem-network/move-stdlib.git"
-rev = "main"
+rev = "deb7a9e8a33a675239200940f2c87b31d727025b"
