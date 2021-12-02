@@ -1,10 +1,7 @@
 use std::process::{Command, Stdio};
 
 fn main() {
-    #[cfg(feature = "assets")]
-        {
-            run(".", "bash", &["./build_std.sh"]);
-        }
+    run(".", "bash", &["./build_std.sh"]);
 }
 
 pub fn run(path: &str, cmd: &str, args: &[&str]) {
