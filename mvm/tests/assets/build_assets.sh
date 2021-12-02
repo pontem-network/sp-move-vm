@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -e
+echo $HOME
+
 dove clean --global
 
 dove build
