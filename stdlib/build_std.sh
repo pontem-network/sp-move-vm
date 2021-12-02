@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+#!/usr/bin/env bash
+
  function lockfile_waithold()
  {
     declare -ir time_beg=$(date '+%s')
@@ -26,19 +28,16 @@
  }
 
 lockfile_waithold
+rm -rf pont-stdlib
+git clone https://github.com/pontem-network/pont-stdlib.git
+cd pont-stdlib
+git reset --hard 52d6f3b92f46f0333b0efff732d96ad129edbac0
+dove build -p
+cd ..
 
-set -e
-dove build
-dove tx "store_u64(13)"
-dove tx "tx_test<0x01::Pontem::T>(100)"
-dove build -p -o "valid_pack"
-dove build -p -o "invalid_pack" --modules_exclude "Store"
-
-dove tx "rt_signers(rt)"
-dove tx "tr_signers(tr)"
-dove tx "tr_and_rt_signers(root, treasury)"
-dove tx "signers_tr_and_rt_with_user(root, treasury)"
-dove tx "0x1::ScriptBook::test"
-
+rm -rf move-stdlib
+git clone https://github.com/pontem-network/move-stdlib.git
+cd move-stdlib
+git reset --hard deb7a9e8a33a675239200940f2c87b31d727025b
+dove build -p
 lockfile_release
-
