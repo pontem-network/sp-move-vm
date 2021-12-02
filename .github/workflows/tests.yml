@@ -62,9 +62,9 @@ jobs:
         run: cargo clippy --examples -- -Dwarnings
 
   build:
+    needs: test
     name: Build
     runs-on: ${{ matrix.os }}
-
     defaults:
       run:
         shell: bash
