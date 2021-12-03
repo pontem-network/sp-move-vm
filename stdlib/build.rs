@@ -2,8 +2,8 @@ use std::fs;
 use std::path::Path;
 use std::process::{Command, Stdio};
 
-const STDLIB_DIR_NAME: &str = "move-stdlib";
-const REPO: &str = "https://github.com/pontem-network/move-stdlib.git";
+const STDLIB_DIR_NAME: &str = "pont-stdlib";
+const REPO: &str = "https://github.com/pontem-network/pont-stdlib.git";
 const REV: &str = "34cedad7436f7dad6c9a521f3f6199324737d69f";
 
 fn main() {
