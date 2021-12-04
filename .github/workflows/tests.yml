@@ -58,7 +58,7 @@ jobs:
         run: cargo test --all --tests --no-fail-fast -- --test-threads=4 --nocapture
 
       - name: Clippy
-        run: cargo clippy --examples
+        run: cargo clippy --all --no-deps
 
   build:
     name: Build
