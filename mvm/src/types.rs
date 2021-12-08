@@ -283,8 +283,8 @@ impl Transaction {
                 Signer::Root => Ok(diem_root_address()),
                 Signer::Treasury => Ok(treasury_compliance_account_address()),
                 Signer::Placeholder => {
-                    if let Some(signer) = signers.pop() {
-                        Ok(signer)
+                    if !signers.is_empty() {
+                        Ok(signers.remove(0))
                     } else {
                         Err(anyhow!("Invalid signers count."))
                     }
