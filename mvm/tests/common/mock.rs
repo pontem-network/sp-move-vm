@@ -142,9 +142,11 @@ impl BalanceAccess for BankMock {
 
 pub trait Utils {
     fn pub_mod(&self, module: ModuleTx);
+
     fn exec(&self, script: ScriptTx) {
         self.exec_with_context(ExecutionContext::new(100, 100), script)
     }
+
     fn exec_with_context(&self, context: ExecutionContext, script: ScriptTx);
 }
 

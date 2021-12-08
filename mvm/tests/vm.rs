@@ -277,3 +277,17 @@ fn test_balance() {
         Some(bob_balance + move_to_bob - move_to_alice)
     );
 }
+
+#[test]
+fn test_signer_order() {
+    let (vm, _, _, _) = vm();
+    vm.exec(signer_order());
+    let tx = Transaction::try_from(
+        &include_bytes!("assets/build/assets/transaction/signer_order.mvt")[..],
+    )
+    .unwrap();
+    vm.exec(
+        tx.into_script(vec![addr("0x1"), addr("0x2"), addr("0x3")])
+            .unwrap(),
+    );
+}

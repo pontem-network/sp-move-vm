@@ -2,6 +2,7 @@ use std::convert::TryFrom;
 
 use serde::Deserialize;
 
+use crate::common::mock::addr;
 use diem_types::account_config::treasury_compliance_account_address;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::language_storage::CORE_CODE_ADDRESS;
@@ -74,15 +75,15 @@ pub fn store_u64_script(addr: AccountAddress, args: u64) -> ScriptTx {
     .unwrap()
 }
 
-// pub fn test_transfer_script(alice: AccountAddress, bob: AccountAddress, amount: u128) -> ScriptTx {
-//     ScriptTx::new(
-//         include_bytes!("../assets/target/assets/bytecode_scripts/test_balance_transfer.mv").to_vec(),
-//         vec![ScriptArg::U128(amount)],
-//         vec![],
-//         vec![alice, bob],
-//     )
-//     .unwrap()
-// }
+pub fn signer_order() -> ScriptTx {
+    ScriptTx::with_script(
+        include_bytes!("../assets/build/assets/bytecode_scripts/signer_order.mv").to_vec(),
+        vec![],
+        vec![],
+        vec![addr("0x1"), addr("0x2"), addr("0x3")],
+    )
+    .unwrap()
+}
 
 pub fn pont_info_script(address: AccountAddress, total: u128) -> ScriptTx {
     ScriptTx::with_script(
