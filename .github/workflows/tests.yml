@@ -7,7 +7,6 @@ on:
       - release-*
 
 env:
-  RUSTFLAGS: -D warnings
   RUST_BACKTRACE: full
   CARGO_INCREMENTAL: 0
   RUSTUP_MAX_RETRIES: 10
@@ -59,7 +58,10 @@ jobs:
         run: cargo test --all --tests --no-fail-fast -- --test-threads=4 --nocapture
 
       - name: Clippy
-        run: cargo clippy --examples -- -Dwarnings
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all --no-deps
 
   build:
     name: Build

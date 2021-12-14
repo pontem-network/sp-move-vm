@@ -1737,7 +1737,7 @@ dependencies = [
 [[package]]
 name = "petgraph_core"
 version = "0.5.1"
-source = "git+https://github.com/pontem-network/petgraph.git?branch=petgraph_core#96e8c14d373dd722d8ad3ec643f9b1e02be30185"
+source = "git+https://github.com/pontem-network/petgraph.git?rev=b8e795dd9d7bb1143a7ac6bbe745e420e9caf500#b8e795dd9d7bb1143a7ac6bbe745e420e9caf500"
 dependencies = [
  "fixedbitset 0.3.2",
  "hashbrown 0.9.1",
