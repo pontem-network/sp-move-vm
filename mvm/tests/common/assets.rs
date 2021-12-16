@@ -21,13 +21,6 @@ pub fn store_module() -> ModuleTx {
     )
 }
 
-pub fn reflect_module() -> ModuleTx {
-    ModuleTx::new(
-        include_bytes!("../assets/build/assets/bytecode_modules/Reflect.mv").to_vec(),
-        CORE_CODE_ADDRESS,
-    )
-}
-
 pub fn reflect_test_module() -> ModuleTx {
     ModuleTx::new(
         include_bytes!("../assets/build/assets/bytecode_modules/ReflectTest.mv").to_vec(),

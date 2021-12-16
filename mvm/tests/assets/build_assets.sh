@@ -31,8 +31,8 @@ set -e
 dove build
 dove tx "store_u64(13)"
 dove tx "tx_test<0x01::Pontem::T>(100)"
-dove build -p -o "valid_pack"
-dove build -p -o "invalid_pack" --modules_exclude "Store"
+dove build -p -o "valid_pack"  --modules_exclude "ReflectTest"
+dove build -p -o "invalid_pack" --modules_exclude "Store" "ReflectTest"
 
 dove tx "rt_signers(rt)"
 dove tx "tr_signers(tr)"
