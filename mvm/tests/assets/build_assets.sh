@@ -38,7 +38,7 @@ dove tx "rt_signers(rt)"
 dove tx "tr_signers(tr)"
 dove tx "tr_and_rt_signers(root, treasury)"
 dove tx "signers_tr_and_rt_with_user(root, treasury)"
-dove tx "0x1::ScriptBook::test"
+dove tx "Assets::ScriptBook::test"
 dove tx "signer_order"
 
 lockfile_release

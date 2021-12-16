@@ -5,6 +5,7 @@ pub mod account;
 pub mod bcs;
 pub mod event;
 pub mod hash;
+pub mod reflect;
 pub mod signature;
 pub mod signer;
 pub mod u256;
@@ -78,6 +79,7 @@ pub fn all_natives(move_std_addr: AccountAddress) -> NativeFunctionTable {
             "ed25519_verify",
             signature::native_ed25519_signature_verification,
         ),
+        ("Reflect", "type_of", reflect::type_of),
     ];
     NATIVES
         .iter()

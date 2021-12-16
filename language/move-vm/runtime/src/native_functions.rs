@@ -7,6 +7,7 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use hashbrown::HashMap;
 use move_binary_format::errors::{PartialVMError, PartialVMResult};
+use move_core_types::language_storage::TypeTag;
 use move_core_types::{
     account_address::AccountAddress,
     gas_schedule::CostTable,
@@ -110,5 +111,9 @@ impl<'a> NativeContext<'a> {
             Err(e) if e.major_status().status_type() == StatusType::InvariantViolation => Err(e),
             Err(_) => Ok(None),
         }
+    }
+
+    pub fn type_to_type_tag(&self, ty: &Type) -> PartialVMResult<TypeTag> {
+        self.resolver.type_to_type_tag(ty)
     }
 }

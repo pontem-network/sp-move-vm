@@ -481,4 +481,5 @@ pub enum NativeCostIndex {
     U256_DIV = 25,
     U256_SUB = 26,
     U256_ADD = 27,
+    TYPE_OF = 28,
 }

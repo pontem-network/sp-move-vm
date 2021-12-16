@@ -9,6 +9,7 @@ dove_version = ">=1.5.1"
 Std = "0x1"
 DiemFramework = "0x1"
 Assets = "0x1"
+TestAddr = "0x13"
 
 [dependencies.PontStdlib]
 git = "https://github.com/pontem-network/pont-stdlib.git"
