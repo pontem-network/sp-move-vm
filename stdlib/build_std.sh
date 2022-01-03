@@ -38,6 +38,6 @@ cd ..
 rm -rf move-stdlib
 git clone https://github.com/pontem-network/move-stdlib.git
 cd move-stdlib
-git reset --hard deb7a9e8a33a675239200940f2c87b31d727025b
+git reset --hard fdeb555c2157a1d68ca64eaf2a2e2cfe2a64efa2
 dove build -p
 lockfile_release

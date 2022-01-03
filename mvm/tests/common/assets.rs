@@ -5,7 +5,8 @@ use serde::Deserialize;
 use crate::common::mock::addr;
 use diem_types::account_config::treasury_compliance_account_address;
 use move_core_types::account_address::AccountAddress;
-use move_core_types::language_storage::CORE_CODE_ADDRESS;
+use move_core_types::identifier::Identifier;
+use move_core_types::language_storage::{StructTag, TypeTag, CORE_CODE_ADDRESS};
 use mvm::io::traits::Balance;
 use mvm::types::{Gas, ModulePackage, ModuleTx, ScriptArg, ScriptTx};
 
@@ -17,6 +18,13 @@ pub fn store_module() -> ModuleTx {
     ModuleTx::new(
         include_bytes!("../assets/build/assets/bytecode_modules/Store.mv").to_vec(),
         CORE_CODE_ADDRESS,
+    )
+}
+
+pub fn reflect_test_module() -> ModuleTx {
+    ModuleTx::new(
+        include_bytes!("../assets/build/assets/bytecode_modules/ReflectTest.mv").to_vec(),
+        addr("0x13"),
     )
 }
 
@@ -180,6 +188,25 @@ pub fn vector_loop(iter: u64) -> ScriptTx {
         include_bytes!("../assets/build/assets/bytecode_scripts/vector_loop.mv").to_vec(),
         vec![ScriptArg::U64(iter)],
         vec![],
+        vec![],
+    )
+    .unwrap()
+}
+
+pub fn reflect_type_of(addr: AccountAddress, module: &str, strct: &str) -> ScriptTx {
+    ScriptTx::with_script(
+        include_bytes!("../assets/build/assets/bytecode_scripts/test_reflect.mv").to_vec(),
+        vec![
+            ScriptArg::Address(addr),
+            ScriptArg::VectorU8(module.as_bytes().to_vec()),
+            ScriptArg::VectorU8(strct.as_bytes().to_vec()),
+        ],
+        vec![TypeTag::Struct(StructTag {
+            address: addr,
+            module: Identifier::new(module).unwrap(),
+            name: Identifier::new(strct).unwrap(),
+            type_params: vec![],
+        })],
         vec![],
     )
     .unwrap()

@@ -291,3 +291,21 @@ fn test_signer_order() {
             .unwrap(),
     );
 }
+
+#[test]
+fn test_reflect_type_of() {
+    let (vm, _, _, _) = vm();
+    vm.pub_mod(reflect_test_module());
+    vm.pub_mod(event_proxy_module());
+    vm.exec(reflect_type_of(addr("0x13"), "ReflectTest", "Mod"));
+    vm.exec(reflect_type_of(addr("0x1"), "EventProxy", "U64"));
+}
+
+#[test]
+#[should_panic]
+fn test_reflect_type_of_fail() {
+    let (vm, _, _, _) = vm();
+    vm.pub_mod(reflect_test_module());
+    vm.pub_mod(event_proxy_module());
+    vm.exec(reflect_type_of(addr("0x2"), "EventProxy", "U64"));
+}
