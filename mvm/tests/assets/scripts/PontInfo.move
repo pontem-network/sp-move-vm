@@ -1,8 +1,8 @@
 script {
-    use DiemFramework::Diem;
-    use DiemFramework::PONT::PONT;
+    use PontemFramework::Pontem;
+    use PontemFramework::PONT::PONT;
 
     fun pont_info(expected: u128) {
-        assert(expected == Diem::market_cap<PONT>(), 1);
+        assert(expected == Pontem::market_cap<PONT>(), 1);
     }
 }

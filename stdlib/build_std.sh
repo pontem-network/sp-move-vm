@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-
-#!/usr/bin/env bash
-
  function lockfile_waithold()
  {
     declare -ir time_beg=$(date '+%s')
@@ -31,7 +28,7 @@ lockfile_waithold
 rm -rf pont-stdlib
 git clone https://github.com/pontem-network/pont-stdlib.git
 cd pont-stdlib
-git reset --hard 52d6f3b92f46f0333b0efff732d96ad129edbac0
+git reset --hard 10250e758b5b1576da2612a88609b07580d5bb83
 dove build -p
 cd ..
 

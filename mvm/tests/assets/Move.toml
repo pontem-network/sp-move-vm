@@ -7,13 +7,13 @@ dove_version = ">=1.5.1"
 
 [addresses]
 Std = "0x1"
-DiemFramework = "0x1"
+PontemFramework = "0x1"
 Assets = "0x1"
 TestAddr = "0x13"
 
 [dependencies.PontStdlib]
 git = "https://github.com/pontem-network/pont-stdlib.git"
-rev = "52d6f3b92f46f0333b0efff732d96ad129edbac0"
+rev = "10250e758b5b1576da2612a88609b07580d5bb83"
 
 [dependencies.MoveStdlib]
 git = "https://github.com/pontem-network/move-stdlib.git"
