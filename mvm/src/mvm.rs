@@ -16,6 +16,7 @@ use move_vm_runtime::move_vm::MoveVM;
 use move_vm_runtime::session::Session;
 
 use crate::abi::ModuleAbi;
+use crate::gas_schedule::cost_table;
 use crate::io::balance::{BalanceOp, MasterOfCoin};
 use crate::io::config::ConfigStore;
 use crate::io::context::ExecutionContext;
@@ -50,9 +51,11 @@ where
 {
     /// Creates a new move vm with given store and event handler.
     pub fn new(store: S, event_handler: E, balance: B) -> Result<Mvm<S, E, B>, Error> {
-        let config = VMConfig::fetch_config(&ConfigStore::from(&store))
-            .ok_or_else(|| anyhow!("Failed to load VMConfig."))?;
-        Self::new_with_config(store, event_handler, balance, config)
+        let vm_config = VMConfig {
+            gas_schedule: cost_table(),
+        };
+
+        Self::new_with_config(store, event_handler, balance, vm_config)
     }
 
     pub(crate) fn new_with_config(
