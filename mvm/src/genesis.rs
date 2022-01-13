@@ -101,22 +101,8 @@ impl Default for GenesisConfig {
                 module: "Genesis".as_bytes().to_vec(),
                 func: "initialize".as_bytes().to_vec(),
                 args: serialize_values(&vec![
-                    MoveValue::Signer(account_config::diem_root_address()), // dr_signer
-                    MoveValue::Signer(account_config::treasury_compliance_account_address()), // tr_signer
-                    MoveValue::vector_u8(
-                        account_config::diem_root_address().to_u8()[20..].to_vec(),
-                    ), // dr_address
-                    MoveValue::vector_u8(
-                        account_config::treasury_compliance_account_address().to_u8()[20..]
-                            .to_vec(),
-                    ), // tr_address
-                    MoveValue::Vector(vec![]), // Initial allow list.
-                    MoveValue::Bool(true),
-                    MoveValue::vector_u8(instr_gas_costs),
-                    MoveValue::vector_u8(native_gas_costs),
+                    MoveValue::Signer(account_config::diem_root_address()), // Diem Root
                     MoveValue::U8(chain_id.id()),
-                    MoveValue::U64(0),
-                    MoveValue::vector_u8(vec![]),
                 ]),
             }),
         }

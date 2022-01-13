@@ -328,7 +328,7 @@ pub mod known_locations {
     use cell::Lazy;
 
     /// The Identifier for the Account module.
-    pub const ACCOUNT_MODULE_IDENTIFIER: &IdentStr = ident_str!("DiemAccount");
+    pub const ACCOUNT_MODULE_IDENTIFIER: &IdentStr = ident_str!("PontAccount");
     /// The ModuleId for the Account module.
     pub static ACCOUNT_MODULE: Lazy<ModuleId> =
         Lazy::new(|| ModuleId::new(CORE_CODE_ADDRESS, ACCOUNT_MODULE_IDENTIFIER.to_owned()));
@@ -338,25 +338,12 @@ pub mod known_locations {
     }
 
     /// The Identifier for the Diem module.
-    pub const DIEM_MODULE_IDENTIFIER: &IdentStr = ident_str!("Diem");
+    pub const DIEM_MODULE_IDENTIFIER: &IdentStr = ident_str!("Token");
     /// The ModuleId for the Diem module.
     pub static DIEM_MODULE: Lazy<ModuleId> =
         Lazy::new(|| ModuleId::new(CORE_CODE_ADDRESS, DIEM_MODULE_IDENTIFIER.to_owned()));
     pub fn diem_module_abort() -> AbortLocation {
         AbortLocation::Module(DIEM_MODULE.clone())
-    }
-
-    /// The Identifier for the Designated Dealer module.
-    pub const DESIGNATED_DEALER_MODULE_IDENTIFIER: &IdentStr = ident_str!("DesignatedDealer");
-    /// The ModuleId for the Designated Dealer module.
-    pub static DESIGNATED_DEALER_MODULE: Lazy<ModuleId> = Lazy::new(|| {
-        ModuleId::new(
-            CORE_CODE_ADDRESS,
-            DESIGNATED_DEALER_MODULE_IDENTIFIER.to_owned(),
-        )
-    });
-    pub fn designated_dealer_module_abort() -> AbortLocation {
-        AbortLocation::Module(DESIGNATED_DEALER_MODULE.clone())
     }
 }
 

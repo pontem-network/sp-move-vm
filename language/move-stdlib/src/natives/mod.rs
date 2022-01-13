@@ -60,12 +60,12 @@ pub fn all_natives(move_std_addr: AccountAddress) -> NativeFunctionTable {
         ("U256", "mul", u256::mul),
         ("U256", "div", u256::div),
         (
-            "DiemAccount",
+            "PontAccount",
             "create_signer",
             account::native_create_signer,
         ),
         (
-            "DiemAccount",
+            "PontAccount",
             "destroy_signer",
             account::native_destroy_signer,
         ),

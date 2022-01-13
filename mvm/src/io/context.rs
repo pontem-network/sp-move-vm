@@ -1,10 +1,10 @@
 use alloc::vec::Vec;
 use move_core_types::language_storage::StructTag;
 
-pub const TIMESTAMP_MODULE: &str = "DiemTimestamp";
+pub const TIMESTAMP_MODULE: &str = "PontTimestamp";
 pub const CURRENT_TIME_MICROSECONDS: &str = "CurrentTimeMicroseconds";
 
-pub const BLOCK_MODULE: &str = "DiemBlock";
+pub const BLOCK_MODULE: &str = "PontBlock";
 pub const BLOCK_METADATA: &str = "BlockMetadata";
 
 #[derive(Debug)]

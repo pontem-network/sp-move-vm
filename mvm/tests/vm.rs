@@ -227,17 +227,14 @@ fn test_balance() {
     let (vm, _, _, bank) = vm();
     bank.set_currency_info("PONT".as_bytes(), CurrencyInfo { total_value: 1001 });
     let root = AccountAddress::random();
-    vm.exec(create_root_account_script(root));
 
     let alice = AccountAddress::random();
     let alice_balance = 1000;
-    vm.exec(create_account_script(root, alice));
 
     let move_to_bob = 500;
 
     let bob = AccountAddress::random();
     let bob_balance = 1;
-    vm.exec(create_account_script(root, bob));
 
     bank.set_balance(&alice, "PONT".as_bytes(), alice_balance);
     bank.set_balance(&bob, "PONT".as_bytes(), bob_balance);

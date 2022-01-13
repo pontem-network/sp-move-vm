@@ -22,23 +22,15 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CurrencyInfoResource {
     pub total_value: u128,
-    pub preburn_value: u64,
-    pub to_xdx_exchange_rate: u64,
-    is_synthetic: bool,
-    scaling_factor: u64,
-    fractional_part: u64,
+    decimals: u8,
     currency_code: Identifier,
-    can_mint: bool,
     mint_events: EventHandle,
     burn_events: EventHandle,
-    preburn_events: EventHandle,
-    cancel_burn_events: EventHandle,
-    exchange_rate_update_events: EventHandle,
 }
 
 impl MoveStructType for CurrencyInfoResource {
     const MODULE_NAME: &'static IdentStr = DIEM_MODULE_IDENTIFIER;
-    const STRUCT_NAME: &'static IdentStr = ident_str!("CurrencyInfo");
+    const STRUCT_NAME: &'static IdentStr = ident_str!("TokenInfo");
 }
 
 impl MoveResource for CurrencyInfoResource {}
@@ -46,33 +38,17 @@ impl MoveResource for CurrencyInfoResource {}
 impl CurrencyInfoResource {
     pub fn new(
         total_value: u128,
-        preburn_value: u64,
-        to_xdx_exchange_rate: u64,
-        is_synthetic: bool,
-        scaling_factor: u64,
-        fractional_part: u64,
+        decimals: u8,
         currency_code: Identifier,
-        can_mint: bool,
         mint_events: EventHandle,
         burn_events: EventHandle,
-        preburn_events: EventHandle,
-        cancel_burn_events: EventHandle,
-        exchange_rate_update_events: EventHandle,
     ) -> Self {
         Self {
             total_value,
-            preburn_value,
-            to_xdx_exchange_rate,
-            is_synthetic,
-            scaling_factor,
-            fractional_part,
+            decimals,
             currency_code,
-            can_mint,
             mint_events,
             burn_events,
-            preburn_events,
-            cancel_burn_events,
-            exchange_rate_update_events,
         }
     }
 
@@ -80,20 +56,12 @@ impl CurrencyInfoResource {
         &self.currency_code
     }
 
-    pub fn scaling_factor(&self) -> u64 {
-        self.scaling_factor
+    pub fn decimals(&self) -> u8 {
+        self.decimals
     }
 
     pub fn total_value(&self) -> u128 {
         self.total_value
-    }
-
-    pub fn preburn_value(&self) -> u64 {
-        self.preburn_value
-    }
-
-    pub fn fractional_part(&self) -> u64 {
-        self.fractional_part
     }
 
     pub fn struct_tag_for(currency_code: Identifier) -> StructTag {
@@ -123,17 +91,5 @@ impl CurrencyInfoResource {
 
     pub fn burn_events(&self) -> &EventHandle {
         &self.burn_events
-    }
-
-    pub fn preburn_events(&self) -> &EventHandle {
-        &self.preburn_events
-    }
-
-    pub fn cancel_burn_events(&self) -> &EventHandle {
-        &self.cancel_burn_events
-    }
-
-    pub fn exchange_rate_update_events(&self) -> &EventHandle {
-        &self.exchange_rate_update_events
     }
 }

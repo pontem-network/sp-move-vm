@@ -113,26 +113,6 @@ pub fn error_script(addr: AccountAddress) -> ScriptTx {
     .unwrap()
 }
 
-pub fn create_root_account_script(addr: AccountAddress) -> ScriptTx {
-    ScriptTx::with_script(
-        include_bytes!("../assets/build/assets/bytecode_scripts/make_root_account.mv").to_vec(),
-        vec![ScriptArg::Address(addr)],
-        vec![],
-        vec![treasury_compliance_account_address()],
-    )
-    .unwrap()
-}
-
-pub fn create_account_script(root: AccountAddress, addr: AccountAddress) -> ScriptTx {
-    ScriptTx::with_script(
-        include_bytes!("../assets/build/assets/bytecode_scripts/make_account.mv").to_vec(),
-        vec![ScriptArg::Address(addr)],
-        vec![],
-        vec![root],
-    )
-    .unwrap()
-}
-
 pub fn transfer_script(
     from: AccountAddress,
     from_balance: Balance,

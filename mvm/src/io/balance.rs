@@ -24,7 +24,7 @@ use crate::io::traits::{Balance, BalanceAccess, CurrencyAccessPath};
 use move_core_types::vm_status::known_locations::DIEM_MODULE_IDENTIFIER;
 
 pub const DIEM_COIN_IDENTIFIER: &IdentStr = ident_str!("Balance");
-pub const CURRENCY_INFO: &str = "CurrencyInfo";
+pub const CURRENCY_INFO: &str = "TokenInfo";
 
 pub static BALANCE_TEMPLATE: Lazy<StructTag> = Lazy::new(|| StructTag {
     address: CORE_CODE_ADDRESS,
@@ -251,8 +251,8 @@ fn coin_type(t_params: &[TypeTag]) -> Option<&StructTag> {
 fn native_currency(coin: &StructTag) -> StructTag {
     StructTag {
         address: CORE_CODE_ADDRESS,
-        module: Identifier::new("NativeCurrencies").expect("Valid identifier"),
-        name: Identifier::new("NativeCurrency").expect("Valid identifier"),
+        module: Identifier::new("NativeToken").expect("Valid identifier"),
+        name: Identifier::new("NativeToken").expect("Valid identifier"),
         type_params: vec![TypeTag::Struct(coin.to_owned())],
     }
 }
