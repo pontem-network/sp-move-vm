@@ -11,8 +11,8 @@ TestAddr = "0x13"
 
 [dependencies.PontStdlib]
 git = "https://github.com/pontem-network/pont-stdlib.git"
-rev = "160f6a2ad8f34d2ac4ade1f39276948675edcd9d"
+rev = "58609eb41ce7bfa8a2c4a7cc383654d3b085d833"
 
 [dependencies.MoveStdlib]
 git = "https://github.com/pontem-network/move-stdlib.git"
-rev = "be9fe12911b2c69899b08ec12e0cdd70f8367ad8"
+rev = "ccd25dfc85c812f56b4a7120bce793edd5f19064"

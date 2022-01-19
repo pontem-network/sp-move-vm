@@ -226,8 +226,6 @@ fn pont_info() {
 fn test_balance() {
     let (vm, _, _, bank) = vm();
     bank.set_currency_info("PONT".as_bytes(), CurrencyInfo { total_value: 1001 });
-    let root = AccountAddress::random();
-
     let alice = AccountAddress::random();
     let alice_balance = 1000;
 

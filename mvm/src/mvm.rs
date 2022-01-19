@@ -2,7 +2,7 @@ use alloc::vec::Vec;
 
 use anyhow::{anyhow, Error};
 
-use diem_types::on_chain_config::{OnChainConfig, VMConfig};
+use diem_types::on_chain_config::VMConfig;
 use move_binary_format::errors::{Location, VMError, VMResult};
 use move_core_types::account_address::AccountAddress;
 use move_core_types::effects::{ChangeSet, Event};
@@ -18,7 +18,6 @@ use move_vm_runtime::session::Session;
 use crate::abi::ModuleAbi;
 use crate::gas_schedule::cost_table;
 use crate::io::balance::{BalanceOp, MasterOfCoin};
-use crate::io::config::ConfigStore;
 use crate::io::context::ExecutionContext;
 use crate::io::key::AccessKey;
 use crate::io::state::{State, WriteEffects};

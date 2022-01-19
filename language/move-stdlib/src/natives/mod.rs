@@ -14,7 +14,6 @@ pub mod vector;
 #[cfg(feature = "testing")]
 pub mod unit_test;
 
-#[cfg(feature = "testing")]
 pub mod debug;
 
 use move_core_types::{account_address::AccountAddress, identifier::Identifier};
@@ -35,9 +34,7 @@ pub fn all_natives(move_std_addr: AccountAddress) -> NativeFunctionTable {
         ("Vector", "pop_back", vector::native_pop),
         ("Vector", "destroy_empty", vector::native_destroy_empty),
         ("Vector", "swap", vector::native_swap),
-        #[cfg(feature = "testing")]
         ("Debug", "print", debug::native_print),
-        #[cfg(feature = "testing")]
         (
             "Debug",
             "print_stack_trace",
@@ -79,7 +76,7 @@ pub fn all_natives(move_std_addr: AccountAddress) -> NativeFunctionTable {
             "ed25519_verify",
             signature::native_ed25519_signature_verification,
         ),
-        ("Reflect", "type_of", reflect::type_of),
+        ("Reflect", "type_info", reflect::type_info),
     ];
     NATIVES
         .iter()

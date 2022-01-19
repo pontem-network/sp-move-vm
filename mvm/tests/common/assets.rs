@@ -3,7 +3,6 @@ use std::convert::TryFrom;
 use serde::Deserialize;
 
 use crate::common::mock::addr;
-use diem_types::account_config::treasury_compliance_account_address;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::{StructTag, TypeTag, CORE_CODE_ADDRESS};

@@ -1,4 +1,5 @@
 use alloc::collections::VecDeque;
+use alloc::vec;
 use alloc::vec::Vec;
 use move_binary_format::errors::PartialVMResult;
 use move_core_types::language_storage::TypeTag;
@@ -7,10 +8,11 @@ use move_vm_runtime::native_functions::NativeContext;
 use move_vm_types::gas_schedule::NativeCostIndex;
 use move_vm_types::loaded_data::runtime_types::Type;
 use move_vm_types::natives::function::{native_gas, NativeResult};
+use move_vm_types::values::Struct;
 use move_vm_types::values::Value;
 use smallvec::smallvec;
 
-pub fn type_of(
+pub fn type_info(
     context: &mut NativeContext,
     ty_args: Vec<Type>,
     arguments: VecDeque<Value>,
@@ -18,17 +20,17 @@ pub fn type_of(
     debug_assert!(ty_args.len() == 1);
     debug_assert!(arguments.is_empty());
 
-    let cost = native_gas(context.cost_table(), NativeCostIndex::TYPE_OF, 0);
+    let cost = native_gas(context.cost_table(), NativeCostIndex::TYPE_INFO, 0);
 
     let type_tag = context.type_to_type_tag(&ty_args[0])?;
     if let TypeTag::Struct(struct_tag) = type_tag {
         Ok(NativeResult::ok(
             cost,
-            smallvec![
+            smallvec![Value::struct_(Struct::pack(vec![
                 Value::address(struct_tag.address),
                 Value::vector_u8(struct_tag.module.into_bytes()),
                 Value::vector_u8(struct_tag.name.into_bytes()),
-            ],
+            ]))],
         ))
     } else {
         Ok(NativeResult::err(cost, INVALID_TYPE_PARAM))

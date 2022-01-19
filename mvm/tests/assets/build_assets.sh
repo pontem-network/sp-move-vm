@@ -35,9 +35,7 @@ dove build -b -o "valid_pack"  --modules_exclude "ReflectTest"
 dove build -b -o "invalid_pack" --modules_exclude "Store" "ReflectTest"
 
 dove tx "rt_signers(rt)"
-dove tx "tr_signers(tr)"
-dove tx "tr_and_rt_signers(root, treasury)"
-dove tx "signers_tr_and_rt_with_user(root, treasury)"
+dove tx "signers_tr_with_user(root)"
 dove tx "Assets::ScriptBook::test"
 dove tx "signer_order"
 

@@ -1,5 +1,5 @@
 use core::convert::TryFrom;
-use diem_types::account_config::{diem_root_address, treasury_compliance_account_address};
+use diem_types::account_config::diem_root_address;
 use move_binary_format::access::ModuleAccess;
 use move_binary_format::file_format::CompiledScript;
 use move_binary_format::CompiledModule;
@@ -17,7 +17,6 @@ fn test_parse_transaction() {
             .unwrap();
     assert_eq!(tx.signers_count(), 0);
     assert!(!tx.has_root_signer());
-    assert!(!tx.has_treasury_signer());
 
     let script = tx.into_script(vec![]).unwrap();
     match script.call() {
@@ -49,7 +48,6 @@ fn test_module_function() {
     .unwrap();
     assert_eq!(tx.signers_count(), 0);
     assert!(!tx.has_root_signer());
-    assert!(!tx.has_treasury_signer());
     let script = tx.into_script(vec![]).unwrap();
     match script.call() {
         Call::Script { .. } => unreachable!(),
@@ -73,7 +71,6 @@ fn test_transaction_with_sys_signers() {
     .unwrap();
     assert_eq!(tx.signers_count(), 0);
     assert!(tx.has_root_signer());
-    assert!(!tx.has_treasury_signer());
 
     let script = tx.into_script(vec![]).unwrap();
     match script.call() {
@@ -87,56 +84,11 @@ fn test_transaction_with_sys_signers() {
     assert_eq!(script.signers(), &[diem_root_address()][..]);
 
     let tx = Transaction::try_from(
-        &include_bytes!("assets/build/assets/transaction/tr_signers.mvt")[..],
-    )
-    .unwrap();
-    assert_eq!(tx.signers_count(), 0);
-    assert!(!tx.has_root_signer());
-    assert!(tx.has_treasury_signer());
-
-    let script = tx.into_script(vec![]).unwrap();
-    match script.call() {
-        Call::Script { code } => {
-            CompiledScript::deserialize(code).unwrap();
-        }
-        Call::ScriptFunction { .. } => unreachable!(),
-    };
-    assert!(script.args().is_empty());
-    assert!(script.type_parameters().is_empty());
-    assert_eq!(
-        script.signers(),
-        &[treasury_compliance_account_address()][..]
-    );
-
-    let tx = Transaction::try_from(
-        &include_bytes!("assets/build/assets/transaction/tr_and_rt_signers.mvt")[..],
-    )
-    .unwrap();
-    assert_eq!(tx.signers_count(), 0);
-    assert!(tx.has_root_signer());
-    assert!(tx.has_treasury_signer());
-
-    let script = tx.into_script(vec![]).unwrap();
-    match script.call() {
-        Call::Script { code } => {
-            CompiledScript::deserialize(code).unwrap();
-        }
-        Call::ScriptFunction { .. } => unreachable!(),
-    };
-    assert!(script.args().is_empty());
-    assert!(script.type_parameters().is_empty());
-    assert_eq!(
-        script.signers(),
-        &[diem_root_address(), treasury_compliance_account_address()][..]
-    );
-
-    let tx = Transaction::try_from(
-        &include_bytes!("assets/build/assets/transaction/signers_tr_and_rt_with_user.mvt")[..],
+        &include_bytes!("assets/build/assets/transaction/signers_tr_with_user.mvt")[..],
     )
     .unwrap();
     assert_eq!(tx.signers_count(), 1);
     assert!(tx.has_root_signer());
-    assert!(tx.has_treasury_signer());
 
     let addr = AccountAddress::random();
     let script = tx.into_script(vec![addr]).unwrap();
@@ -148,14 +100,7 @@ fn test_transaction_with_sys_signers() {
     };
     assert!(script.args().is_empty());
     assert!(script.type_parameters().is_empty());
-    assert_eq!(
-        script.signers(),
-        &[
-            diem_root_address(),
-            treasury_compliance_account_address(),
-            addr
-        ][..]
-    );
+    assert_eq!(script.signers(), &[diem_root_address(), addr][..]);
 }
 
 #[test]
@@ -261,17 +206,7 @@ fn test_module_abi() {
                     visibility: Script,
                     type_parameters: vec![TypeAbilities { abilities: vec![] }],
                     parameters: vec![],
-                    returns: vec![
-                        U64,
-                        Struct(StructDef {
-                            id: ModuleId::new(
-                                CORE_CODE_ADDRESS,
-                                Identifier::new("EventProxy").unwrap()
-                            ),
-                            name: Identifier::new("U64").unwrap(),
-                            type_parameters: vec![]
-                        })
-                    ]
+                    returns: vec![]
                 },
             ],
         }

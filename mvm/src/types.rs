@@ -13,7 +13,7 @@ use move_core_types::value::MoveValue;
 use move_core_types::vm_status::StatusCode;
 
 use crate::error::SubStatus;
-use diem_types::account_config::{diem_root_address, treasury_compliance_account_address};
+use diem_types::account_config::diem_root_address;
 use move_binary_format::errors::Location;
 use move_core_types::identifier::Identifier;
 
@@ -226,8 +226,6 @@ impl From<ScriptArg> for MoveValue {
 pub enum Signer {
     /// Root signer.
     Root,
-    /// Treasury signer.
-    Treasury,
     /// Template to replace.
     Placeholder,
     /// Named address.
@@ -281,7 +279,6 @@ impl Transaction {
             .iter()
             .map(|s| match *s {
                 Signer::Root => Ok(diem_root_address()),
-                Signer::Treasury => Ok(treasury_compliance_account_address()),
                 Signer::Placeholder => {
                     if !signers.is_empty() {
                         Ok(signers.remove(0))
@@ -311,10 +308,6 @@ impl Transaction {
 
     pub fn has_root_signer(&self) -> bool {
         self.as_ref().signers.iter().any(|s| *s == Signer::Root)
-    }
-
-    pub fn has_treasury_signer(&self) -> bool {
-        self.as_ref().signers.iter().any(|s| *s == Signer::Treasury)
     }
 
     pub fn signers_count(&self) -> usize {
