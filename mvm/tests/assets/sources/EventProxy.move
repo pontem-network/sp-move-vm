@@ -13,7 +13,7 @@ module Assets::EventProxy {
         U64 { val }
     }
 
-    public(script) fun test_only<T>(): (u64, U64) {
+    public(script) fun test_only<T>() {
         abort 1
     }
 }

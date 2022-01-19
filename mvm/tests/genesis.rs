@@ -17,6 +17,7 @@ fn test_genesis_success() {
     contains_core_module(&state, "BCS");
     contains_core_module(&state, "BitVector");
     contains_core_module(&state, "Capability");
+    contains_core_module(&state, "Debug");
     contains_core_module(&state, "Errors");
     contains_core_module(&state, "Event");
     contains_core_module(&state, "FixedPoint32");

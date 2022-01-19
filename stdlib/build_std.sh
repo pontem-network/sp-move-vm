@@ -28,13 +28,13 @@ lockfile_waithold
 rm -rf pont-stdlib
 git clone https://github.com/pontem-network/pont-stdlib.git
 cd pont-stdlib
-git reset --hard aa3dcdd5ed62b8912e0f95108ca1451162d385ac
-dove build -p
+git reset --hard 160f6a2ad8f34d2ac4ade1f39276948675edcd9d
+dove build -b
 cd ..
 
 rm -rf move-stdlib
 git clone https://github.com/pontem-network/move-stdlib.git
 cd move-stdlib
-git reset --hard 79ed97fc1f98fefab16fbb54988bdc7defb09578
-dove build -p
+git reset --hard be9fe12911b2c69899b08ec12e0cdd70f8367ad8
+dove build -b
 lockfile_release
