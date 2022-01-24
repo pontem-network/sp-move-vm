@@ -27,7 +27,7 @@ jobs:
         rust:
           - stable
         dove:
-          - 1.5.1
+          - 1.5.5
         os:
           - macos-latest
           - ubuntu-latest
@@ -76,7 +76,7 @@ jobs:
         rust:
           - nightly-2021-04-24
         dove:
-          - 1.5.1
+          - 1.5.5
         os:
           - macos-latest
           - ubuntu-latest
