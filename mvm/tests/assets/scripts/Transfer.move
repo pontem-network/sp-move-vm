@@ -8,7 +8,7 @@ script {
         assert!(PontAccount::balance<PONT>(Signer::address_of(&from)) == from_balance, Errors::custom(0));
         assert!(PontAccount::balance<PONT>(Signer::address_of(&to)) == to_balance, Errors::custom(1));
 
-        PontAccount::pay_from<PONT>(&from, Signer::address_of(&to), to_move, x"");
+        PontAccount::pay_from<PONT>(&from, Signer::address_of(&to), to_move);
 
         assert!(PontAccount::balance<PONT>(Signer::address_of(&from)) == from_balance - to_move, Errors::custom(2));
         assert!(PontAccount::balance<PONT>(Signer::address_of(&to)) == to_balance + to_move, Errors::custom(3));
