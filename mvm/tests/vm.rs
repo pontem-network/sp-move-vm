@@ -217,7 +217,7 @@ fn test_invalid_pac() {
 #[test]
 fn pont_info() {
     let (vm, _, _, bank) = vm();
-    bank.set_currency_info("PONT".as_bytes(), CurrencyInfo { total_value: 42 });
+    bank.set_currency_info("NOX".as_bytes(), CurrencyInfo { total_value: 42 });
 
     vm.exec(pont_info_script(CORE_CODE_ADDRESS, 42));
 }
@@ -225,7 +225,7 @@ fn pont_info() {
 #[test]
 fn test_balance() {
     let (vm, _, _, bank) = vm();
-    bank.set_currency_info("PONT".as_bytes(), CurrencyInfo { total_value: 1001 });
+    bank.set_currency_info("NOX".as_bytes(), CurrencyInfo { total_value: 1001 });
     let alice = AccountAddress::random();
     let alice_balance = 1000;
 
@@ -234,8 +234,8 @@ fn test_balance() {
     let bob = AccountAddress::random();
     let bob_balance = 1;
 
-    bank.set_balance(&alice, "PONT".as_bytes(), alice_balance);
-    bank.set_balance(&bob, "PONT".as_bytes(), bob_balance);
+    bank.set_balance(&alice, "NOX".as_bytes(), alice_balance);
+    bank.set_balance(&bob, "NOX".as_bytes(), bob_balance);
 
     vm.exec(transfer_script(
         alice,
@@ -246,11 +246,11 @@ fn test_balance() {
     ));
 
     assert_eq!(
-        bank.get_balance(&alice, "PONT".as_bytes()),
+        bank.get_balance(&alice, "NOX".as_bytes()),
         Some(alice_balance - move_to_bob)
     );
     assert_eq!(
-        bank.get_balance(&bob, "PONT".as_bytes()),
+        bank.get_balance(&bob, "NOX".as_bytes()),
         Some(bob_balance + move_to_bob)
     );
 
@@ -264,11 +264,11 @@ fn test_balance() {
     ));
 
     assert_eq!(
-        bank.get_balance(&alice, "PONT".as_bytes()),
+        bank.get_balance(&alice, "NOX".as_bytes()),
         Some(alice_balance - move_to_bob + move_to_alice)
     );
     assert_eq!(
-        bank.get_balance(&bob, "PONT".as_bytes()),
+        bank.get_balance(&bob, "NOX".as_bytes()),
         Some(bob_balance + move_to_bob - move_to_alice)
     );
 }
