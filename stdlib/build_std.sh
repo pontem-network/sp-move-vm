@@ -28,7 +28,7 @@ lockfile_waithold
 rm -rf pont-stdlib
 git clone https://github.com/pontem-network/pont-stdlib.git
 cd pont-stdlib
-git reset --hard d92b21e558e059a64808fe44eee98d91c194105b
+git reset --hard 1f094231de16cad54f2303093a7f866474bccd12
 dove build -b
 cd ..
 

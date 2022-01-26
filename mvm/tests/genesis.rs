@@ -34,7 +34,7 @@ fn test_genesis_success() {
     contains_core_module(&state, "Genesis");
     contains_core_module(&state, "KSM");
     contains_core_module(&state, "NativeToken");
-    contains_core_module(&state, "PONT");
+    contains_core_module(&state, "NOX");
     contains_core_module(&state, "PontAccount");
     contains_core_module(&state, "PontBlock");
     contains_core_module(&state, "PontTimestamp");
