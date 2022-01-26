@@ -2,8 +2,7 @@ use alloc::vec::Vec;
 
 use anyhow::{anyhow, Error};
 
-use diem_types::event::EventKey;
-use diem_types::on_chain_config::{OnChainConfig, VMConfig};
+use diem_types::on_chain_config::VMConfig;
 use move_binary_format::errors::{Location, VMError, VMResult};
 use move_core_types::account_address::AccountAddress;
 use move_core_types::effects::{ChangeSet, Event};
@@ -13,14 +12,12 @@ use move_core_types::gas_schedule::{AbstractMemorySize, GasAlgebra, GasUnits};
 use move_core_types::identifier::{IdentStr, Identifier};
 use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS};
 use move_core_types::vm_status::{StatusCode, VMStatus};
-use move_vm_runtime::data_cache::MoveStorage;
-use move_vm_runtime::logging::NoContextLog;
 use move_vm_runtime::move_vm::MoveVM;
 use move_vm_runtime::session::Session;
 
 use crate::abi::ModuleAbi;
+use crate::gas_schedule::cost_table;
 use crate::io::balance::{BalanceOp, MasterOfCoin};
-use crate::io::config::ConfigStore;
 use crate::io::context::ExecutionContext;
 use crate::io::key::AccessKey;
 use crate::io::state::{State, WriteEffects};
@@ -28,6 +25,7 @@ use crate::io::traits::{BalanceAccess, EventHandler, Storage};
 use crate::types::{Call, Gas, ModuleTx, PublishPackageTx, ScriptTx, VmResult};
 use crate::{StateAccess, Vm};
 use move_binary_format::CompiledModule;
+use move_core_types::resolver::{ModuleResolver, ResourceResolver};
 use move_vm_types::gas_schedule::GasStatus;
 
 /// MoveVM.
@@ -52,9 +50,11 @@ where
 {
     /// Creates a new move vm with given store and event handler.
     pub fn new(store: S, event_handler: E, balance: B) -> Result<Mvm<S, E, B>, Error> {
-        let config = VMConfig::fetch_config(&ConfigStore::from(&store))
-            .ok_or_else(|| anyhow!("Failed to load VMConfig."))?;
-        Self::new_with_config(store, event_handler, balance, config)
+        let vm_config = VMConfig {
+            gas_schedule: cost_table(),
+        };
+
+        Self::new_with_config(store, event_handler, balance, vm_config)
     }
 
     pub(crate) fn new_with_config(
@@ -64,7 +64,12 @@ where
         config: VMConfig,
     ) -> Result<Mvm<S, E, B>, Error> {
         Ok(Mvm {
-            vm: MoveVM::new(),
+            vm: MoveVM::new(move_stdlib::natives::all_natives(CORE_CODE_ADDRESS)).map_err(
+                |err| {
+                    let (code, _, msg, _, _, _) = err.all_data();
+                    anyhow!("Error code:{:?}: msg: '{}'", code, msg.unwrap_or_default())
+                },
+            )?,
             cost_table: config.gas_schedule,
             state: State::new(store),
             event_handler,
@@ -87,14 +92,8 @@ where
         let mut cost_strategy =
             GasStatus::new(&self.cost_table, GasUnits::new(gas.max_gas_amount()));
 
-        let result = session.execute_function(
-            module,
-            function_name,
-            ty_args,
-            args,
-            &mut cost_strategy,
-            &NoContextLog::new(),
-        );
+        let result =
+            session.execute_function(module, function_name, ty_args, args, &mut cost_strategy);
 
         self.handle_vm_result(
             sender,
@@ -198,7 +197,8 @@ where
         let msg = bcs::to_bytes(&status)
             .map_err(|err| Error::msg(format!("Failed to generate event message: {:?}", err)))?;
 
-        let guid = EventKey::new_from_address(&sender, 0).to_vec();
+        let mut guid = 0_u64.to_le_bytes().to_vec();
+        guid.extend(&sender.to_u8());
         self.event_handler.on_event(guid, 0, tag, msg);
         Ok(())
     }
@@ -206,16 +206,15 @@ where
     fn _publish_module<R>(
         &self,
         session: &mut Session<'_, '_, R>,
-        module: Vec<u8>,
+        module: Vec<Vec<u8>>,
         sender: AccountAddress,
         cost_strategy: &mut GasStatus,
     ) -> VMResult<()>
     where
-        R: MoveStorage,
+        R: ModuleResolver<Error = Error> + ResourceResolver<Error = Error>,
     {
         cost_strategy.charge_intrinsic_gas(AbstractMemorySize::new(module.len() as u64))?;
-
-        let result = session.publish_module(module, sender, cost_strategy, &NoContextLog::new());
+        let result = session.publish_module_bundle(module, sender, cost_strategy);
         Self::charge_global_write_gas_usage(cost_strategy, session, &sender)?;
         result
     }
@@ -226,7 +225,7 @@ where
         sender: &AccountAddress,
     ) -> VMResult<()>
     where
-        R: MoveStorage,
+        R: ModuleResolver<Error = Error> + ResourceResolver<Error = Error>,
     {
         let total_cost = session.num_mutated_accounts(sender)
             * cost_strategy
@@ -259,7 +258,7 @@ where
         let mut session = self.vm.new_session(&self.state);
 
         let result = self
-            ._publish_module(&mut session, module, sender, &mut cost_strategy)
+            ._publish_module(&mut session, vec![module], sender, &mut cost_strategy)
             .and_then(|_| session.finish().map(|(ws, e)| (ws, e, vec![])));
 
         self.handle_vm_result(sender, cost_strategy, gas, result, dry_run)
@@ -275,25 +274,12 @@ where
         let mut cost_strategy =
             GasStatus::new(&self.cost_table, GasUnits::new(gas.max_gas_amount()));
 
-        // We need to create a new vm to publish module packages.
-        // Because during batch publishing, the cache mutates.
-        // This is not the correct behavior for the dry_run case or for rolling back a transaction.
-        let vm = MoveVM::new();
-        let mut session = vm.new_session(&self.state);
+        let mut session = self.vm.new_session(&self.state);
+        let result = self
+            ._publish_module(&mut session, modules, sender, &mut cost_strategy)
+            .and_then(|_| session.finish().map(|(ws, e)| (ws, e, vec![])));
 
-        for module in modules {
-            if let Err(err) = self._publish_module(&mut session, module, sender, &mut cost_strategy)
-            {
-                return self.handle_vm_result(sender, cost_strategy, gas, Err(err), dry_run);
-            }
-        }
-        self.handle_vm_result(
-            sender,
-            cost_strategy,
-            gas,
-            session.finish().map(|(ws, e)| (ws, e, vec![])),
-            dry_run,
-        )
+        self.handle_vm_result(sender, cost_strategy, gas, result, dry_run)
     }
 
     fn execute_script(
@@ -315,14 +301,9 @@ where
             GasStatus::new(&self.cost_table, GasUnits::new(gas.max_gas_amount()));
 
         let result = match script {
-            Call::Script { code } => vm_session.execute_script(
-                code,
-                type_args,
-                args,
-                senders,
-                &mut cost_strategy,
-                &NoContextLog::new(),
-            ),
+            Call::Script { code } => {
+                vm_session.execute_script(code, type_args, args, senders, &mut cost_strategy)
+            }
             Call::ScriptFunction {
                 mod_address,
                 mod_name,
@@ -334,7 +315,6 @@ where
                 args,
                 senders,
                 &mut cost_strategy,
-                &NoContextLog::new(),
             ),
         };
 
@@ -362,10 +342,7 @@ where
 {
     fn get_module(&self, module_id: &[u8]) -> Result<Option<Vec<u8>>, Error> {
         let module_id = bcs::from_bytes(module_id).map_err(Error::msg)?;
-        self.state.get_module(&module_id).map_err(|err| {
-            let (code, _, msg, _, _, _) = err.all_data();
-            anyhow!("Error code:{:?}: msg: '{}'", code, msg.unwrap_or_default())
-        })
+        self.state.get_module(&module_id)
     }
 
     fn get_module_abi(&self, module_id: &[u8]) -> Result<Option<Vec<u8>>, Error> {
@@ -385,9 +362,6 @@ where
         let tag = bcs::from_bytes(tag).map_err(Error::msg)?;
 
         let state_session = self.state.state_session(None, &self.master_of_coin);
-        state_session.get_resource(address, &tag).map_err(|err| {
-            let (code, _, msg, _, _) = err.all_data();
-            anyhow!("Error code:{:?}: msg: '{}'", code, msg.unwrap_or_default())
-        })
+        state_session.get_resource(address, &tag)
     }
 }

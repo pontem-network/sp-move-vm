@@ -16,7 +16,6 @@ pub mod check_duplication;
 pub mod code_unit_verifier;
 pub mod constants;
 pub mod control_flow;
-pub mod control_flow_graph;
 pub mod cyclic_dependencies;
 pub mod dependencies;
 pub mod friends;
@@ -36,7 +35,6 @@ pub use verifier::{verify_module, verify_script};
 
 mod absint;
 mod acquires_list_verifier;
-mod binary_views;
 mod locals_safety;
 mod reference_safety;
 mod stack_usage_verifier;

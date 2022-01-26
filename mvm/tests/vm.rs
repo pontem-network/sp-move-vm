@@ -3,12 +3,11 @@ extern crate alloc;
 
 use common::mock::Utils;
 use common::{assets::*, contains_core_module, mock::*, vm};
-use diem_types::event::EventKey;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::identifier::Identifier;
 use move_core_types::language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS};
+use move_core_types::resolver::{ModuleResolver, ResourceResolver};
 use move_core_types::vm_status::{AbortLocation, StatusCode, VMStatus};
-use move_vm_runtime::data_cache::MoveStorage;
 use mvm::io::balance::CurrencyInfo;
 use mvm::io::context::ExecutionContext;
 use mvm::io::state::State;
@@ -46,7 +45,7 @@ fn test_module_republication() {
 #[test]
 fn test_run_module_function() {
     let tx = Transaction::try_from(
-        &include_bytes!("assets/artifacts/transactions/ScriptBook_test.mvt")[..],
+        &include_bytes!("assets/build/assets/transaction/ScriptBook_test.mvt")[..],
     )
     .unwrap();
     let script = tx.into_script(vec![]).unwrap();
@@ -99,7 +98,6 @@ fn test_store_event() {
     vm.pub_mod(event_proxy_module());
 
     vm.exec(emit_event_script(addr("0x1"), test_value));
-
     let (guid, seq, tag, msg) = event.data.borrow_mut().remove(0);
     assert_eq!(
         guid,
@@ -163,9 +161,9 @@ fn test_error_event() {
     );
 
     let (guid, seq, tag, msg) = events.pop().unwrap();
-    let key = EventKey::from_bytes(&guid).unwrap();
-    assert_eq!(sender, key.get_creator_address());
-    assert_eq!(0, key.get_creation_number());
+    let mut expected_guid = 0_u64.to_le_bytes().to_vec();
+    expected_guid.extend(sender.to_u8());
+    assert_eq!(expected_guid, guid);
     assert_eq!(0, seq);
 
     assert_eq!(
@@ -219,7 +217,7 @@ fn test_invalid_pac() {
 #[test]
 fn pont_info() {
     let (vm, _, _, bank) = vm();
-    bank.set_currency_info("PONT".as_bytes(), CurrencyInfo { total_value: 42 });
+    bank.set_currency_info("NOX".as_bytes(), CurrencyInfo { total_value: 42 });
 
     vm.exec(pont_info_script(CORE_CODE_ADDRESS, 42));
 }
@@ -227,22 +225,17 @@ fn pont_info() {
 #[test]
 fn test_balance() {
     let (vm, _, _, bank) = vm();
-    bank.set_currency_info("PONT".as_bytes(), CurrencyInfo { total_value: 1001 });
-    let root = AccountAddress::random();
-    vm.exec(create_root_account_script(root));
-
+    bank.set_currency_info("NOX".as_bytes(), CurrencyInfo { total_value: 1001 });
     let alice = AccountAddress::random();
     let alice_balance = 1000;
-    vm.exec(create_account_script(root, alice));
 
     let move_to_bob = 500;
 
     let bob = AccountAddress::random();
     let bob_balance = 1;
-    vm.exec(create_account_script(root, bob));
 
-    bank.set_balance(&alice, "PONT".as_bytes(), alice_balance);
-    bank.set_balance(&bob, "PONT".as_bytes(), bob_balance);
+    bank.set_balance(&alice, "NOX".as_bytes(), alice_balance);
+    bank.set_balance(&bob, "NOX".as_bytes(), bob_balance);
 
     vm.exec(transfer_script(
         alice,
@@ -253,11 +246,11 @@ fn test_balance() {
     ));
 
     assert_eq!(
-        bank.get_balance(&alice, "PONT".as_bytes()),
+        bank.get_balance(&alice, "NOX".as_bytes()),
         Some(alice_balance - move_to_bob)
     );
     assert_eq!(
-        bank.get_balance(&bob, "PONT".as_bytes()),
+        bank.get_balance(&bob, "NOX".as_bytes()),
         Some(bob_balance + move_to_bob)
     );
 
@@ -271,11 +264,43 @@ fn test_balance() {
     ));
 
     assert_eq!(
-        bank.get_balance(&alice, "PONT".as_bytes()),
+        bank.get_balance(&alice, "NOX".as_bytes()),
         Some(alice_balance - move_to_bob + move_to_alice)
     );
     assert_eq!(
-        bank.get_balance(&bob, "PONT".as_bytes()),
+        bank.get_balance(&bob, "NOX".as_bytes()),
         Some(bob_balance + move_to_bob - move_to_alice)
     );
+}
+
+#[test]
+fn test_signer_order() {
+    let (vm, _, _, _) = vm();
+    vm.exec(signer_order());
+    let tx = Transaction::try_from(
+        &include_bytes!("assets/build/assets/transaction/signer_order.mvt")[..],
+    )
+    .unwrap();
+    vm.exec(
+        tx.into_script(vec![addr("0x1"), addr("0x2"), addr("0x3")])
+            .unwrap(),
+    );
+}
+
+#[test]
+fn test_reflect_type_of() {
+    let (vm, _, _, _) = vm();
+    vm.pub_mod(reflect_test_module());
+    vm.pub_mod(event_proxy_module());
+    vm.exec(reflect_type_of(addr("0x13"), "ReflectTest", "Mod"));
+    vm.exec(reflect_type_of(addr("0x1"), "EventProxy", "U64"));
+}
+
+#[test]
+#[should_panic]
+fn test_reflect_type_of_fail() {
+    let (vm, _, _, _) = vm();
+    vm.pub_mod(reflect_test_module());
+    vm.pub_mod(event_proxy_module());
+    vm.exec(reflect_type_of(addr("0x2"), "EventProxy", "U64"));
 }

@@ -16,17 +16,17 @@ cell = { path = "../../../common/cell", version = "0.1.0", default-features = fa
 hex = { version = "0.4.2", default-features = false }
 anyhow = { version = "1.0.34", default-features = false }
 log = {version = "0.4", default-features = false }
+tracing = {version = "0.1.26", default-features = false }
+sha3 = {version = "0.9.1", default-features = false }
 
 bytecode-verifier = { path = "../../bytecode-verifier", default-features = false }
 diem-crypto = { path = "../../../crypto/crypto", default-features = false }
 move-core-types = { path = "../../move-core/types", default-features = false }
-move-vm-natives = { path = "../natives", default-features = false }
 move-vm-types = { path = "../types", default-features = false }
 move-binary-format = { path = "../../move-binary-format", default-features = false }
 
 [features]
 default = ["std"]
-debug_module = ["move-vm-natives/debug_module"]
 
 std = [
 	"cell/std",
@@ -34,7 +34,6 @@ std = [
 	"move-binary-format/std",
 	"move-core-types/std",
 	"move-vm-types/std",
-	"move-vm-natives/std",
 	"bytecode-verifier/std",
 	"diem-crypto/std",
     "log/std",

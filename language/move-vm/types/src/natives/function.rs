@@ -16,42 +16,14 @@
 //! This module contains the declarations and utilities to implement a native
 //! function.
 
-use crate::{gas_schedule::NativeCostIndex, loaded_data::runtime_types::Type, values::Value};
-pub use move_binary_format::errors::PartialVMError;
-use move_binary_format::errors::PartialVMResult;
-use move_core_types::{
-    gas_schedule::{AbstractMemorySize, CostTable, GasAlgebra, GasCarrier, InternalGasUnits},
-    value::MoveTypeLayout,
+use crate::{gas_schedule::NativeCostIndex, values::Value};
+use move_core_types::gas_schedule::{
+    AbstractMemorySize, CostTable, GasAlgebra, GasCarrier, InternalGasUnits,
 };
-use smallvec::SmallVec;
+use smallvec::{smallvec, SmallVec};
 
-use alloc::string::String;
-use alloc::vec::Vec;
-
+pub use move_binary_format::errors::{PartialVMError, PartialVMResult};
 pub use move_core_types::vm_status::StatusCode;
-
-/// `NativeContext` - Native function context.
-///
-/// This is the API, the "privileges", a native function is given.
-/// Normally a native function will only need the `CostTable`.
-/// The set of native functions and their linkage is entirely inside the MoveVM
-/// runtime.
-pub trait NativeContext {
-    /// Prints stack trace.
-    fn print_stack_trace(&self, buf: &mut String) -> PartialVMResult<()>;
-    /// Gets cost table ref.
-    fn cost_table(&self) -> &CostTable;
-    /// Saves contract event. Returns true if successful
-    fn save_event(
-        &mut self,
-        guid: Vec<u8>,
-        count: u64,
-        ty: Type,
-        val: Value,
-    ) -> PartialVMResult<bool>;
-    /// Get the a data layout via the type.
-    fn type_to_type_layout(&self, ty: &Type) -> PartialVMResult<Option<MoveTypeLayout>>;
-}
 
 /// Result of a native function execution requires charges for execution cost.
 ///
@@ -87,6 +59,48 @@ impl NativeResult {
             cost,
             result: Err(abort_code),
         }
+    }
+
+    /// Convert a PartialVMResult<()> into a PartialVMResult<NativeResult>
+    pub fn map_partial_vm_result_empty(
+        cost: InternalGasUnits<GasCarrier>,
+        res: PartialVMResult<()>,
+    ) -> PartialVMResult<Self> {
+        let result = match res {
+            Ok(_) => NativeResult::ok(cost, smallvec![]),
+            Err(err) if err.major_status() == StatusCode::ABORTED => {
+                let (_, abort_code, _, _, _) = err.all_data();
+                NativeResult::err(
+                    cost,
+                    abort_code.unwrap_or(StatusCode::UNKNOWN_INVARIANT_VIOLATION_ERROR as u64),
+                )
+            }
+            Err(err) => {
+                return Err(err);
+            }
+        };
+        Ok(result)
+    }
+
+    /// Convert a PartialVMResult<Value> into a PartialVMResult<NativeResult>
+    pub fn map_partial_vm_result_one(
+        cost: InternalGasUnits<GasCarrier>,
+        res: PartialVMResult<Value>,
+    ) -> PartialVMResult<Self> {
+        let result = match res {
+            Ok(val) => NativeResult::ok(cost, smallvec![val]),
+            Err(err) if err.major_status() == StatusCode::ABORTED => {
+                let (_, abort_code, _, _, _) = err.all_data();
+                NativeResult::err(
+                    cost,
+                    abort_code.unwrap_or(StatusCode::UNKNOWN_INVARIANT_VIOLATION_ERROR as u64),
+                )
+            }
+            Err(err) => {
+                return Err(err);
+            }
+        };
+        Ok(result)
     }
 }
 

@@ -87,6 +87,12 @@ pub enum KeptVMStatus {
     MiscellaneousError,
 }
 
+impl KeptVMStatus {
+    pub fn is_success(&self) -> bool {
+        matches!(self, KeptVMStatus::Executed)
+    }
+}
+
 pub type DiscardedVMStatus = StatusCode;
 
 /// An `AbortLocation` specifies where a Move program `abort` occurred, either in a function in
@@ -318,10 +324,11 @@ pub mod known_locations {
         language_storage::{ModuleId, CORE_CODE_ADDRESS},
         vm_status::AbortLocation,
     };
+    use alloc::borrow::ToOwned;
     use cell::Lazy;
 
     /// The Identifier for the Account module.
-    pub const ACCOUNT_MODULE_IDENTIFIER: &IdentStr = ident_str!("DiemAccount");
+    pub const ACCOUNT_MODULE_IDENTIFIER: &IdentStr = ident_str!("PontAccount");
     /// The ModuleId for the Account module.
     pub static ACCOUNT_MODULE: Lazy<ModuleId> =
         Lazy::new(|| ModuleId::new(CORE_CODE_ADDRESS, ACCOUNT_MODULE_IDENTIFIER.to_owned()));
@@ -331,25 +338,12 @@ pub mod known_locations {
     }
 
     /// The Identifier for the Diem module.
-    pub const DIEM_MODULE_IDENTIFIER: &IdentStr = ident_str!("Diem");
+    pub const DIEM_MODULE_IDENTIFIER: &IdentStr = ident_str!("Token");
     /// The ModuleId for the Diem module.
     pub static DIEM_MODULE: Lazy<ModuleId> =
         Lazy::new(|| ModuleId::new(CORE_CODE_ADDRESS, DIEM_MODULE_IDENTIFIER.to_owned()));
     pub fn diem_module_abort() -> AbortLocation {
         AbortLocation::Module(DIEM_MODULE.clone())
-    }
-
-    /// The Identifier for the Designated Dealer module.
-    pub const DESIGNATED_DEALER_MODULE_IDENTIFIER: &IdentStr = ident_str!("DesignatedDealer");
-    /// The ModuleId for the Designated Dealer module.
-    pub static DESIGNATED_DEALER_MODULE: Lazy<ModuleId> = Lazy::new(|| {
-        ModuleId::new(
-            CORE_CODE_ADDRESS,
-            DESIGNATED_DEALER_MODULE_IDENTIFIER.to_owned(),
-        )
-    });
-    pub fn designated_dealer_module_abort() -> AbortLocation {
-        AbortLocation::Module(DESIGNATED_DEALER_MODULE.clone())
     }
 }
 
@@ -466,6 +460,8 @@ pub enum StatusCode {
     SECONDARY_KEYS_ADDRESSES_COUNT_MISMATCH = 27,
     // There are duplicates among signers, including the sender and all the secondary signers
     SIGNERS_CONTAIN_DUPLICATES = 28,
+    // The sequence nonce in the transaction is invalid (too new, too old, or already used).
+    SEQUENCE_NONCE_INVALID = 29,
 
     // When a code module/script is published it is verified. These are the
     // possible errors that can arise from the verification process.
@@ -554,8 +550,7 @@ pub enum StatusCode {
     GENERIC_MEMBER_OPCODE_MISMATCH = 1090,
     FUNCTION_RESOLUTION_FAILURE = 1091,
     INVALID_OPERATION_IN_SCRIPT = 1094,
-    // The sender is trying to publish a module named `M`, but the sender's account already
-    // contains a module with this name.
+    // The sender is trying to publish two modules with the same name in one transaction
     DUPLICATE_MODULE_NAME = 1095,
     // The sender is trying to publish a module that breaks the compatibility checks
     BACKWARD_INCOMPATIBLE_MODULE_UPDATE = 1096,
@@ -575,6 +570,10 @@ pub enum StatusCode {
     INVALID_FRIEND_DECL_WITH_MODULES_IN_DEPENDENCIES = 1106,
     // The updated module introduces a cyclic friendship (i.e., A friends B and B also friends A)
     CYCLIC_MODULE_FRIENDSHIP = 1107,
+    // A phantom type parameter was used in a non-phantom position.
+    INVALID_PHANTOM_TYPE_PARAM_POSITION = 1108,
+    VEC_UPDATE_EXISTS_MUTABLE_BORROW_ERROR = 1109,
+    VEC_BORROW_ELEMENT_EXISTS_MUTABLE_BORROW_ERROR = 1110,
 
     // These are errors that the VM might raise if a violation of internal
     // invariants takes place.
@@ -596,6 +595,7 @@ pub enum StatusCode {
     FAILED_TO_DESERIALIZE_RESOURCE = 2020,
     // Failed to resolve type due to linking being broken after verification
     TYPE_RESOLUTION_FAILURE = 2021,
+    DUPLICATE_NATIVE_FUNCTION = 2022,
 
     // Errors that can arise from binary decoding (deserialization)
     // Deserializtion Errors: 3000-3999
@@ -726,6 +726,8 @@ impl From<StatusCode> for u64 {
 pub mod sub_status {
     // Native Function Error sub-codes
     pub const NFE_VECTOR_ERROR_BASE: u64 = 0;
+    // Invalid type params.
+    pub const INVALID_TYPE_PARAM: u64 = 1;
     // Failure in BCS deserialization
     pub const NFE_BCS_SERIALIZATION_FAILURE: u64 = 0x1C5;
 }

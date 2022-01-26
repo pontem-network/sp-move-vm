@@ -1,10 +1,11 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{errors::*, file_format::*, file_format_common::*};
+use crate::{check_bounds::BoundsChecker, errors::*, file_format::*, file_format_common::*};
 use alloc::boxed::Box;
-use alloc::string::String;
+use alloc::format;
 use alloc::string::ToString;
+use alloc::vec;
 use alloc::vec::Vec;
 use core::convert::TryInto;
 use hashbrown::HashSet;
@@ -15,12 +16,11 @@ use move_core_types::{
 impl CompiledScript {
     /// Deserializes a &[u8] slice into a `CompiledScript` instance.
     pub fn deserialize(binary: &[u8]) -> BinaryLoaderResult<Self> {
-        let deserialized = CompiledScriptMut::deserialize_no_check_bounds(binary)?;
-        deserialized.freeze()
+        let script = CompiledScript::deserialize_no_check_bounds(binary)?;
+        BoundsChecker::verify_script(&script)?;
+        Ok(script)
     }
-}
 
-impl CompiledScriptMut {
     // exposed as a public function to enable testing the deserializer
     #[doc(hidden)]
     pub fn deserialize_no_check_bounds(binary: &[u8]) -> BinaryLoaderResult<Self> {
@@ -31,12 +31,11 @@ impl CompiledScriptMut {
 impl CompiledModule {
     /// Deserialize a &[u8] slice into a `CompiledModule` instance.
     pub fn deserialize(binary: &[u8]) -> BinaryLoaderResult<Self> {
-        let deserialized = CompiledModuleMut::deserialize_no_check_bounds(binary)?;
-        deserialized.freeze()
+        let module = CompiledModule::deserialize_no_check_bounds(binary)?;
+        BoundsChecker::verify_module(&module)?;
+        Ok(module)
     }
-}
 
-impl CompiledModuleMut {
     // exposed as a public function to enable testing the deserializer
     pub fn deserialize_no_check_bounds(binary: &[u8]) -> BinaryLoaderResult<Self> {
         deserialize_compiled_module(binary)
@@ -46,14 +45,14 @@ impl CompiledModuleMut {
 /// Table info: table type, offset where the table content starts from, count of bytes for
 /// the table content.
 #[derive(Clone, Debug)]
-pub struct Table {
+struct Table {
     kind: TableType,
     offset: u32,
     count: u32,
 }
 
 impl Table {
-    pub fn new(kind: TableType, offset: u32, count: u32) -> Table {
+    fn new(kind: TableType, offset: u32, count: u32) -> Table {
         Table {
             kind,
             offset,
@@ -177,7 +176,7 @@ pub fn load_field_inst_index(
     )?))
 }
 
-pub fn load_function_inst_index(
+fn load_function_inst_index(
     cursor: &mut VersionedCursor,
 ) -> BinaryLoaderResult<FunctionInstantiationIndex> {
     Ok(FunctionInstantiationIndex(read_uleb_internal(
@@ -186,7 +185,7 @@ pub fn load_function_inst_index(
     )?))
 }
 
-pub fn load_struct_def_inst_index(
+fn load_struct_def_inst_index(
     cursor: &mut VersionedCursor,
 ) -> BinaryLoaderResult<StructDefInstantiationIndex> {
     Ok(StructDefInstantiationIndex(read_uleb_internal(
@@ -195,36 +194,34 @@ pub fn load_struct_def_inst_index(
     )?))
 }
 
-pub fn load_constant_pool_index(
-    cursor: &mut VersionedCursor,
-) -> BinaryLoaderResult<ConstantPoolIndex> {
+fn load_constant_pool_index(cursor: &mut VersionedCursor) -> BinaryLoaderResult<ConstantPoolIndex> {
     Ok(ConstantPoolIndex(read_uleb_internal(
         cursor,
         CONSTANT_INDEX_MAX,
     )?))
 }
 
-pub fn load_bytecode_count(cursor: &mut VersionedCursor) -> BinaryLoaderResult<usize> {
+fn load_bytecode_count(cursor: &mut VersionedCursor) -> BinaryLoaderResult<usize> {
     read_uleb_internal(cursor, BYTECODE_COUNT_MAX)
 }
 
-pub fn load_bytecode_index(cursor: &mut VersionedCursor) -> BinaryLoaderResult<u16> {
+fn load_bytecode_index(cursor: &mut VersionedCursor) -> BinaryLoaderResult<u16> {
     read_uleb_internal(cursor, BYTECODE_INDEX_MAX)
 }
 
-pub fn load_acquires_count(cursor: &mut VersionedCursor) -> BinaryLoaderResult<u64> {
+fn load_acquires_count(cursor: &mut VersionedCursor) -> BinaryLoaderResult<u64> {
     read_uleb_internal(cursor, ACQUIRES_COUNT_MAX)
 }
 
-pub fn load_field_count(cursor: &mut VersionedCursor) -> BinaryLoaderResult<u64> {
+fn load_field_count(cursor: &mut VersionedCursor) -> BinaryLoaderResult<u64> {
     read_uleb_internal(cursor, FIELD_COUNT_MAX)
 }
 
-pub fn load_type_parameter_count(cursor: &mut VersionedCursor) -> BinaryLoaderResult<usize> {
+fn load_type_parameter_count(cursor: &mut VersionedCursor) -> BinaryLoaderResult<usize> {
     read_uleb_internal(cursor, TYPE_PARAMETER_COUNT_MAX)
 }
 
-pub fn load_signature_size(cursor: &mut VersionedCursor) -> BinaryLoaderResult<u64> {
+fn load_signature_size(cursor: &mut VersionedCursor) -> BinaryLoaderResult<u64> {
     read_uleb_internal(cursor, SIGNATURE_SIZE_MAX)
 }
 
@@ -232,36 +229,36 @@ pub fn load_constant_size(cursor: &mut VersionedCursor) -> BinaryLoaderResult<us
     read_uleb_internal(cursor, CONSTANT_SIZE_MAX)
 }
 
-pub fn load_identifier_size(cursor: &mut VersionedCursor) -> BinaryLoaderResult<usize> {
+fn load_identifier_size(cursor: &mut VersionedCursor) -> BinaryLoaderResult<usize> {
     read_uleb_internal(cursor, IDENTIFIER_SIZE_MAX)
 }
 
-pub fn load_type_parameter_index(cursor: &mut VersionedCursor) -> BinaryLoaderResult<u16> {
+fn load_type_parameter_index(cursor: &mut VersionedCursor) -> BinaryLoaderResult<u16> {
     read_uleb_internal(cursor, TYPE_PARAMETER_INDEX_MAX)
 }
 
-pub fn load_field_offset(cursor: &mut VersionedCursor) -> BinaryLoaderResult<u16> {
+fn load_field_offset(cursor: &mut VersionedCursor) -> BinaryLoaderResult<u16> {
     read_uleb_internal(cursor, FIELD_OFFSET_MAX)
 }
 
-pub fn load_table_count(cursor: &mut VersionedCursor) -> BinaryLoaderResult<u8> {
+fn load_table_count(cursor: &mut VersionedCursor) -> BinaryLoaderResult<u8> {
     read_uleb_internal(cursor, TABLE_COUNT_MAX)
 }
 
-pub fn load_table_offset(cursor: &mut VersionedCursor) -> BinaryLoaderResult<u32> {
+fn load_table_offset(cursor: &mut VersionedCursor) -> BinaryLoaderResult<u32> {
     read_uleb_internal(cursor, TABLE_OFFSET_MAX)
 }
 
-pub fn load_table_size(cursor: &mut VersionedCursor) -> BinaryLoaderResult<u32> {
+fn load_table_size(cursor: &mut VersionedCursor) -> BinaryLoaderResult<u32> {
     read_uleb_internal(cursor, TABLE_SIZE_MAX)
 }
 
-pub fn load_local_index(cursor: &mut VersionedCursor) -> BinaryLoaderResult<u8> {
+fn load_local_index(cursor: &mut VersionedCursor) -> BinaryLoaderResult<u8> {
     read_uleb_internal(cursor, LOCAL_INDEX_MAX)
 }
 
 /// Module internal function that manages deserialization of transactions.
-pub fn deserialize_compiled_script(binary: &[u8]) -> BinaryLoaderResult<CompiledScriptMut> {
+fn deserialize_compiled_script(binary: &[u8]) -> BinaryLoaderResult<CompiledScript> {
     let binary_len = binary.len();
     let mut cursor = VersionedCursor::new(binary)?;
     let table_count = load_table_count(&mut cursor)?;
@@ -276,7 +273,7 @@ pub fn deserialize_compiled_script(binary: &[u8]) -> BinaryLoaderResult<Compiled
         content_len as usize,
     )?;
 
-    let mut script = CompiledScriptMut {
+    let mut script = CompiledScript {
         version: cursor.version(),
         type_parameters: load_ability_sets(
             &mut cursor,
@@ -292,7 +289,7 @@ pub fn deserialize_compiled_script(binary: &[u8]) -> BinaryLoaderResult<Compiled
 }
 
 /// Module internal function that manages deserialization of modules.
-pub fn deserialize_compiled_module(binary: &[u8]) -> BinaryLoaderResult<CompiledModuleMut> {
+fn deserialize_compiled_module(binary: &[u8]) -> BinaryLoaderResult<CompiledModule> {
     let binary_len = binary.len();
     let mut cursor = VersionedCursor::new(binary)?;
     let table_count = load_table_count(&mut cursor)?;
@@ -307,7 +304,7 @@ pub fn deserialize_compiled_module(binary: &[u8]) -> BinaryLoaderResult<Compiled
         content_len as usize,
     )?;
 
-    let mut module = CompiledModuleMut {
+    let mut module = CompiledModule {
         version: cursor.version(),
         self_module_handle_idx: load_module_handle_index(&mut cursor)?,
         ..Default::default()
@@ -321,7 +318,7 @@ pub fn deserialize_compiled_module(binary: &[u8]) -> BinaryLoaderResult<Compiled
 /// Reads all the table headers.
 ///
 /// Return a Vec<Table> that contains all the table headers defined and checked.
-pub fn read_tables(
+fn read_tables(
     cursor: &mut VersionedCursor,
     table_count: u8,
     tables: &mut Vec<Table>,
@@ -334,7 +331,7 @@ pub fn read_tables(
 
 /// Reads a table from a slice at a given offset.
 /// If a table is not recognized an error is returned.
-pub fn read_table(cursor: &mut VersionedCursor) -> BinaryLoaderResult<Table> {
+fn read_table(cursor: &mut VersionedCursor) -> BinaryLoaderResult<Table> {
     let kind = match cursor.read_u8() {
         Ok(kind) => kind,
         Err(_) => {
@@ -347,7 +344,7 @@ pub fn read_table(cursor: &mut VersionedCursor) -> BinaryLoaderResult<Table> {
     Ok(Table::new(TableType::from_u8(kind)?, table_offset, count))
 }
 
-pub fn read_table_contents<'a>(
+fn read_table_contents<'a>(
     cursor: &mut VersionedCursor,
     buffer: &'a mut Vec<u8>,
     n: usize,
@@ -360,7 +357,7 @@ pub fn read_table_contents<'a>(
 /// Verify correctness of tables.
 ///
 /// Tables cannot have duplicates, must cover the entire blob and must be disjoint.
-pub fn check_tables(tables: &mut Vec<Table>, binary_len: usize) -> BinaryLoaderResult<u32> {
+fn check_tables(tables: &mut Vec<Table>, binary_len: usize) -> BinaryLoaderResult<u32> {
     // there is no real reason to pass a mutable reference but we are sorting next line
     tables.sort_by(|t1, t2| t1.offset.cmp(&t2.offset));
 
@@ -391,7 +388,7 @@ pub fn check_tables(tables: &mut Vec<Table>, binary_len: usize) -> BinaryLoaderR
 // Trait to read common tables from CompiledScript or CompiledModule
 //
 
-pub trait CommonTables {
+trait CommonTables {
     fn get_module_handles(&mut self) -> &mut Vec<ModuleHandle>;
     fn get_struct_handles(&mut self) -> &mut Vec<StructHandle>;
     fn get_function_handles(&mut self) -> &mut Vec<FunctionHandle>;
@@ -402,7 +399,7 @@ pub trait CommonTables {
     fn get_constant_pool(&mut self) -> &mut ConstantPool;
 }
 
-impl CommonTables for CompiledScriptMut {
+impl CommonTables for CompiledScript {
     fn get_module_handles(&mut self) -> &mut Vec<ModuleHandle> {
         &mut self.module_handles
     }
@@ -436,7 +433,7 @@ impl CommonTables for CompiledScriptMut {
     }
 }
 
-impl CommonTables for CompiledModuleMut {
+impl CommonTables for CompiledModule {
     fn get_module_handles(&mut self) -> &mut Vec<ModuleHandle> {
         &mut self.module_handles
     }
@@ -470,9 +467,9 @@ impl CommonTables for CompiledModuleMut {
     }
 }
 
-/// Builds and returns a `CompiledScriptMut`.
-pub fn build_compiled_script(
-    script: &mut CompiledScriptMut,
+/// Builds and returns a `CompiledScript`.
+fn build_compiled_script(
+    script: &mut CompiledScript,
     binary: &VersionedBinary,
     tables: &[Table],
 ) -> BinaryLoaderResult<()> {
@@ -481,9 +478,9 @@ pub fn build_compiled_script(
     Ok(())
 }
 
-/// Builds and returns a `CompiledModuleMut`.
-pub fn build_compiled_module(
-    module: &mut CompiledModuleMut,
+/// Builds and returns a `CompiledModule`.
+fn build_compiled_module(
+    module: &mut CompiledModule,
     binary: &VersionedBinary,
     tables: &[Table],
 ) -> BinaryLoaderResult<()> {
@@ -493,7 +490,7 @@ pub fn build_compiled_module(
 }
 
 /// Builds the common tables in a compiled unit.
-pub fn build_common_tables(
+fn build_common_tables(
     binary: &VersionedBinary,
     tables: &[Table],
     common: &mut impl CommonTables,
@@ -543,11 +540,11 @@ pub fn build_common_tables(
     Ok(())
 }
 
-/// Builds tables related to a `CompiledModuleMut`.
-pub fn build_module_tables(
+/// Builds tables related to a `CompiledModule`.
+fn build_module_tables(
     binary: &VersionedBinary,
     tables: &[Table],
-    module: &mut CompiledModuleMut,
+    module: &mut CompiledModule,
 ) -> BinaryLoaderResult<()> {
     for table in tables {
         match table.kind {
@@ -584,11 +581,11 @@ pub fn build_module_tables(
     Ok(())
 }
 
-/// Builds tables related to a `CompiledScriptMut`.
-pub fn build_script_tables(
+/// Builds tables related to a `CompiledScript`.
+fn build_script_tables(
     _binary: &VersionedBinary,
     tables: &[Table],
-    _script: &mut CompiledScriptMut,
+    _script: &mut CompiledScript,
 ) -> BinaryLoaderResult<()> {
     for table in tables {
         match table.kind {
@@ -617,7 +614,7 @@ pub fn build_script_tables(
 }
 
 /// Builds the `ModuleHandle` table.
-pub fn load_module_handles(
+fn load_module_handles(
     binary: &VersionedBinary,
     table: &Table,
     module_handles: &mut Vec<ModuleHandle>,
@@ -634,7 +631,7 @@ pub fn load_module_handles(
 }
 
 /// Builds the `StructHandle` table.
-pub fn load_struct_handles(
+fn load_struct_handles(
     binary: &VersionedBinary,
     table: &Table,
     struct_handles: &mut Vec<StructHandle>,
@@ -646,8 +643,7 @@ pub fn load_struct_handles(
         let module = load_module_handle_index(&mut cursor)?;
         let name = load_identifier_index(&mut cursor)?;
         let abilities = load_ability_set(&mut cursor, AbilitySetPosition::StructHandle)?;
-        let type_parameters =
-            load_ability_sets(&mut cursor, AbilitySetPosition::StructTypeParameters)?;
+        let type_parameters = load_struct_type_parameters(&mut cursor)?;
         struct_handles.push(StructHandle {
             module,
             name,
@@ -659,7 +655,7 @@ pub fn load_struct_handles(
 }
 
 /// Builds the `FunctionHandle` table.
-pub fn load_function_handles(
+fn load_function_handles(
     binary: &VersionedBinary,
     table: &Table,
     function_handles: &mut Vec<FunctionHandle>,
@@ -687,7 +683,7 @@ pub fn load_function_handles(
 }
 
 /// Builds the `StructInstantiation` table.
-pub fn load_struct_instantiations(
+fn load_struct_instantiations(
     binary: &VersionedBinary,
     table: &Table,
     struct_insts: &mut Vec<StructDefInstantiation>,
@@ -708,7 +704,7 @@ pub fn load_struct_instantiations(
 }
 
 /// Builds the `FunctionInstantiation` table.
-pub fn load_function_instantiations(
+fn load_function_instantiations(
     binary: &VersionedBinary,
     table: &Table,
     func_insts: &mut Vec<FunctionInstantiation>,
@@ -728,7 +724,7 @@ pub fn load_function_instantiations(
 }
 
 /// Builds the `IdentifierPool`.
-pub fn load_identifiers(
+fn load_identifiers(
     binary: &VersionedBinary,
     table: &Table,
     identifiers: &mut IdentifierPool,
@@ -755,7 +751,7 @@ pub fn load_identifiers(
 }
 
 /// Builds the `AddressIdentifierPool`.
-pub fn load_address_identifiers(
+fn load_address_identifiers(
     binary: &VersionedBinary,
     table: &Table,
     addresses: &mut AddressIdentifierPool,
@@ -780,7 +776,7 @@ pub fn load_address_identifiers(
 }
 
 /// Builds the `ConstantPool`.
-pub fn load_constant_pool(
+fn load_constant_pool(
     binary: &VersionedBinary,
     table: &Table,
     constants: &mut ConstantPool,
@@ -795,7 +791,7 @@ pub fn load_constant_pool(
 }
 
 /// Build a single `Constant`
-pub fn load_constant(cursor: &mut VersionedCursor) -> BinaryLoaderResult<Constant> {
+fn load_constant(cursor: &mut VersionedCursor) -> BinaryLoaderResult<Constant> {
     let type_ = load_signature_token(cursor)?;
     let size = load_constant_size(cursor)?;
     let mut data: Vec<u8> = vec![0u8; size];
@@ -811,7 +807,7 @@ pub fn load_constant(cursor: &mut VersionedCursor) -> BinaryLoaderResult<Constan
 }
 
 /// Builds the `SignaturePool`.
-pub fn load_signatures(
+fn load_signatures(
     binary: &VersionedBinary,
     table: &Table,
     signatures: &mut SignaturePool,
@@ -825,9 +821,7 @@ pub fn load_signatures(
     Ok(())
 }
 
-pub fn load_signature_tokens(
-    cursor: &mut VersionedCursor,
-) -> BinaryLoaderResult<Vec<SignatureToken>> {
+fn load_signature_tokens(cursor: &mut VersionedCursor) -> BinaryLoaderResult<Vec<SignatureToken>> {
     let len = load_signature_size(cursor)?;
     let mut tokens = vec![];
     for _ in 0..len {
@@ -1056,7 +1050,7 @@ pub fn load_ability_set(
     }
 }
 
-pub fn load_ability_sets(
+fn load_ability_sets(
     cursor: &mut VersionedCursor,
     pos: AbilitySetPosition,
 ) -> BinaryLoaderResult<Vec<AbilitySet>> {
@@ -1068,8 +1062,35 @@ pub fn load_ability_sets(
     Ok(kinds)
 }
 
+fn load_struct_type_parameters(
+    cursor: &mut VersionedCursor,
+) -> BinaryLoaderResult<Vec<StructTypeParameter>> {
+    let len = load_type_parameter_count(cursor)?;
+    let mut type_params = Vec::with_capacity(len);
+    for _ in 0..len {
+        type_params.push(load_struct_type_parameter(cursor)?);
+    }
+    Ok(type_params)
+}
+
+fn load_struct_type_parameter(
+    cursor: &mut VersionedCursor,
+) -> BinaryLoaderResult<StructTypeParameter> {
+    let constraints = load_ability_set(cursor, AbilitySetPosition::StructTypeParameters)?;
+    let is_phantom = if cursor.version() < VERSION_3 {
+        false
+    } else {
+        let byte: u8 = read_uleb_internal(cursor, 1)?;
+        byte != 0
+    };
+    Ok(StructTypeParameter {
+        constraints,
+        is_phantom,
+    })
+}
+
 /// Builds the `StructDefinition` table.
-pub fn load_struct_defs(
+fn load_struct_defs(
     binary: &VersionedBinary,
     table: &Table,
     struct_defs: &mut Vec<StructDefinition>,
@@ -1101,7 +1122,7 @@ pub fn load_struct_defs(
     Ok(())
 }
 
-pub fn load_field_defs(cursor: &mut VersionedCursor) -> BinaryLoaderResult<Vec<FieldDefinition>> {
+fn load_field_defs(cursor: &mut VersionedCursor) -> BinaryLoaderResult<Vec<FieldDefinition>> {
     let mut fields = Vec::new();
     let field_count = load_field_count(cursor)?;
     for _ in 0..field_count {
@@ -1110,7 +1131,7 @@ pub fn load_field_defs(cursor: &mut VersionedCursor) -> BinaryLoaderResult<Vec<F
     Ok(fields)
 }
 
-pub fn load_field_def(cursor: &mut VersionedCursor) -> BinaryLoaderResult<FieldDefinition> {
+fn load_field_def(cursor: &mut VersionedCursor) -> BinaryLoaderResult<FieldDefinition> {
     let name = load_identifier_index(cursor)?;
     let signature = load_signature_token(cursor)?;
     Ok(FieldDefinition {
@@ -1120,7 +1141,7 @@ pub fn load_field_def(cursor: &mut VersionedCursor) -> BinaryLoaderResult<FieldD
 }
 
 /// Builds the `FunctionDefinition` table.
-pub fn load_function_defs(
+fn load_function_defs(
     binary: &VersionedBinary,
     table: &Table,
     func_defs: &mut Vec<FunctionDefinition>,
@@ -1135,7 +1156,7 @@ pub fn load_function_defs(
     Ok(())
 }
 
-pub fn load_field_handles(
+fn load_field_handles(
     binary: &VersionedBinary,
     table: &Table,
     field_handles: &mut Vec<FieldHandle>,
@@ -1157,7 +1178,7 @@ pub fn load_field_handles(
     Ok(())
 }
 
-pub fn load_field_instantiations(
+fn load_field_instantiations(
     binary: &VersionedBinary,
     table: &Table,
     field_insts: &mut Vec<FieldInstantiation>,
@@ -1180,44 +1201,36 @@ pub fn load_field_instantiations(
 }
 
 /// Deserializes a `FunctionDefinition`.
-pub fn load_function_def(cursor: &mut VersionedCursor) -> BinaryLoaderResult<FunctionDefinition> {
+fn load_function_def(cursor: &mut VersionedCursor) -> BinaryLoaderResult<FunctionDefinition> {
     let function = load_function_handle_index(cursor)?;
 
     let mut flags = cursor.read_u8().map_err(|_| {
         PartialVMError::new(StatusCode::MALFORMED).with_message("Unexpected EOF".to_string())
     })?;
 
-    let (visibility, mut extra_flags) = match cursor.version() {
-        VERSION_1 => {
-            let is_public_bit = Visibility::Public as u8;
-            let vis = if (flags & is_public_bit) != 0 {
-                flags ^= is_public_bit;
-                Visibility::Public
-            } else {
-                Visibility::Private
-            };
-            (vis, flags)
-        }
-        VERSION_2 => {
-            // NOTE: changes compared with VERSION_1
-            // - in VERSION_1: the flags is a byte compositing both the visibility info and whether
-            //                 the function is a native function
-            // - in VERSION_2: the flags only represent the visibility info and we need to advance
-            //                 the cursor to read up the next byte as flags
-            let vis = flags.try_into().map_err(|_| {
-                PartialVMError::new(StatusCode::MALFORMED)
-                    .with_message("Invalid visibility byte".to_string())
-            })?;
-            let extra_flags = cursor.read_u8().map_err(|_| {
-                PartialVMError::new(StatusCode::MALFORMED)
-                    .with_message("Unexpected EOF".to_string())
-            })?;
-            (vis, extra_flags)
-        }
-        _ => {
-            return Err(PartialVMError::new(StatusCode::UNREACHABLE)
-                .with_message(String::from("Invalid bytecode version")))
-        }
+    // NOTE: changes compared with VERSION_1
+    // - in VERSION_1: the flags is a byte compositing both the visibility info and whether
+    //                 the function is a native function
+    // - in VERSION_2 onwards: the flags only represent the visibility info and we need to
+    //                 advance the cursor to read up the next byte as flags
+    let (visibility, mut extra_flags) = if cursor.version() == VERSION_1 {
+        let is_public_bit = Visibility::Public as u8;
+        let vis = if (flags & is_public_bit) != 0 {
+            flags ^= is_public_bit;
+            Visibility::Public
+        } else {
+            Visibility::Private
+        };
+        (vis, flags)
+    } else {
+        let vis = flags.try_into().map_err(|_| {
+            PartialVMError::new(StatusCode::MALFORMED)
+                .with_message("Invalid visibility byte".to_string())
+        })?;
+        let extra_flags = cursor.read_u8().map_err(|_| {
+            PartialVMError::new(StatusCode::MALFORMED).with_message("Unexpected EOF".to_string())
+        })?;
+        (vis, extra_flags)
     };
 
     let acquires_global_resources = load_struct_definition_indices(cursor)?;
@@ -1243,7 +1256,7 @@ pub fn load_function_def(cursor: &mut VersionedCursor) -> BinaryLoaderResult<Fun
 }
 
 /// Deserializes a `Vec<StructDefinitionIndex>`.
-pub fn load_struct_definition_indices(
+fn load_struct_definition_indices(
     cursor: &mut VersionedCursor,
 ) -> BinaryLoaderResult<Vec<StructDefinitionIndex>> {
     let len = load_acquires_count(cursor)?;
@@ -1255,7 +1268,7 @@ pub fn load_struct_definition_indices(
 }
 
 /// Deserializes a `CodeUnit`.
-pub fn load_code_unit(cursor: &mut VersionedCursor) -> BinaryLoaderResult<CodeUnit> {
+fn load_code_unit(cursor: &mut VersionedCursor) -> BinaryLoaderResult<CodeUnit> {
     let locals = load_signature_index(cursor)?;
 
     let mut code_unit = CodeUnit {
@@ -1268,14 +1281,37 @@ pub fn load_code_unit(cursor: &mut VersionedCursor) -> BinaryLoaderResult<CodeUn
 }
 
 /// Deserializes a code stream (`Bytecode`s).
-pub fn load_code(cursor: &mut VersionedCursor, code: &mut Vec<Bytecode>) -> BinaryLoaderResult<()> {
+fn load_code(cursor: &mut VersionedCursor, code: &mut Vec<Bytecode>) -> BinaryLoaderResult<()> {
     let bytecode_count = load_bytecode_count(cursor)?;
 
     while code.len() < bytecode_count {
         let byte = cursor.read_u8().map_err(|_| {
             PartialVMError::new(StatusCode::MALFORMED).with_message("Unexpected EOF".to_string())
         })?;
-        let bytecode = match Opcodes::from_u8(byte)? {
+        let opcode = Opcodes::from_u8(byte)?;
+        // version checking
+        match opcode {
+            Opcodes::VEC_PACK
+            | Opcodes::VEC_LEN
+            | Opcodes::VEC_IMM_BORROW
+            | Opcodes::VEC_MUT_BORROW
+            | Opcodes::VEC_PUSH_BACK
+            | Opcodes::VEC_POP_BACK
+            | Opcodes::VEC_UNPACK
+            | Opcodes::VEC_SWAP => {
+                if cursor.version() < VERSION_4 {
+                    return Err(
+                        PartialVMError::new(StatusCode::MALFORMED).with_message(format!(
+                            "Vector operations not available before bytecode version {}",
+                            VERSION_4
+                        )),
+                    );
+                }
+            }
+            _ => {}
+        };
+        // conversion
+        let bytecode = match opcode {
             Opcodes::POP => Bytecode::Pop,
             Opcodes::RET => Bytecode::Ret,
             Opcodes::BR_TRUE => Bytecode::BrTrue(load_bytecode_index(cursor)?),
@@ -1363,6 +1399,18 @@ pub fn load_code(cursor: &mut VersionedCursor, code: &mut Vec<Bytecode>) -> Bina
                 Bytecode::MoveToGeneric(load_struct_def_inst_index(cursor)?)
             }
             Opcodes::FREEZE_REF => Bytecode::FreezeRef,
+            Opcodes::VEC_PACK => {
+                Bytecode::VecPack(load_signature_index(cursor)?, read_u64_internal(cursor)?)
+            }
+            Opcodes::VEC_LEN => Bytecode::VecLen(load_signature_index(cursor)?),
+            Opcodes::VEC_IMM_BORROW => Bytecode::VecImmBorrow(load_signature_index(cursor)?),
+            Opcodes::VEC_MUT_BORROW => Bytecode::VecMutBorrow(load_signature_index(cursor)?),
+            Opcodes::VEC_PUSH_BACK => Bytecode::VecPushBack(load_signature_index(cursor)?),
+            Opcodes::VEC_POP_BACK => Bytecode::VecPopBack(load_signature_index(cursor)?),
+            Opcodes::VEC_UNPACK => {
+                Bytecode::VecUnpack(load_signature_index(cursor)?, read_u64_internal(cursor)?)
+            }
+            Opcodes::VEC_SWAP => Bytecode::VecSwap(load_signature_index(cursor)?),
         };
         code.push(bytecode);
     }
@@ -1370,7 +1418,7 @@ pub fn load_code(cursor: &mut VersionedCursor, code: &mut Vec<Bytecode>) -> Bina
 }
 
 impl TableType {
-    pub fn from_u8(value: u8) -> BinaryLoaderResult<TableType> {
+    fn from_u8(value: u8) -> BinaryLoaderResult<TableType> {
         match value {
             0x1 => Ok(TableType::MODULE_HANDLES),
             0x2 => Ok(TableType::STRUCT_HANDLES),
@@ -1392,7 +1440,7 @@ impl TableType {
 }
 
 impl SerializedType {
-    pub fn from_u8(value: u8) -> BinaryLoaderResult<SerializedType> {
+    fn from_u8(value: u8) -> BinaryLoaderResult<SerializedType> {
         match value {
             0x1 => Ok(SerializedType::BOOL),
             0x2 => Ok(SerializedType::U8),
@@ -1421,7 +1469,7 @@ pub enum DeprecatedNominalResourceFlag {
 }
 
 impl DeprecatedNominalResourceFlag {
-    pub fn from_u8(value: u8) -> BinaryLoaderResult<DeprecatedNominalResourceFlag> {
+    fn from_u8(value: u8) -> BinaryLoaderResult<DeprecatedNominalResourceFlag> {
         match value {
             0x1 => Ok(DeprecatedNominalResourceFlag::NOMINAL_RESOURCE),
             0x2 => Ok(DeprecatedNominalResourceFlag::NORMAL_STRUCT),
@@ -1432,14 +1480,14 @@ impl DeprecatedNominalResourceFlag {
 #[rustfmt::skip]
 #[allow(non_camel_case_types)]
 #[repr(u8)]
-pub enum DeprecatedKind {
+enum DeprecatedKind {
     ALL                     = 0x1,
     COPYABLE                = 0x2,
     RESOURCE                = 0x3,
 }
 
 impl DeprecatedKind {
-    pub fn from_u8(value: u8) -> BinaryLoaderResult<DeprecatedKind> {
+    fn from_u8(value: u8) -> BinaryLoaderResult<DeprecatedKind> {
         match value {
             0x1 => Ok(DeprecatedKind::ALL),
             0x2 => Ok(DeprecatedKind::COPYABLE),
@@ -1450,7 +1498,7 @@ impl DeprecatedKind {
 }
 
 impl SerializedNativeStructFlag {
-    pub fn from_u8(value: u8) -> BinaryLoaderResult<SerializedNativeStructFlag> {
+    fn from_u8(value: u8) -> BinaryLoaderResult<SerializedNativeStructFlag> {
         match value {
             0x1 => Ok(SerializedNativeStructFlag::NATIVE),
             0x2 => Ok(SerializedNativeStructFlag::DECLARED),
@@ -1460,7 +1508,7 @@ impl SerializedNativeStructFlag {
 }
 
 impl Opcodes {
-    pub fn from_u8(value: u8) -> BinaryLoaderResult<Opcodes> {
+    fn from_u8(value: u8) -> BinaryLoaderResult<Opcodes> {
         match value {
             0x01 => Ok(Opcodes::POP),
             0x02 => Ok(Opcodes::RET),
@@ -1525,6 +1573,14 @@ impl Opcodes {
             0x3D => Ok(Opcodes::IMM_BORROW_GLOBAL_GENERIC),
             0x3E => Ok(Opcodes::MOVE_FROM_GENERIC),
             0x3F => Ok(Opcodes::MOVE_TO_GENERIC),
+            0x40 => Ok(Opcodes::VEC_PACK),
+            0x41 => Ok(Opcodes::VEC_LEN),
+            0x42 => Ok(Opcodes::VEC_IMM_BORROW),
+            0x43 => Ok(Opcodes::VEC_MUT_BORROW),
+            0x44 => Ok(Opcodes::VEC_PUSH_BACK),
+            0x45 => Ok(Opcodes::VEC_POP_BACK),
+            0x46 => Ok(Opcodes::VEC_UNPACK),
+            0x47 => Ok(Opcodes::VEC_SWAP),
             _ => Err(PartialVMError::new(StatusCode::UNKNOWN_OPCODE)),
         }
     }

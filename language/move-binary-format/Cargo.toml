@@ -12,13 +12,13 @@ edition = "2018"
 [dependencies]
 hashbrown = "0.9"
 anyhow = { version = "1.0.38", default-features = false }
-cell = { path = "../../common/cell", default-features = false}
+cell = { path = "../../common/cell", default-features = false }
 mirai-annotations = { path = "../../mirai-annotations", default-features = false }
 proptest = { version = "1.0.0", optional = true }
 proptest-derive = { version = "0.3.0", optional = true }
 ref-cast = "1.0.6"
+variant_count = "1.1.0"
 move-core-types = { path = "../move-core/types", default-features = false }
-num-variants = { path = "../../common/num-variants", default-features = false }
 
 [dev-dependencies]
 proptest = "1.0.0"
@@ -33,7 +33,6 @@ fuzzing = ["proptest", "proptest-derive", "move-core-types/fuzzing"]
 std = [
     "anyhow/std",
     "move-core-types/std",
-    "num-variants/std",
     "cell/std",
 ]
 

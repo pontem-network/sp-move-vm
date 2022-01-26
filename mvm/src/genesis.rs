@@ -69,18 +69,23 @@ where
 
 // Genesis configuration.
 pub struct GenesisConfig {
-    pub stdlib: PublishPackageTx,                 // Standard library.
-    pub init_func_config: Option<InitFuncConfig>, // Initialize function config.
-    cost_table: CostTable,                        // Cost table.
+    pub stdlib: PublishPackageTx,
+    // Standard library.
+    pub init_func_config: Option<InitFuncConfig>,
+    // Initialize function config.
+    cost_table: CostTable, // Cost table.
 }
 
 impl Default for GenesisConfig {
     #[cfg(feature = "move_stdlib")]
     fn default() -> Self {
         use core::convert::TryFrom;
-        let stdlib = ModulePackage::try_from(stdlib::stdlib_package())
-            .expect("Expected valid stdlib")
-            .into_tx(CORE_CODE_ADDRESS);
+        let pont_stdlib =
+            ModulePackage::try_from(stdlib::pont_stdlib_package()).expect("Expected valid stdlib");
+        let mut move_stdlib =
+            ModulePackage::try_from(stdlib::stdlib_package()).expect("Expected valid stdlib");
+        move_stdlib.join(pont_stdlib);
+        let stdlib = move_stdlib.into_tx(CORE_CODE_ADDRESS);
 
         let cost_table = cost_table();
         let instr_gas_costs = bcs::to_bytes(&cost_table.instruction_table)
@@ -96,16 +101,7 @@ impl Default for GenesisConfig {
                 module: "Genesis".as_bytes().to_vec(),
                 func: "initialize".as_bytes().to_vec(),
                 args: serialize_values(&vec![
-                    MoveValue::Signer(account_config::diem_root_address()), // dr_signer
-                    MoveValue::Signer(account_config::treasury_compliance_account_address()), // tr_signer
-                    MoveValue::vector_u8(account_config::diem_root_address().to_vec()), // dr_address
-                    MoveValue::vector_u8(
-                        account_config::treasury_compliance_account_address().to_vec(),
-                    ), // tr_address
-                    MoveValue::Vector(vec![]), // Initial allow list.
-                    MoveValue::Bool(true),
-                    MoveValue::vector_u8(instr_gas_costs),
-                    MoveValue::vector_u8(native_gas_costs),
+                    MoveValue::Signer(account_config::diem_root_address()), // Diem Root
                     MoveValue::U8(chain_id.id()),
                 ]),
             }),

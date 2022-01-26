@@ -6,22 +6,23 @@
 
 #[macro_use]
 extern crate mirai_annotations;
-#[macro_use]
 extern crate alloc;
-
 use core::fmt;
 
 pub mod access;
+pub mod binary_views;
 pub mod check_bounds;
 pub mod compatibility;
 #[macro_use]
 pub mod errors;
 pub mod constant;
+pub mod control_flow_graph;
 pub mod cursor;
 pub mod deserializer;
 pub mod file_format;
 pub mod file_format_common;
 pub mod internals;
+pub mod layout;
 pub mod normalized;
 #[cfg(any(test, feature = "fuzzing"))]
 pub mod proptest_types;

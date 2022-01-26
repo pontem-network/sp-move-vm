@@ -1,3 +1,4 @@
+use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use diem_types::account_address::AccountAddress;
@@ -140,7 +141,7 @@ fn make_structs_abi(module: &CompiledModule) -> Vec<Struct> {
             let type_parameters = handle
                 .type_parameters
                 .iter()
-                .map(TypeAbilities::from)
+                .map(|tp| TypeAbilities::from(&tp.constraints))
                 .collect();
 
             let fields = match &sdef.field_information {

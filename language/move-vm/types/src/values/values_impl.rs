@@ -1,7 +1,6 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::natives::function::NativeResult;
 use alloc::boxed::Box;
 use alloc::rc::Rc;
 use alloc::string::{String, ToString};
@@ -20,13 +19,12 @@ use move_binary_format::{
 use move_core_types::{
     account_address::AccountAddress,
     gas_schedule::{
-        AbstractMemorySize, GasAlgebra, GasCarrier, InternalGasUnits, CONST_SIZE,
-        MIN_EXISTS_DATA_SIZE, REFERENCE_SIZE, STRUCT_SIZE,
+        AbstractMemorySize, GasAlgebra, GasCarrier, CONST_SIZE, MIN_EXISTS_DATA_SIZE,
+        REFERENCE_SIZE, STRUCT_SIZE,
     },
     value::{MoveStructLayout, MoveTypeLayout},
     vm_status::{sub_status::NFE_VECTOR_ERROR_BASE, StatusCode},
 };
-use smallvec::smallvec;
 
 /***************************************************************************************
  *
@@ -40,7 +38,7 @@ use smallvec::smallvec;
 
 /// Runtime representation of a Move value.
 #[derive(Debug)]
-pub enum ValueImpl {
+enum ValueImpl {
     Invalid,
 
     U8(u8),
@@ -65,7 +63,7 @@ pub enum ValueImpl {
 /// Except when not owned by the VM stack, a container always lives inside an Rc<RefCell<>>,
 /// making it possible to be shared by references.
 #[derive(Debug, Clone)]
-pub enum Container {
+enum Container {
     Locals(Rc<RefCell<Vec<ValueImpl>>>),
     Vec(Rc<RefCell<Vec<ValueImpl>>>),
     Struct(Rc<RefCell<Vec<ValueImpl>>>),
@@ -80,7 +78,7 @@ pub enum Container {
 /// or in global storage. In the latter case, it also keeps a status flag indicating whether
 /// the container has been possibly modified.
 #[derive(Debug)]
-pub enum ContainerRef {
+enum ContainerRef {
     Local(Container),
     Global {
         status: Rc<RefCell<GlobalDataStatus>>,
@@ -92,14 +90,14 @@ pub enum ContainerRef {
 /// Clean - the data was only read.
 /// Dirty - the data was possibly modified.
 #[derive(Debug, Clone, Copy)]
-pub enum GlobalDataStatus {
+enum GlobalDataStatus {
     Clean,
     Dirty,
 }
 
 /// A Move reference pointing to an element in a container.
 #[derive(Debug)]
-pub struct IndexedRef {
+struct IndexedRef {
     idx: usize,
     container_ref: ContainerRef,
 }
@@ -107,27 +105,27 @@ pub struct IndexedRef {
 /// An umbrella enum for references. It is used to hide the internals of the public type
 /// Reference.
 #[derive(Debug)]
-pub enum ReferenceImpl {
+enum ReferenceImpl {
     IndexedRef(IndexedRef),
     ContainerRef(ContainerRef),
 }
 
 // A reference to a signer. Clients can attempt a cast to this struct if they are
-// expecting a Signer on the stavk or as an argument.
+// expecting a Signer on the stack or as an argument.
 #[derive(Debug)]
 pub struct SignerRef(ContainerRef);
 
 // A reference to a vector. This is an alias for a ContainerRef for now but we may change
 // it once Containers are restructured.
 // It's used from vector native functions to get a reference to a vector and operate on that.
-// There is an impl for VecotrRef which implements the API private to this module.
+// There is an impl for VectorRef which implements the API private to this module.
 #[derive(Debug)]
 pub struct VectorRef(ContainerRef);
 
 // A vector. This is an alias for a Container for now but we may change
 // it once Containers are restructured.
 // It's used from vector native functions to get a vector and operate on that.
-// There is an impl for Vecotr which implements the API private to this module.
+// There is an impl for Vector which implements the API private to this module.
 #[derive(Debug)]
 pub struct Vector(Container);
 
@@ -142,7 +140,7 @@ pub struct Vector(Container);
  *
  *   They are opaque to an external caller by design -- no knowledge about the internal
  *   representation is given and they can only be manipulated via the public methods,
- *   which is to ensure no arbitratry invalid states can be created unless some crucial
+ *   which is to ensure no arbitrary invalid states can be created unless some crucial
  *   internal invariants are violated.
  *
  **************************************************************************************/
@@ -151,7 +149,7 @@ pub struct Vector(Container);
 #[derive(Debug)]
 pub struct StructRef(ContainerRef);
 
-/// A generic Move reference that offers two functinalities: read_ref & write_ref.
+/// A generic Move reference that offers two functionalities: read_ref & write_ref.
 #[derive(Debug)]
 pub struct Reference(ReferenceImpl);
 
@@ -1522,25 +1520,15 @@ impl IntegerValue {
 *
 * Vector
 *
-*   Native function imeplementations of the Vector module.
-*
-*   TODO: split the code into two parts:
-*         1) Internal vector APIs that define & implements the core operations
-             (and operations only).
-*         2) Native function adapters that the dispatcher can call into. These will
-*            check if arguments are valid and deal with gas metering.
+*   Implemented as a built-in data type.
 *
 **************************************************************************************/
 
 pub const INDEX_OUT_OF_BOUNDS: u64 = NFE_VECTOR_ERROR_BASE + 1;
 pub const POP_EMPTY_VEC: u64 = NFE_VECTOR_ERROR_BASE + 2;
-pub const DESTROY_NON_EMPTY_VEC: u64 = NFE_VECTOR_ERROR_BASE + 3;
+pub const VEC_UNPACK_PARITY_MISMATCH: u64 = NFE_VECTOR_ERROR_BASE + 3;
 
-fn check_elem_layout(
-    _context: &impl NativeContext,
-    ty: &Type,
-    v: &Container,
-) -> PartialVMResult<()> {
+fn check_elem_layout(ty: &Type, v: &Container) -> PartialVMResult<()> {
     match (ty, v) {
         (Type::U8, Container::VecU8(_))
         | (Type::U64, Container::VecU64(_))
@@ -1552,6 +1540,7 @@ fn check_elem_layout(
         (Type::Vector(_), Container::Vec(_)) => Ok(()),
 
         (Type::Struct(_), Container::Vec(_))
+        | (Type::Signer, Container::Vec(_))
         | (Type::StructInstantiation(_, _), Container::Vec(_)) => Ok(()),
 
         (Type::Reference(_), _) | (Type::MutableReference(_), _) | (Type::TyParam(_), _) => Err(
@@ -1578,9 +1567,9 @@ fn check_elem_layout(
 }
 
 impl VectorRef {
-    pub fn len(&self, type_param: &Type, context: &impl NativeContext) -> PartialVMResult<Value> {
+    pub fn len(&self, type_param: &Type) -> PartialVMResult<Value> {
         let c = self.0.container();
-        check_elem_layout(context, type_param, c)?;
+        check_elem_layout(type_param, c)?;
 
         let len = match c {
             Container::VecU8(r) => r.borrow().len(),
@@ -1589,20 +1578,14 @@ impl VectorRef {
             Container::VecBool(r) => r.borrow().len(),
             Container::VecAddress(r) => r.borrow().len(),
             Container::Vec(r) => r.borrow().len(),
-
             Container::Locals(_) | Container::Struct(_) => unreachable!(),
         };
         Ok(Value::u64(len as u64))
     }
 
-    pub fn push_back(
-        &self,
-        e: Value,
-        type_param: &Type,
-        context: &impl NativeContext,
-    ) -> PartialVMResult<()> {
+    pub fn push_back(&self, e: Value, type_param: &Type) -> PartialVMResult<()> {
         let c = self.0.container();
-        check_elem_layout(context, type_param, c)?;
+        check_elem_layout(type_param, c)?;
 
         match c {
             Container::VecU8(r) => r.borrow_mut().push(e.value_as()?),
@@ -1611,44 +1594,31 @@ impl VectorRef {
             Container::VecBool(r) => r.borrow_mut().push(e.value_as()?),
             Container::VecAddress(r) => r.borrow_mut().push(e.value_as()?),
             Container::Vec(r) => r.borrow_mut().push(e.0),
-
             Container::Locals(_) | Container::Struct(_) => unreachable!(),
         }
-        self.0.mark_dirty();
 
+        self.0.mark_dirty();
         Ok(())
     }
 
-    pub fn borrow_elem(
-        &self,
-        idx: usize,
-        cost: InternalGasUnits<GasCarrier>,
-        type_param: &Type,
-        context: &impl NativeContext,
-    ) -> PartialVMResult<NativeResult> {
+    pub fn borrow_elem(&self, idx: usize, type_param: &Type) -> PartialVMResult<Value> {
         let c = self.0.container();
-        check_elem_layout(context, type_param, c)?;
+        check_elem_layout(type_param, c)?;
         if idx >= c.len() {
-            return Ok(NativeResult::err(cost, INDEX_OUT_OF_BOUNDS));
+            return Err(
+                PartialVMError::new(StatusCode::ABORTED).with_sub_status(INDEX_OUT_OF_BOUNDS)
+            );
         }
-        Ok(NativeResult::ok(
-            cost,
-            smallvec![Value(self.0.borrow_elem(idx)?)],
-        ))
+        Ok(Value(self.0.borrow_elem(idx)?))
     }
 
-    pub fn pop(
-        &self,
-        cost: InternalGasUnits<GasCarrier>,
-        type_param: &Type,
-        context: &impl NativeContext,
-    ) -> PartialVMResult<NativeResult> {
+    pub fn pop(&self, type_param: &Type) -> PartialVMResult<Value> {
         let c = self.0.container();
-        check_elem_layout(context, type_param, c)?;
+        check_elem_layout(type_param, c)?;
 
         macro_rules! err_pop_empty_vec {
             () => {
-                return Ok(NativeResult::err(cost, POP_EMPTY_VEC))
+                return Err(PartialVMError::new(StatusCode::ABORTED).with_sub_status(POP_EMPTY_VEC))
             };
         }
 
@@ -1673,36 +1643,27 @@ impl VectorRef {
                 Some(x) => Value::address(x),
                 None => err_pop_empty_vec!(),
             },
-
             Container::Vec(r) => match r.borrow_mut().pop() {
                 Some(x) => Value(x),
                 None => err_pop_empty_vec!(),
             },
-
             Container::Locals(_) | Container::Struct(_) => unreachable!(),
         };
 
         self.0.mark_dirty();
-
-        Ok(NativeResult::ok(cost, smallvec![res]))
+        Ok(res)
     }
 
-    pub fn swap(
-        &self,
-        idx1: usize,
-        idx2: usize,
-        cost: InternalGasUnits<GasCarrier>,
-        type_param: &Type,
-        context: &impl NativeContext,
-    ) -> PartialVMResult<NativeResult> {
+    pub fn swap(&self, idx1: usize, idx2: usize, type_param: &Type) -> PartialVMResult<()> {
         let c = self.0.container();
-        check_elem_layout(context, type_param, c)?;
+        check_elem_layout(type_param, c)?;
 
         macro_rules! swap {
             ($v: expr) => {{
                 let mut v = $v.borrow_mut();
                 if idx1 >= v.len() || idx2 >= v.len() {
-                    return Ok(NativeResult::err(cost, INDEX_OUT_OF_BOUNDS));
+                    return Err(PartialVMError::new(StatusCode::ABORTED)
+                        .with_sub_status(INDEX_OUT_OF_BOUNDS));
                 }
                 v.swap(idx1, idx2);
             }};
@@ -1715,32 +1676,51 @@ impl VectorRef {
             Container::VecBool(r) => swap!(r),
             Container::VecAddress(r) => swap!(r),
             Container::Vec(r) => swap!(r),
-
             Container::Locals(_) | Container::Struct(_) => unreachable!(),
         }
 
         self.0.mark_dirty();
-
-        Ok(NativeResult::ok(cost, smallvec![]))
+        Ok(())
     }
 }
 
 impl Vector {
-    pub fn empty(
-        cost: InternalGasUnits<GasCarrier>,
-        type_param: &Type,
-        _context: &impl NativeContext,
-    ) -> PartialVMResult<NativeResult> {
+    pub fn pack(type_param: &Type, elements: Vec<Value>) -> PartialVMResult<Value> {
         let container = match type_param {
-            Type::U8 => Value::vector_u8(iter::empty::<u8>()),
-            Type::U64 => Value::vector_u64(iter::empty::<u64>()),
-            Type::U128 => Value::vector_u128(iter::empty::<u128>()),
-            Type::Bool => Value::vector_bool(iter::empty::<bool>()),
-            Type::Address => Value::vector_address(iter::empty::<AccountAddress>()),
+            Type::U8 => Value::vector_u8(
+                elements
+                    .into_iter()
+                    .map(|v| v.value_as())
+                    .collect::<PartialVMResult<Vec<_>>>()?,
+            ),
+            Type::U64 => Value::vector_u64(
+                elements
+                    .into_iter()
+                    .map(|v| v.value_as())
+                    .collect::<PartialVMResult<Vec<_>>>()?,
+            ),
+            Type::U128 => Value::vector_u128(
+                elements
+                    .into_iter()
+                    .map(|v| v.value_as())
+                    .collect::<PartialVMResult<Vec<_>>>()?,
+            ),
+            Type::Bool => Value::vector_bool(
+                elements
+                    .into_iter()
+                    .map(|v| v.value_as())
+                    .collect::<PartialVMResult<Vec<_>>>()?,
+            ),
+            Type::Address => Value::vector_address(
+                elements
+                    .into_iter()
+                    .map(|v| v.value_as())
+                    .collect::<PartialVMResult<Vec<_>>>()?,
+            ),
 
             Type::Signer | Type::Vector(_) | Type::Struct(_) | Type::StructInstantiation(_, _) => {
                 Value(ValueImpl::Container(Container::Vec(Rc::new(RefCell::new(
-                    vec![],
+                    elements.into_iter().map(|v| v.0).collect(),
                 )))))
             }
 
@@ -1752,33 +1732,50 @@ impl Vector {
             }
         };
 
-        Ok(NativeResult::ok(cost, smallvec![container]))
+        Ok(container)
     }
 
-    pub fn destroy_empty(
-        self,
-        cost: InternalGasUnits<GasCarrier>,
-        type_param: &Type,
-        context: &impl NativeContext,
-    ) -> PartialVMResult<NativeResult> {
-        check_elem_layout(context, type_param, &self.0)?;
+    pub fn empty(type_param: &Type) -> PartialVMResult<Value> {
+        Self::pack(type_param, vec![])
+    }
 
-        let is_empty = match &self.0 {
-            Container::VecU8(r) => r.borrow().is_empty(),
-            Container::VecU64(r) => r.borrow().is_empty(),
-            Container::VecU128(r) => r.borrow().is_empty(),
-            Container::VecBool(r) => r.borrow().is_empty(),
-            Container::VecAddress(r) => r.borrow().is_empty(),
-            Container::Vec(r) => r.borrow().is_empty(),
-
+    pub fn unpack(self, type_param: &Type, expected_num: u64) -> PartialVMResult<Vec<Value>> {
+        check_elem_layout(type_param, &self.0)?;
+        let elements: Vec<_> = match self.0 {
+            Container::VecU8(r) => take_unique_ownership(r)?
+                .into_iter()
+                .map(Value::u8)
+                .collect(),
+            Container::VecU64(r) => take_unique_ownership(r)?
+                .into_iter()
+                .map(Value::u64)
+                .collect(),
+            Container::VecU128(r) => take_unique_ownership(r)?
+                .into_iter()
+                .map(Value::u128)
+                .collect(),
+            Container::VecBool(r) => take_unique_ownership(r)?
+                .into_iter()
+                .map(Value::bool)
+                .collect(),
+            Container::VecAddress(r) => take_unique_ownership(r)?
+                .into_iter()
+                .map(Value::address)
+                .collect(),
+            Container::Vec(r) => take_unique_ownership(r)?.into_iter().map(Value).collect(),
             Container::Locals(_) | Container::Struct(_) => unreachable!(),
         };
-
-        if is_empty {
-            Ok(NativeResult::ok(cost, smallvec![]))
+        if expected_num as usize == elements.len() {
+            Ok(elements)
         } else {
-            Ok(NativeResult::err(cost, DESTROY_NON_EMPTY_VEC))
+            Err(PartialVMError::new(StatusCode::ABORTED)
+                .with_sub_status(VEC_UNPACK_PARITY_MISMATCH))
         }
+    }
+
+    pub fn destroy_empty(self, type_param: &Type) -> PartialVMResult<()> {
+        self.unpack(type_param, 0)?;
+        Ok(())
     }
 }
 
@@ -2166,31 +2163,31 @@ pub mod debug {
     use super::*;
     use core::fmt::Write;
 
-    fn print_invalid<B: Write>(buf: &mut B) -> PartialVMResult<()> {
+    fn print_invalid(buf: &mut String) -> PartialVMResult<()> {
         debug_write!(buf, "-")
     }
 
-    fn print_u8<B: Write>(buf: &mut B, x: &u8) -> PartialVMResult<()> {
+    fn print_u8(buf: &mut String, x: &u8) -> PartialVMResult<()> {
         debug_write!(buf, "{}", x)
     }
 
-    fn print_u64<B: Write>(buf: &mut B, x: &u64) -> PartialVMResult<()> {
+    fn print_u64(buf: &mut String, x: &u64) -> PartialVMResult<()> {
         debug_write!(buf, "{}", x)
     }
 
-    fn print_u128<B: Write>(buf: &mut B, x: &u128) -> PartialVMResult<()> {
+    fn print_u128(buf: &mut String, x: &u128) -> PartialVMResult<()> {
         debug_write!(buf, "{}", x)
     }
 
-    fn print_bool<B: Write>(buf: &mut B, x: &bool) -> PartialVMResult<()> {
+    fn print_bool(buf: &mut String, x: &bool) -> PartialVMResult<()> {
         debug_write!(buf, "{}", x)
     }
 
-    fn print_address<B: Write>(buf: &mut B, x: &AccountAddress) -> PartialVMResult<()> {
+    fn print_address(buf: &mut String, x: &AccountAddress) -> PartialVMResult<()> {
         debug_write!(buf, "{}", x)
     }
 
-    fn print_value_impl<B: Write>(buf: &mut B, val: &ValueImpl) -> PartialVMResult<()> {
+    fn print_value_impl(buf: &mut String, val: &ValueImpl) -> PartialVMResult<()> {
         match val {
             ValueImpl::Invalid => print_invalid(buf),
 
@@ -2207,18 +2204,17 @@ pub mod debug {
         }
     }
 
-    fn print_list<'a, B, I, X, F>(
-        buf: &mut B,
+    fn print_list<'a, I, X, F>(
+        buf: &mut String,
         begin: &str,
         items: I,
         print: F,
         end: &str,
     ) -> PartialVMResult<()>
     where
-        B: Write,
         X: 'a,
         I: IntoIterator<Item = &'a X>,
-        F: Fn(&mut B, &X) -> PartialVMResult<()>,
+        F: Fn(&mut String, &X) -> PartialVMResult<()>,
     {
         debug_write!(buf, "{}", begin)?;
         let mut it = items.into_iter();
@@ -2233,7 +2229,7 @@ pub mod debug {
         Ok(())
     }
 
-    fn print_container<B: Write>(buf: &mut B, c: &Container) -> PartialVMResult<()> {
+    fn print_container(buf: &mut String, c: &Container) -> PartialVMResult<()> {
         match c {
             Container::Vec(r) => print_list(buf, "[", r.borrow().iter(), print_value_impl, "]"),
 
@@ -2254,15 +2250,19 @@ pub mod debug {
         }
     }
 
-    fn print_container_ref<B: Write>(buf: &mut B, r: &ContainerRef) -> PartialVMResult<()> {
+    fn print_container_ref(buf: &mut String, r: &ContainerRef) -> PartialVMResult<()> {
         debug_write!(buf, "(&) ")?;
         print_container(buf, r.container())
     }
 
-    fn print_slice_elem<B, X, F>(buf: &mut B, v: &[X], idx: usize, print: F) -> PartialVMResult<()>
+    fn print_slice_elem<X, F>(
+        buf: &mut String,
+        v: &[X],
+        idx: usize,
+        print: F,
+    ) -> PartialVMResult<()>
     where
-        B: Write,
-        F: FnOnce(&mut B, &X) -> PartialVMResult<()>,
+        F: FnOnce(&mut String, &X) -> PartialVMResult<()>,
     {
         match v.get(idx) {
             Some(x) => print(buf, x),
@@ -2273,7 +2273,7 @@ pub mod debug {
         }
     }
 
-    fn print_indexed_ref<B: Write>(buf: &mut B, r: &IndexedRef) -> PartialVMResult<()> {
+    fn print_indexed_ref(buf: &mut String, r: &IndexedRef) -> PartialVMResult<()> {
         let idx = r.idx;
         match r.container_ref.container() {
             Container::Locals(r) | Container::Vec(r) | Container::Struct(r) => {
@@ -2288,14 +2288,14 @@ pub mod debug {
         }
     }
 
-    pub fn print_reference<B: Write>(buf: &mut B, r: &Reference) -> PartialVMResult<()> {
+    pub fn print_reference(buf: &mut String, r: &Reference) -> PartialVMResult<()> {
         match &r.0 {
             ReferenceImpl::ContainerRef(r) => print_container_ref(buf, r),
             ReferenceImpl::IndexedRef(r) => print_indexed_ref(buf, r),
         }
     }
 
-    pub fn print_locals<B: Write>(buf: &mut B, locals: &Locals) -> PartialVMResult<()> {
+    pub fn print_locals(buf: &mut String, locals: &Locals) -> PartialVMResult<()> {
         // REVIEW: The number of spaces in the indent is currently hard coded.
         for (idx, val) in locals.0.borrow().iter().enumerate() {
             debug_write!(buf, "            [{}] ", idx)?;
@@ -2305,7 +2305,7 @@ pub mod debug {
         Ok(())
     }
 
-    pub fn print_value<B: Write>(buf: &mut B, val: &Value) -> PartialVMResult<()> {
+    pub fn print_value(buf: &mut String, val: &Value) -> PartialVMResult<()> {
         print_value_impl(buf, &val.0)
     }
 }
@@ -2329,7 +2329,7 @@ pub mod debug {
  *   is to involve an explicit representation of the type layout.
  *
  **************************************************************************************/
-use crate::{loaded_data::runtime_types::Type, natives::function::NativeContext};
+use crate::loaded_data::runtime_types::Type;
 use serde::{
     de::Error as DeError,
     ser::{Error as SerError, SerializeSeq, SerializeTuple},

@@ -8,11 +8,9 @@
 //! the stack height by the number of values returned by the function as indicated in its
 //! signature. Additionally, the stack height must not dip below that at the beginning of the
 //! block for any basic block.
-use crate::{
+use move_binary_format::{
     binary_views::{BinaryIndexedView, FunctionView},
     control_flow_graph::{BlockId, ControlFlowGraph},
-};
-use move_binary_format::{
     errors::{PartialVMError, PartialVMResult},
     file_format::{Bytecode, CodeUnit, FunctionDefinitionIndex, Signature, StructFieldInformation},
 };
@@ -49,7 +47,7 @@ impl<'a> StackUsageVerifier<'a> {
         let block_start = cfg.block_start(block_id);
         for i in block_start..=cfg.block_end(block_id) {
             let (num_pops, num_pushes) = self.instruction_effect(&code[i as usize])?;
-            // Check that the stack height is sufficient to accomodate the number
+            // Check that the stack height is sufficient to accommodate the number
             // of pops this instruction does
             if stack_size_increment < num_pops {
                 return Err(
@@ -74,14 +72,14 @@ impl<'a> StackUsageVerifier<'a> {
     /// The effect of an instruction is a tuple where the first element
     /// is the number of pops it does, and the second element is the number
     /// of pushes it does
-    fn instruction_effect(&self, instruction: &Bytecode) -> PartialVMResult<(u32, u32)> {
+    fn instruction_effect(&self, instruction: &Bytecode) -> PartialVMResult<(u64, u64)> {
         Ok(match instruction {
             // Instructions that pop, but don't push
             Bytecode::Pop
             | Bytecode::BrTrue(_)
             | Bytecode::BrFalse(_)
-            | Bytecode::Abort
-            | Bytecode::StLoc(_) => (1, 0),
+            | Bytecode::StLoc(_)
+            | Bytecode::Abort => (1, 0),
 
             // Instructions that push, but don't pop
             Bytecode::LdU8(_)
@@ -113,7 +111,9 @@ impl<'a> StackUsageVerifier<'a> {
             | Bytecode::MoveFromGeneric(_)
             | Bytecode::CastU8
             | Bytecode::CastU64
-            | Bytecode::CastU128 => (1, 1),
+            | Bytecode::CastU128
+            | Bytecode::VecLen(_)
+            | Bytecode::VecPopBack(_) => (1, 1),
 
             // Binary operations (pop twice and push once)
             Bytecode::Add
@@ -135,8 +135,21 @@ impl<'a> StackUsageVerifier<'a> {
             | Bytecode::Le
             | Bytecode::Ge => (2, 1),
 
-            // MoveTo and WriteRef pop twice but do not push
-            Bytecode::MoveTo(_) | Bytecode::MoveToGeneric(_) | Bytecode::WriteRef => (2, 0),
+            // Vector packing and unpacking
+            Bytecode::VecPack(_, num) => (*num, 1),
+            Bytecode::VecUnpack(_, num) => (1, *num),
+
+            // Vector indexing operations (pop twice and push once)
+            Bytecode::VecImmBorrow(_) | Bytecode::VecMutBorrow(_) => (2, 1),
+
+            // MoveTo, WriteRef, and VecPushBack pop twice but do not push
+            Bytecode::MoveTo(_)
+            | Bytecode::MoveToGeneric(_)
+            | Bytecode::WriteRef
+            | Bytecode::VecPushBack(_) => (2, 0),
+
+            // VecSwap pops three times but does not push
+            Bytecode::VecSwap(_) => (3, 0),
 
             // Branch and Nop neither pops nor pushes
             Bytecode::Branch(_) | Bytecode::Nop => (0, 0),
@@ -144,21 +157,21 @@ impl<'a> StackUsageVerifier<'a> {
             // Return performs `return_count` pops
             Bytecode::Ret => {
                 let return_count = self.return_.len();
-                (return_count as u32, 0)
+                (return_count as u64, 0)
             }
 
             // Call performs `arg_count` pops and `return_count` pushes
             Bytecode::Call(idx) => {
                 let function_handle = self.resolver.function_handle_at(*idx);
-                let arg_count = self.resolver.signature_at(function_handle.parameters).len() as u32;
-                let return_count = self.resolver.signature_at(function_handle.return_).len() as u32;
+                let arg_count = self.resolver.signature_at(function_handle.parameters).len() as u64;
+                let return_count = self.resolver.signature_at(function_handle.return_).len() as u64;
                 (arg_count, return_count)
             }
             Bytecode::CallGeneric(idx) => {
                 let func_inst = self.resolver.function_instantiation_at(*idx);
                 let function_handle = self.resolver.function_handle_at(func_inst.handle);
-                let arg_count = self.resolver.signature_at(function_handle.parameters).len() as u32;
-                let return_count = self.resolver.signature_at(function_handle.return_).len() as u32;
+                let arg_count = self.resolver.signature_at(function_handle.parameters).len() as u64;
+                let return_count = self.resolver.signature_at(function_handle.return_).len() as u64;
                 (arg_count, return_count)
             }
 
@@ -170,7 +183,7 @@ impl<'a> StackUsageVerifier<'a> {
                     StructFieldInformation::Native => 0,
                     StructFieldInformation::Declared(fields) => fields.len(),
                 };
-                (field_count as u32, 1)
+                (field_count as u64, 1)
             }
             Bytecode::PackGeneric(idx) => {
                 let struct_inst = self.resolver.struct_instantiation_at(*idx)?;
@@ -180,7 +193,7 @@ impl<'a> StackUsageVerifier<'a> {
                     StructFieldInformation::Native => 0,
                     StructFieldInformation::Declared(fields) => fields.len(),
                 };
-                (field_count as u32, 1)
+                (field_count as u64, 1)
             }
 
             // Unpack performs one pop and `num_fields` pushes
@@ -191,7 +204,7 @@ impl<'a> StackUsageVerifier<'a> {
                     StructFieldInformation::Native => 0,
                     StructFieldInformation::Declared(fields) => fields.len(),
                 };
-                (1, field_count as u32)
+                (1, field_count as u64)
             }
             Bytecode::UnpackGeneric(idx) => {
                 let struct_inst = self.resolver.struct_instantiation_at(*idx)?;
@@ -201,7 +214,7 @@ impl<'a> StackUsageVerifier<'a> {
                     StructFieldInformation::Native => 0,
                     StructFieldInformation::Declared(fields) => fields.len(),
                 };
-                (1, field_count as u32)
+                (1, field_count as u64)
             }
         })
     }

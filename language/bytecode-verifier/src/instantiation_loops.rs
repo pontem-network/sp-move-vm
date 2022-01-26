@@ -122,7 +122,7 @@ impl<'a> InstantiationLoopChecker<'a> {
         }
     }
 
-    /// Retrives the node corresponding to the specified type formal.
+    /// Retrieves the node corresponding to the specified type formal.
     /// If none exists in the graph yet, create one.
     fn get_or_add_node(&mut self, node: Node) -> NodeIndex {
         match self.node_map.entry(node) {
@@ -193,7 +193,7 @@ impl<'a> InstantiationLoopChecker<'a> {
                         self.add_edge(
                             Node(caller_idx, type_param),
                             Node(callee_idx, formal_idx),
-                            Edge::TyConApp(&ty),
+                            Edge::TyConApp(ty),
                         );
                     }
                 }

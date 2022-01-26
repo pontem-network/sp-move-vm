@@ -1,0 +1,32 @@
+[package]
+name = "move-stdlib"
+version = "0.1.0"
+edition = "2018"
+authors = ["Diem Association <opensource@diem.com>"]
+description = "Diem stdlib"
+repository = "https://github.com/diem/diem"
+homepage = "https://diem.com"
+license = "Apache-2.0"
+publish = false
+
+[dependencies]
+move-vm-types = { path = "../move-vm/types", default-features = false }
+move-binary-format = { path = "../move-binary-format", default-features = false }
+move-core-types = { path = "../move-core/types", default-features = false }
+move-vm-runtime = { path = "../move-vm/runtime", default-features = false }
+diem-crypto = { path = "../../crypto/crypto", default-features = false }
+uint = { version = "0.9.1", default-features = false }
+smallvec = { version = "1.6.1", default-features = false }
+sha2 = { version = "0.9.3", default-features = false }
+sha3 = { version = "0.9.1", default-features = false }
+
+[features]
+default = ["std"]
+testing = []
+std = [
+    "move-vm-types/std",
+    "move-binary-format/std",
+    "move-core-types/std",
+    "move-vm-runtime/std",
+    "diem-crypto/std",
+]

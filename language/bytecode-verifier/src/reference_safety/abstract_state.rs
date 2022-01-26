@@ -2,15 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! This module defines the abstract state for the type and memory safety analysis.
-use crate::{
-    absint::{AbstractDomain, JoinResult},
-    binary_views::FunctionView,
-};
+use crate::absint::{AbstractDomain, JoinResult};
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::vec::Vec;
 use borrow_graph::references::RefID;
 use mirai_annotations::{checked_postcondition, checked_precondition, checked_verify};
 use move_binary_format::{
+    binary_views::FunctionView,
     errors::{PartialVMError, PartialVMResult},
     file_format::{
         CodeOffset, FieldHandleIndex, FunctionDefinitionIndex, LocalIndex, Signature,
@@ -221,7 +219,7 @@ impl AbstractState {
     }
 
     /// checks if `id` is writable
-    /// - Mutable references are freezable if there are no consistent borrows
+    /// - Mutable references are writable if there are no consistent borrows
     /// - Immutable references are not writable by the typing rules
     fn is_writable(&self, id: RefID) -> bool {
         checked_precondition!(self.borrow_graph.is_mutable(id));
@@ -457,6 +455,41 @@ impl AbstractState {
         } else {
             Ok(AbstractValue::NonReference)
         }
+    }
+
+    pub fn vector_op(
+        &mut self,
+        offset: CodeOffset,
+        vector: AbstractValue,
+        mut_: bool,
+    ) -> PartialVMResult<()> {
+        let id = vector.ref_id().unwrap();
+        if mut_ && !self.is_writable(id) {
+            return Err(self.error(StatusCode::VEC_UPDATE_EXISTS_MUTABLE_BORROW_ERROR, offset));
+        }
+        self.release(id);
+        Ok(())
+    }
+
+    pub fn vector_element_borrow(
+        &mut self,
+        offset: CodeOffset,
+        vector: AbstractValue,
+        mut_: bool,
+    ) -> PartialVMResult<AbstractValue> {
+        let vec_id = vector.ref_id().unwrap();
+        if mut_ && !self.is_writable(vec_id) {
+            return Err(self.error(
+                StatusCode::VEC_BORROW_ELEMENT_EXISTS_MUTABLE_BORROW_ERROR,
+                offset,
+            ));
+        }
+
+        let elem_id = self.new_ref(mut_);
+        self.add_borrow(vec_id, elem_id);
+
+        self.release(vec_id);
+        Ok(AbstractValue::Reference(elem_id))
     }
 
     pub fn call(

@@ -4,14 +4,12 @@
 //! This module defines the transfer functions for verifying type safety of a procedure body.
 //! It does not utilize control flow, but does check each block independently
 
-use crate::{
-    binary_views::{BinaryIndexedView, FunctionView},
-    control_flow_graph::ControlFlowGraph,
-};
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use mirai_annotations::*;
 use move_binary_format::{
+    binary_views::{BinaryIndexedView, FunctionView},
+    control_flow_graph::ControlFlowGraph,
     errors::{PartialVMError, PartialVMResult},
     file_format::{
         AbilitySet, Bytecode, CodeOffset, FieldHandleIndex, FunctionDefinitionIndex,
@@ -68,9 +66,9 @@ impl<'a> TypeSafetyChecker<'a> {
         self.locals.local_at(i)
     }
 
-    fn abilities(&self, t: &SignatureToken) -> AbilitySet {
+    fn abilities(&self, t: &SignatureToken) -> PartialVMResult<AbilitySet> {
         self.resolver
-            .abilities(&t, self.function_view.type_parameters())
+            .abilities(t, self.function_view.type_parameters())
     }
 
     fn error(&self, status: StatusCode, offset: CodeOffset) -> PartialVMError {
@@ -180,7 +178,7 @@ fn borrow_global(
 
     let struct_def = verifier.resolver.struct_def_at(idx)?;
     let struct_type = materialize_type(struct_def.struct_handle, type_args);
-    if !verifier.abilities(&struct_type).has_key() {
+    if !verifier.abilities(&struct_type)?.has_key() {
         return Err(verifier.error(StatusCode::BORROWGLOBAL_WITHOUT_KEY_ABILITY, offset));
     }
 
@@ -281,7 +279,7 @@ fn exists(
     type_args: &Signature,
 ) -> PartialVMResult<()> {
     let struct_type = materialize_type(struct_def.struct_handle, type_args);
-    if !verifier.abilities(&struct_type).has_key() {
+    if !verifier.abilities(&struct_type)?.has_key() {
         return Err(verifier.error(
             StatusCode::EXISTS_WITHOUT_KEY_ABILITY_OR_BAD_ARGUMENT,
             offset,
@@ -308,7 +306,7 @@ fn move_from(
     type_args: &Signature,
 ) -> PartialVMResult<()> {
     let struct_type = materialize_type(struct_def.struct_handle, type_args);
-    if !verifier.abilities(&struct_type).has_key() {
+    if !verifier.abilities(&struct_type)?.has_key() {
         return Err(verifier.error(StatusCode::MOVEFROM_WITHOUT_KEY_ABILITY, offset));
     }
 
@@ -329,7 +327,7 @@ fn move_to(
     type_args: &Signature,
 ) -> PartialVMResult<()> {
     let struct_type = materialize_type(struct_def.struct_handle, type_args);
-    if !verifier.abilities(&struct_type).has_key() {
+    if !verifier.abilities(&struct_type)?.has_key() {
         return Err(verifier.error(StatusCode::MOVETO_WITHOUT_KEY_ABILITY, offset));
     }
 
@@ -348,6 +346,35 @@ fn move_to(
     }
 }
 
+fn borrow_vector_element(
+    verifier: &mut TypeSafetyChecker,
+    declared_element_type: &SignatureToken,
+    offset: CodeOffset,
+    mut_ref_only: bool,
+) -> PartialVMResult<()> {
+    let operand_idx = verifier.stack.pop().unwrap();
+    let operand_vec = verifier.stack.pop().unwrap();
+
+    // check index
+    if operand_idx != ST::U64 {
+        return Err(verifier.error(StatusCode::TYPE_MISMATCH, offset));
+    }
+
+    // check vector and update stack
+    let element_type = match get_vector_element_type(operand_vec, mut_ref_only) {
+        Some(ty) if &ty == declared_element_type => ty,
+        _ => return Err(verifier.error(StatusCode::TYPE_MISMATCH, offset)),
+    };
+    let element_ref_type = if mut_ref_only {
+        ST::MutableReference(Box::new(element_type))
+    } else {
+        ST::Reference(Box::new(element_type))
+    };
+    verifier.stack.push(element_ref_type);
+
+    Ok(())
+}
+
 fn verify_instr(
     verifier: &mut TypeSafetyChecker,
     bytecode: &Bytecode,
@@ -359,7 +386,7 @@ fn verify_instr(
             let abilities = verifier
                 .resolver
                 .abilities(&operand, verifier.function_view.type_parameters());
-            if !abilities.has_drop() {
+            if !abilities?.has_drop() {
                 return Err(verifier.error(StatusCode::POP_WITHOUT_DROP_ABILITY, offset));
             }
         }
@@ -462,7 +489,7 @@ fn verify_instr(
             let local_signature = verifier.local_at(*idx).clone();
             if !verifier
                 .resolver
-                .abilities(&local_signature, verifier.function_view.type_parameters())
+                .abilities(&local_signature, verifier.function_view.type_parameters())?
                 .has_copy()
             {
                 return Err(verifier.error(StatusCode::COPYLOC_WITHOUT_COPY_ABILITY, offset));
@@ -519,7 +546,7 @@ fn verify_instr(
             let operand = verifier.stack.pop().unwrap();
             match operand {
                 ST::Reference(inner) | ST::MutableReference(inner) => {
-                    if !verifier.abilities(&inner).has_copy() {
+                    if !verifier.abilities(&inner)?.has_copy() {
                         return Err(
                             verifier.error(StatusCode::READREF_WITHOUT_COPY_ABILITY, offset)
                         );
@@ -541,7 +568,7 @@ fn verify_instr(
                     )
                 }
             };
-            if !verifier.abilities(&ref_inner_signature).has_drop() {
+            if !verifier.abilities(&ref_inner_signature)?.has_drop() {
                 return Err(verifier.error(StatusCode::WRITEREF_WITHOUT_DROP_ABILITY, offset));
             }
 
@@ -621,7 +648,7 @@ fn verify_instr(
         Bytecode::Eq | Bytecode::Neq => {
             let operand1 = verifier.stack.pop().unwrap();
             let operand2 = verifier.stack.pop().unwrap();
-            if verifier.abilities(&operand1).has_drop() && operand1 == operand2 {
+            if verifier.abilities(&operand1)?.has_drop() && operand1 == operand2 {
                 verifier.stack.push(ST::Bool);
             } else {
                 return Err(verifier.error(StatusCode::EQUALITY_OP_TYPE_MISMATCH_ERROR, offset));
@@ -693,6 +720,85 @@ fn verify_instr(
             let type_args = verifier.resolver.signature_at(struct_inst.type_parameters);
             move_to(verifier, offset, struct_def, type_args)?
         }
+
+        Bytecode::VecPack(idx, num) => {
+            let element_type = &verifier.resolver.signature_at(*idx).0[0];
+            for _ in 0..*num {
+                verifier.stack.pop().unwrap();
+            }
+            verifier
+                .stack
+                .push(ST::Vector(Box::new(element_type.clone())));
+        }
+
+        Bytecode::VecLen(idx) => {
+            let operand = verifier.stack.pop().unwrap();
+            let declared_element_type = &verifier.resolver.signature_at(*idx).0[0];
+            match get_vector_element_type(operand, false) {
+                Some(derived_element_type) if &derived_element_type == declared_element_type => {
+                    verifier.stack.push(ST::U64);
+                }
+                _ => return Err(verifier.error(StatusCode::TYPE_MISMATCH, offset)),
+            };
+        }
+
+        Bytecode::VecImmBorrow(idx) => {
+            let declared_element_type = &verifier.resolver.signature_at(*idx).0[0];
+            borrow_vector_element(verifier, declared_element_type, offset, false)?
+        }
+        Bytecode::VecMutBorrow(idx) => {
+            let declared_element_type = &verifier.resolver.signature_at(*idx).0[0];
+            borrow_vector_element(verifier, declared_element_type, offset, true)?
+        }
+
+        Bytecode::VecPushBack(idx) => {
+            let operand_elem = verifier.stack.pop().unwrap();
+            let operand_vec = verifier.stack.pop().unwrap();
+            let declared_element_type = &verifier.resolver.signature_at(*idx).0[0];
+            if declared_element_type != &operand_elem {
+                return Err(verifier.error(StatusCode::TYPE_MISMATCH, offset));
+            }
+            match get_vector_element_type(operand_vec, true) {
+                Some(derived_element_type) if &derived_element_type == declared_element_type => {}
+                _ => return Err(verifier.error(StatusCode::TYPE_MISMATCH, offset)),
+            };
+        }
+
+        Bytecode::VecPopBack(idx) => {
+            let operand_vec = verifier.stack.pop().unwrap();
+            let declared_element_type = &verifier.resolver.signature_at(*idx).0[0];
+            match get_vector_element_type(operand_vec, true) {
+                Some(derived_element_type) if &derived_element_type == declared_element_type => {
+                    verifier.stack.push(derived_element_type);
+                }
+                _ => return Err(verifier.error(StatusCode::TYPE_MISMATCH, offset)),
+            };
+        }
+
+        Bytecode::VecUnpack(idx, num) => {
+            let operand_vec = verifier.stack.pop().unwrap();
+            let declared_element_type = &verifier.resolver.signature_at(*idx).0[0];
+            if operand_vec != ST::Vector(Box::new(declared_element_type.clone())) {
+                return Err(verifier.error(StatusCode::TYPE_MISMATCH, offset));
+            }
+            for _ in 0..*num {
+                verifier.stack.push(declared_element_type.clone());
+            }
+        }
+
+        Bytecode::VecSwap(idx) => {
+            let operand_idx2 = verifier.stack.pop().unwrap();
+            let operand_idx1 = verifier.stack.pop().unwrap();
+            let operand_vec = verifier.stack.pop().unwrap();
+            if operand_idx1 != ST::U64 || operand_idx2 != ST::U64 {
+                return Err(verifier.error(StatusCode::TYPE_MISMATCH, offset));
+            }
+            let declared_element_type = &verifier.resolver.signature_at(*idx).0[0];
+            match get_vector_element_type(operand_vec, true) {
+                Some(derived_element_type) if &derived_element_type == declared_element_type => {}
+                _ => return Err(verifier.error(StatusCode::TYPE_MISMATCH, offset)),
+            };
+        }
     };
     Ok(())
 }
@@ -736,5 +842,31 @@ fn instantiate(token: &SignatureToken, subst: &Signature) -> SignatureToken {
             assume!((*idx as usize) < subst.len());
             subst.0[*idx as usize].clone()
         }
+    }
+}
+
+fn get_vector_element_type(
+    vector_ref_ty: SignatureToken,
+    mut_ref_only: bool,
+) -> Option<SignatureToken> {
+    use SignatureToken::*;
+    match vector_ref_ty {
+        Reference(referred_type) => {
+            if mut_ref_only {
+                None
+            } else if let ST::Vector(element_type) = *referred_type {
+                Some(*element_type)
+            } else {
+                None
+            }
+        }
+        MutableReference(referred_type) => {
+            if let ST::Vector(element_type) = *referred_type {
+                Some(*element_type)
+            } else {
+                None
+            }
+        }
+        _ => None,
     }
 }

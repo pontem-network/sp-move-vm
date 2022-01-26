@@ -1,19 +1,7 @@
-use std::fs;
-use std::path::Path;
 use std::process::{Command, Stdio};
 
-const STDLIB_DIR_NAME: &str = "pont-stdlib";
-const REPO: &str = "https://github.com/pontem-network/pont-stdlib.git";
-const REV: &str = "34cedad7436f7dad6c9a521f3f6199324737d69f";
-
 fn main() {
-    let path: &Path = STDLIB_DIR_NAME.as_ref();
-    if path.exists() {
-        fs::remove_dir_all(path).unwrap();
-    }
-    run(".", "git", &["clone", REPO]);
-    run(STDLIB_DIR_NAME, "git", &["checkout", REV]);
-    run(STDLIB_DIR_NAME, "dove", &["build", "-p"]);
+    run(".", "bash", &["./build_std.sh"]);
 }
 
 pub fn run(path: &str, cmd: &str, args: &[&str]) {
@@ -21,9 +9,7 @@ pub fn run(path: &str, cmd: &str, args: &[&str]) {
         .current_dir(path)
         .args(args)
         .stdout(Stdio::piped())
-        .spawn()
-        .unwrap()
-        .wait()
+        .status()
         .unwrap();
     if !status.success() {
         panic!("Failed to run {} {} {:?}", path, cmd, args);

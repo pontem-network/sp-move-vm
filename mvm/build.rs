@@ -3,7 +3,7 @@ use std::process::{Command, Stdio};
 fn main() {
     #[cfg(feature = "assets")]
     {
-        run("tests/assets", "sh", &["./build_assets.sh"]);
+        run("tests/assets", "bash", &["./build_assets.sh"]);
     }
 }
 

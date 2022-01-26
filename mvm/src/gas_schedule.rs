@@ -124,6 +124,14 @@ pub fn cost_table() -> CostTable {
             GasCost::new(73, 1),
         ),
         (Nop, GasCost::new(10, 1)),
+        (VecPack(SignatureIndex::new(0), 0), GasCost::new(84, 1)),
+        (VecLen(SignatureIndex::new(0)), GasCost::new(98, 1)),
+        (VecImmBorrow(SignatureIndex::new(0)), GasCost::new(1334, 1)),
+        (VecMutBorrow(SignatureIndex::new(0)), GasCost::new(1902, 1)),
+        (VecPushBack(SignatureIndex::new(0)), GasCost::new(53, 1)),
+        (VecPopBack(SignatureIndex::new(0)), GasCost::new(227, 1)),
+        (VecUnpack(SignatureIndex::new(0), 0), GasCost::new(572, 1)),
+        (VecSwap(SignatureIndex::new(0)), GasCost::new(1436, 1)),
     ];
 
     let mut native_table = vec![
@@ -155,6 +163,7 @@ pub fn cost_table() -> CostTable {
         (N::U256_DIV, GasCost::new(10, 1)),
         (N::U256_SUB, GasCost::new(10, 1)),
         (N::U256_ADD, GasCost::new(10, 1)),
+        (N::TYPE_INFO, GasCost::new(10, 1)),
     ];
 
     instrs.sort_by_key(|cost| instruction_key(&cost.0));
