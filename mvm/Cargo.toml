@@ -28,7 +28,7 @@ move-stdlib = { path = "../language/move-stdlib", default-features = false }
 
 [dependencies.sp-io]
 git = "https://github.com/paritytech/substrate"
-branch = "polkadot-v0.9.11"
+branch = "polkadot-v0.9.18"
 default-features = false
 optional = true
 
