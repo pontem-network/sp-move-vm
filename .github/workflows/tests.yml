@@ -74,7 +74,7 @@ jobs:
       fail-fast: false
       matrix:
         rust:
-          - nightly-2021-04-24
+          - nightly-2021-11-07
         dove:
           - 1.5.5
         os:
