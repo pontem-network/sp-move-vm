@@ -175,11 +175,7 @@ pub fn vector_loop(iter: u64) -> ScriptTx {
 pub fn reflect_type_of(addr: AccountAddress, module: &str, strct: &str) -> ScriptTx {
     ScriptTx::with_script(
         include_bytes!("../assets/build/assets/bytecode_scripts/test_reflect.mv").to_vec(),
-        vec![
-            ScriptArg::Address(addr),
-            ScriptArg::VectorU8(module.as_bytes().to_vec()),
-            ScriptArg::VectorU8(strct.as_bytes().to_vec()),
-        ],
+        vec![ScriptArg::Address(addr)],
         vec![TypeTag::Struct(StructTag {
             address: addr,
             module: Identifier::new(module).unwrap(),

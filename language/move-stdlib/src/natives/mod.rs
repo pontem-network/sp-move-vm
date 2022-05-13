@@ -76,7 +76,7 @@ pub fn all_natives(move_std_addr: AccountAddress) -> NativeFunctionTable {
             "ed25519_verify",
             signature::native_ed25519_signature_verification,
         ),
-        ("Reflect", "type_info", reflect::type_info),
+        ("Reflect", "mod_address_of", reflect::mod_address_of),
     ];
     NATIVES
         .iter()

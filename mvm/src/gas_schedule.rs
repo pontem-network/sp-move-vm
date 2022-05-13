@@ -163,7 +163,7 @@ pub fn cost_table() -> CostTable {
         (N::U256_DIV, GasCost::new(10, 1)),
         (N::U256_SUB, GasCost::new(10, 1)),
         (N::U256_ADD, GasCost::new(10, 1)),
-        (N::TYPE_INFO, GasCost::new(10, 1)),
+        (N::MOD_ADDRESS_OF, GasCost::new(10, 1)),
     ];
 
     instrs.sort_by_key(|cost| instruction_key(&cost.0));
